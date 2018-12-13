@@ -3,20 +3,15 @@ package com.baosight.xinsight.ots.rest.service;
 import com.baosight.xinsight.common.CommonConstants;
 import com.baosight.xinsight.kafka.MessageHandlerFactory;
 import com.baosight.xinsight.model.PermissionCheckUserInfo;
-import com.baosight.xinsight.ots.client.OTSTable;
+import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.exception.TableException;
 import com.baosight.xinsight.ots.exception.OtsException;
-import com.baosight.xinsight.ots.rest.api.TableResource;
-import com.baosight.xinsight.ots.rest.common.RestConstants;
 import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 import com.baosight.xinsight.ots.rest.util.MessageBuilder;
-import com.baosight.xinsight.ots.rest.util.PermissionUtil;
-import com.baosight.xinsight.ots.rest.vo.table.operate.TableCreateBodyVo;
+import com.baosight.xinsight.ots.rest.model.table.operate.TableCreateBody;
 
 import org.apache.log4j.Logger;
-
-import javax.ws.rs.Path;
 
 /**
  * @author liyuhui
@@ -33,18 +28,19 @@ public class TableService {
      * @return created table
      * @throws Exception
      */
-    public static OTSTable createTable(PermissionCheckUserInfo userInfo, String tableName, TableCreateBodyVo createBodyModel) throws Exception {
+    public static OtsTable createTable(PermissionCheckUserInfo userInfo, String tableName, TableCreateBody createBodyModel) throws Exception {
         try {
-            //存入userInfo到缓存
-            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
-                PermissionUtil.CacheInfo info = PermissionUtil.GetInstance().otsPermissionHandler(userInfo, -1, PermissionUtil.PermissionOpesration.OTSMANAGEW);
-                MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
-                        .sendData(userInfo.getTenantId(), MessageBuilder.buildPermissionMessage(userInfo, RestConstants.OTS_MANAGE_PERMISSION_OPERATION,
-                                info.isReadPermission(), info.isWritePermission(), info.isPermissionFlag(), info.getCurrentTime()));
-            }
+            //todo lyh
+//            //存入userInfo到缓存
+//            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
+//                PermissionUtil.CacheInfo info = PermissionUtil.GetInstance().otsPermissionHandler(userInfo, -1, PermissionUtil.PermissionOpesration.OTSMANAGEW);
+//                MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
+//                        .sendData(userInfo.getTenantId(), MessageBuilder.buildPermissionMessage(userInfo, RestConstants.OTS_MANAGE_PERMISSION_OPERATION,
+//                                info.isReadPermission(), info.isWritePermission(), info.isPermissionFlag(), info.getCurrentTime()));
+//            }
 
             //创建表（包含大表和小表），以及表存在性校验
-            OTSTable table = ConfigUtil.getInstance().getOtsAdmin()
+            OtsTable table = ConfigUtil.getInstance().getOtsAdmin()
                     .createTable(userInfo.getUserId(), userInfo.getTenantId(), tableName,createBodyModel.toTable());
 
             //add cache

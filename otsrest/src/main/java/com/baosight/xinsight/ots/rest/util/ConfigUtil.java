@@ -9,7 +9,7 @@ import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.client.OtsAdmin;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.exception.OtsException;
-import com.baosight.xinsight.ots.rest.common.RestErrorCode;
+import com.baosight.xinsight.ots.rest.constant.RestErrorCode;
 import com.baosight.xinsight.redis.RedisUtil;
 import com.baosight.xinsight.utils.SystemUtil;
 
@@ -26,6 +26,9 @@ import java.util.regex.Pattern;
 
 import redis.clients.jedis.JedisPoolConfig;
 
+/**
+ * 单例类
+ */
 public class ConfigUtil {
 	private static final Logger LOG = Logger.getLogger(ConfigUtil.class);
 
@@ -102,12 +105,21 @@ public class ConfigUtil {
 	public static void setProjectName(String projectName) {
 		PROJECT_NAME = projectName;
 	}
-	
-	private void initEvn() throws NumberFormatException, ConfigException, OtsException, Exception {
+
+	/**
+	 * 初始化环境
+	 * @throws NumberFormatException
+	 * @throws ConfigException
+	 * @throws OtsException
+	 * @throws Exception
+	 */
+	private void initEvn() throws Exception {
+		//获得webRoot根路径
 		String classPath = ConfigUtil.class.getClassLoader().getResource("/").getPath();
 		String webRoot = classPath.substring(0, classPath.lastIndexOf("/WEB-INF/"));
 		System.out.println("---webRoot path:" + webRoot); 
-		//check the log directory 		
+
+		//check the log directory
 		String osType = System.getProperty("os.name");
 		if (osType.toLowerCase().equals("sunos") || osType.toLowerCase().equals("linux")) {
 			webRoot = CommonConstants.DEFAULT_WEBLOG_PATH;
@@ -143,7 +155,7 @@ public class ConfigUtil {
 		InetAddress inetAddr = InetAddress.getLocalHost();
 		hostName = inetAddr.getHostName();
 		
-		//init otsclient
+		//init otsClient
 		OtsConfiguration conf = OtsConfiguration.create();
 		//如果默认ots的conf.properties存在,这样都可以不配置
 		conf.setProperty(OtsConstants.ZOOKEEPER_QUORUM, configReader.getValue(ConfigConstants.ZOOKEEPER_QUORUM, "127.0.0.1:2181"));
@@ -201,7 +213,7 @@ public class ConfigUtil {
         redisutil = new RedisUtil(getValue(ConfigConstants.REDIS_QUORUM), getValue(ConfigConstants.REDIS_PASSWORD), jedisPoolConfig);
 	}
 	
-	public String getValue(String key) throws IOException {		
+	public String getValue(String key) throws IOException {
         String value = configReader.getValue(key, null);
         if (value == null) {
         	LOG.warn("no property:" + key);
@@ -220,7 +232,7 @@ public class ConfigUtil {
         return buffer.toString();
 	}
 	
-	public String getValue(String key, String defaultValue) throws IOException {	
+	public String getValue(String key, String defaultValue) throws IOException {
 		return configReader.getValue(key, defaultValue);
 	}
 	

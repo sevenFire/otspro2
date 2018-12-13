@@ -8,8 +8,8 @@ import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.exception.OtsException;
-import com.baosight.xinsight.ots.rest.common.RestConstants;
-import com.baosight.xinsight.ots.rest.common.RestErrorCode;
+import com.baosight.xinsight.ots.rest.constant.RestConstants;
+import com.baosight.xinsight.ots.rest.constant.RestErrorCode;
 import com.baosight.xinsight.ots.rest.permission.CachePermission;
 import com.baosight.xinsight.ots.rest.permission.ScheduleThread;
 

@@ -5,7 +5,7 @@ import com.baosight.xinsight.config.ConfigConstants;
 import com.baosight.xinsight.model.PermissionCheckUserInfo;
 import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
-import com.baosight.xinsight.ots.rest.common.RestConstants;
+import com.baosight.xinsight.ots.rest.constant.RestConstants;
 import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 import com.baosight.xinsight.utils.AasPermissionUtil;
 import com.baosight.xinsight.utils.EhcacheUtil;
@@ -184,7 +184,7 @@ public class CachePermission {
             LOG.warn(String.format("obtain permission failed, the relevat permission of [%s] will be removed if existed in cache", resourceKey));
             return null;
         }
-        CacheItem properties = putCacheItem(userInfo.getUserId(), userInfo.getTenantId(), userInfo.getTenantName(), 
+        CacheItem properties = putCacheItem(userInfo.getUserId(), userInfo.getTenantId(), userInfo.getTenantName(),
                 userInfo.getUserName(), tableId, permission.isGet(), permission.isPost(), permissionFlag, createTime);
         LOG.debug((new StringBuilder()).append(String.valueOf(userInfo.getUserId()))
                 .append(CommonConstants.DEFAULT_SINGLE_UNLINE_SPLIT).append(tableId).append(":")

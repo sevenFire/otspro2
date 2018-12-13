@@ -58,11 +58,6 @@
         </dependency>
         <dependency>
             <groupId>com.baosight.xinsight</groupId>
-            <artifactId>xinsight-common</artifactId>
-            <version>${com.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.baosight.xinsight</groupId>
             <artifactId>xinsight-ots-common</artifactId>
             <version>${ots.version}</version>
         </dependency>

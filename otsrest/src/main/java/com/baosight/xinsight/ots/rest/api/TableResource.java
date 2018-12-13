@@ -3,11 +3,10 @@ package com.baosight.xinsight.ots.rest.api;
 import com.baosight.xinsight.model.PermissionCheckUserInfo;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
-import com.baosight.xinsight.ots.rest.common.ErrorMode;
+import com.baosight.xinsight.ots.rest.constant.ErrorMode;
 import com.baosight.xinsight.ots.rest.service.TableService;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
-import com.baosight.xinsight.ots.rest.util.RegexUtil;
-import com.baosight.xinsight.ots.rest.vo.table.operate.TableCreateBodyVo;
+import com.baosight.xinsight.ots.rest.model.table.operate.TableCreateBody;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
@@ -58,11 +57,11 @@ public class TableResource {
     public Response post(@PathParam("tablename") String tableName, String body) {
         //校验表名合法性
         //todo lyh 错误码和校验规则
-        if (!RegexUtil.isValidTableName(tableName)) {
-            LOG.error(Response.Status.FORBIDDEN.name() + ":" + tableName + " is not a valid table name.");
-            return Response.status(Response.Status.FORBIDDEN).type(MediaType.APPLICATION_JSON).entity(
-                    new ErrorMode(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST, Response.Status.FORBIDDEN.name() + ":" + tableName + " is not a valid table name.")).build();
-        }
+//        if (!RegexUtil.isValidTableName(tableName)) {
+//            LOG.error(Response.Status.FORBIDDEN.name() + ":" + tableName + " is not a valid table name.");
+//            return Response.status(Response.Status.FORBIDDEN).type(MediaType.APPLICATION_JSON).entity(
+//                    new ErrorMode(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST, Response.Status.FORBIDDEN.name() + ":" + tableName + " is not a valid table name.")).build();
+//        }
 
         //获得userInfo和body
         PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
@@ -70,9 +69,9 @@ public class TableResource {
         LOG.debug("Post:" + tableName + "\nContent:\n" + body);
 
         //生成body对应的model并校验参数合法性
-        TableCreateBodyVo bodyModel;
+        TableCreateBody bodyModel;
         try {
-            bodyModel = TableCreateBodyVo.toClass(body);
+            bodyModel = TableCreateBody.toClass(body);
         } catch (OtsException e) {
             e.printStackTrace();
             LOG.error(ExceptionUtils.getFullStackTrace(e));

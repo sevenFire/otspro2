@@ -21,7 +21,7 @@ public class TableConstants {
 
 
     public static final String T_OTS_USER_TABLE = "ots_user_table";  //表名
-    public static final String E_OTS_USER_TABLE = "OTSUserTable";   //实体名
+    public static final String E_OTS_USER_TABLE = "Table";   //实体名
 
     public static final String INSERT = "insert";
     public static final String QUERY = "query";
@@ -29,4 +29,6 @@ public class TableConstants {
     public static final String UPDATE = "update";
 
 
+    //HBase中ots的表名前缀
+    public static final String HBASE_TABLE_PREFIX = "1:ots_";
 }
