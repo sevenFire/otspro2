@@ -15,5 +15,7 @@
         <module>coprocessor</module>
         <module>mapreduce</module>
         <module>datasource</module>
+        <module>otscfgsvr</module>
+        <module>otsrest</module>
     </modules>
 </project>
