@@ -183,19 +183,19 @@ public class Configurator {
 
     /**
      * 查询并返回表的详细信息
-     * @param userId
+     * @param tenantId
      * @param tableName
      * @return
      * @throws ConfigException
      */
-    public Table queryTable(long userId, String tableName) throws ConfigException{
+    public Table queryTable(long tenantId, String tableName) throws ConfigException{
         Table table = null;
 
         try {
             connect();
 
             Statement st = conn.createStatement();
-            String sql = String.format("select * from ots_user_table where ots_user_table.table_name = '%s' and ots_user_table.userid = '%d';", tableName, userId);
+            String sql = String.format("select * from ots_user_table where ots_user_table.table_name = '%s' and ots_user_table.tenant_id = '%d';", tableName, tenantId);
             LOG.debug(sql);
 
             ResultSet rs = st.executeQuery(sql);

@@ -324,4 +324,23 @@ public class OtsAdmin {
         }
     }
 
+    /**
+     * 在RDB中查询表
+     * @param tenantId
+     * @param tableName
+     * @return
+     */
+    public Table getRDBTable(Long tenantId, String tableName) throws ConfigException {
+        Configurator configurator = new Configurator();
+
+        try {
+            Table table = configurator.queryTable(tenantId, tableName);
+            return table;
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        }finally {
+            configurator.release();
+        }
+    }
 }
