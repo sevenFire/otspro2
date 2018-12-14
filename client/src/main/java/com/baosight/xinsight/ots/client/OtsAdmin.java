@@ -130,9 +130,9 @@ public class OtsAdmin {
 
         try {
             //在pg中创建表。
-            createRDBTableWithCheck(userId,tenantId,tableName,table);
+            createRDBTableIfNotExist(userId,tenantId,tableName,table);
             //在HBase中创建大表
-            hBaseFailed2DelPost = createHBaseTableWithCheck(tenantId);
+            hBaseFailed2DelPost = createHBaseTableIfNotExist(tenantId);
 
             //HBase创建失败，需要回滚RDB中数据
             if (hBaseFailed2DelPost){
@@ -151,7 +151,7 @@ public class OtsAdmin {
      * 如果该租户下已经有表，则不创建。
      * @param tenantId
      */
-    private boolean createHBaseTableWithCheck(Long tenantId) throws OtsException {
+    private boolean createHBaseTableIfNotExist(Long tenantId) throws OtsException {
         Boolean HBaseFailed2DelPost = false;
         try {
             if(!isHBaseTableExist(tenantId)){
@@ -173,7 +173,7 @@ public class OtsAdmin {
      * @param tableName
      * @param table
      */
-    public void createRDBTableWithCheck(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
+    public void createRDBTableIfNotExist(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
         Configurator configurator = new Configurator();
 
         //查询表是否存在
