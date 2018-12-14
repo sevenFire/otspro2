@@ -26,6 +26,8 @@
       <param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>
       <param-value>true</param-value>
     </init-param>
+
+    <!--todo lyh 先注释掉用以调试-->
     <!--在执行rest请求前进行权限验证-->
     <init-param>
       <param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>
