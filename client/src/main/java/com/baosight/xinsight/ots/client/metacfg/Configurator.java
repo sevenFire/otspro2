@@ -96,20 +96,22 @@ public class Configurator {
     public long addTable(Table table) throws ConfigException	{
         long tableId = 0;
 
+
         try {
             connect();
             conn.setAutoCommit(false);
 
 			String sql = String.format("insert into ots_user_table " +
-							" (\"table_id\", \"user_id\", \"tenant_id\", \"table_name\", \"table_desc\", \"primary_key\", \"table_columns\", \"create_time\", \"modify_time\", \"creator\", \"modifier\") " +
-							" values ('%d', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%d', ? , ? , ? , ? , ? , ?) returning table_id;",
-					table.getTableId(), table.getUserId(), table.getTenantId(), table.getTableName(), table.getTableDesc(),  table.getPrimaryKey(), table.getTableColumns(), table.getCreateTime(), table.getModifyTime(),table.getCreator(),table.getModifier());
+							" (\"user_id\", \"tenant_id\", \"table_name\", \"table_desc\", \"primary_key\", \"table_columns\", \"create_time\", \"modify_time\", \"creator\", \"modifier\") " +
+							" values ('%d', '%d', '%s', '%s', '%s', '%s', ? , ? , ? , ?) returning table_id; ",
+					table.getUserId(), table.getTenantId(), table.getTableName(), table.getTableDesc(),  table.getPrimaryKey(), table.getTableColumns());
 			LOG.debug(sql);
 			PreparedStatement pstmt = conn.prepareStatement(sql);
 			pstmt.setTimestamp(1, new Timestamp(table.getCreateTime().getTime()));
 			pstmt.setTimestamp(2, new Timestamp(table.getModifyTime().getTime()));
 			pstmt.setLong(3, table.getCreator());
             pstmt.setLong(4, table.getModifier());
+
 			LOG.debug(pstmt.toString());
 
 			pstmt.execute();
@@ -226,7 +228,7 @@ public class Configurator {
             LOG.debug(sql);
 
             ResultSet rs = st.executeQuery(sql);
-            if (rs.next() && rs.getInt(1)>0) {
+            if (rs.next() && rs.getFetchSize()>0) {
                 return true;
             } else return false;
 

@@ -1,27 +1,21 @@
-package com.baosight.xinsight.ots.client.metacfg;
+package com.baosight.xinsight.ots.client.pojo;
 
 import java.util.Date;
 
-/**
- * @author liyuhui
- * @date 2018/12/11
- * @description table对应的实体类
- */
 public class Table {
-
-    private Long tableId ; //表id
-    private Long userId ; //用户id
-    private Long tenantId; //租户id
-    private String tableName; //表名
-    private String tableDesc; //表的描述
-    private String primaryKey; //表的主键
-    private String tableColumns; //表的列信息
-    private Date createTime; //创建时间
-    private Date modifyTime; //最近修改时间
-    private Long creator; //创建人
-    private Long modifier; //最近修改人
-    private Boolean permission; //权限信息
-    private Boolean enable; //是否启用
+    private Long tableId;
+    private Integer userId;
+    private Integer tenantId;
+    private String tableName;
+    private String tableDesc;
+    private Object primaryKey;
+    private Object tableColumns;
+    private Date createTime;
+    private Date modifyTime;
+    private Long creator;
+    private Long modifier;
+    private Boolean permission;
+    private Boolean enable;
 
     public Long getTableId() {
         return tableId;
@@ -31,19 +25,19 @@ public class Table {
         this.tableId = tableId;
     }
 
-    public Long getUserId() {
+    public Integer getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(Integer userId) {
         this.userId = userId;
     }
 
-    public Long getTenantId() {
+    public Integer getTenantId() {
         return tenantId;
     }
 
-    public void setTenantId(Long tenantId) {
+    public void setTenantId(Integer tenantId) {
         this.tenantId = tenantId;
     }
 
@@ -63,19 +57,19 @@ public class Table {
         this.tableDesc = tableDesc;
     }
 
-    public String getPrimaryKey() {
+    public Object getPrimaryKey() {
         return primaryKey;
     }
 
-    public void setPrimaryKey(String primaryKey) {
+    public void setPrimaryKey(Object primaryKey) {
         this.primaryKey = primaryKey;
     }
 
-    public String getTableColumns() {
+    public Object getTableColumns() {
         return tableColumns;
     }
 
-    public void setTableColumns(String tableColumns) {
+    public void setTableColumns(Object tableColumns) {
         this.tableColumns = tableColumns;
     }
 
@@ -111,19 +105,19 @@ public class Table {
         this.modifier = modifier;
     }
 
-    public Boolean getEnable() {
-        return enable;
-    }
-
-    public void setEnable(Boolean enable) {
-        this.enable = enable;
-    }
-
     public Boolean getPermission() {
         return permission;
     }
 
     public void setPermission(Boolean permission) {
         this.permission = permission;
+    }
+
+    public Boolean getEnable() {
+        return enable;
+    }
+
+    public void setEnable(Boolean enable) {
+        this.enable = enable;
     }
 }

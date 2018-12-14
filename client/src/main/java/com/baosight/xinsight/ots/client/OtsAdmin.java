@@ -177,7 +177,7 @@ public class OtsAdmin {
         Configurator configurator = new Configurator();
 
         //查询表是否存在
-        if (null != configurator.ifExistTable(userId, tableName)) {//已存在，则抛出异常给上层方法，因为有联动。
+        if (configurator.ifExistTable(userId, tableName)) {//已存在，则抛出异常给上层方法，因为有联动。
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
                     String.format("user (userId:%d) already owned table:%s!", userId, tableName));
         }
