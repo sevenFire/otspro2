@@ -2,10 +2,74 @@
  "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
  "http://java.sun.com/dtd/web-app_2_3.dtd" >
 
-<web-app>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://java.sun.com/xml/ns/javaee"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         id="WebApp_ID" version="3.0">
+
   <display-name>Archetype Created Web Application</display-name>
 
   <welcome-file-list>
     <welcome-file>index.jsp</welcome-file>
   </welcome-file-list>
+
+  <servlet>
+    <servlet-name>OTS RESTful API</servlet-name>
+    <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
+    <!--这样定以后，对应的类必须位于api这个包下-->
+    <init-param>
+      <param-name>com.sun.jersey.config.property.packages</param-name>
+      <param-value>com.baosight.xinsight.ots.rest.api</param-value>
+    </init-param>
+    <!--处理返回的json-->
+    <init-param>
+      <param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>
+      <param-value>true</param-value>
+    </init-param>
+    <!--在执行rest请求前进行权限验证-->
+    <init-param>
+      <param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>
+      <param-value>com.baosight.xinsight.ots.rest.filter.AuthorizationFilter</param-value>
+    </init-param>
+    <init-param>
+      <param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
+      <param-value>com.baosight.xinsight.ots.rest.filter.CrossDomainFilter</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>OTS RESTful API</servlet-name>
+    <url-pattern>/api/*</url-pattern>
+  </servlet-mapping>
+
+  <!--todo lyh-->
+  <!--<servlet>-->
+    <!--<servlet-name>logProfile</servlet-name>-->
+    <!--<servlet-class>com.baosight.xinsight.ots.rest.servlet.LogInitServlet</servlet-class>-->
+    <!--<load-on-startup>0</load-on-startup>-->
+  <!--</servlet>-->
+
+  <!--<filter>-->
+    <!--<filter-name>LicenseFilter</filter-name>-->
+    <!--<filter-class>com.baosight.xinsight.ots.rest.filter.LicenseFilter</filter-class>-->
+  <!--</filter>-->
+  <!--<filter-mapping>-->
+    <!--<filter-name>LicenseFilter</filter-name>-->
+    <!--<url-pattern>/*</url-pattern>-->
+  <!--</filter-mapping>-->
+
+  <!--<filter>-->
+    <!--<filter-name>NdcFilter</filter-name>-->
+    <!--<filter-class>com.baosight.xinsight.ots.rest.filter.Log4jNdcFilter</filter-class>-->
+  <!--</filter>-->
+  <!--<filter-mapping>-->
+    <!--<filter-name>NdcFilter</filter-name>-->
+    <!--<url-pattern>/*</url-pattern>-->
+  <!--</filter-mapping>-->
+
+  <!-- system listener -->
+  <!--<listener>-->
+    <!--<listener-class>com.baosight.xinsight.ots.rest.servlet.SystemListener</listener-class>-->
+  <!--</listener>-->
+
 </web-app>

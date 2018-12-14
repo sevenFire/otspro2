@@ -19,6 +19,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 
+/**
+ * 所有rest请求前的权限校验过滤器
+ */
 @Provider
 public class AuthorizationFilter implements ContainerRequestFilter {
 	private static final Logger LOG = Logger.getLogger(AuthorizationFilter.class);
@@ -28,7 +31,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
 	
 	@Override
     public ContainerRequest filter(ContainerRequest request) {        
-    	Response response = null;
+    	Response response;
     	AuthTokenManager tokenManager = AuthTokenManager.createInstance(ConfigUtil.getInstance().getAuthServerAddr());
     	
     	String method = request.getMethod();

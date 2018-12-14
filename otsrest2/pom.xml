@@ -5,11 +5,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.baosight.xinsight</groupId>
-  <artifactId>otsrest</artifactId>
+  <artifactId>otsrest2</artifactId>
   <version>${ots.version}</version>
   <packaging>war</packaging>
 
-  <name>otsrest Maven Webapp</name>
+  <name>otsrest2 Maven Webapp</name>
 
   <parent>
     <groupId>com.baosight.xinsight</groupId>
@@ -20,20 +20,14 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.baosight.xinsight</groupId>
       <artifactId>xinsight-ots-client</artifactId>
-      <version>2.1.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.baosight.xinsight</groupId>
-      <artifactId>xinsight-ots-common</artifactId>
       <version>2.1.0</version>
     </dependency>
 
@@ -49,10 +43,28 @@
       <version>4.11</version>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-core</artifactId>
+      <version>1.9</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-json</artifactId>
+      <version>1.9</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-server</artifactId>
+      <version>1.9</version>
+    </dependency>
   </dependencies>
 
   <build>
-    <finalName>otsrest</finalName>
+    <finalName>otsrest2</finalName>
     <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
       <plugins>
         <plugin>
