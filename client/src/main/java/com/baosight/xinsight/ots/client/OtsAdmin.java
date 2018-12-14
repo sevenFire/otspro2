@@ -348,15 +348,17 @@ public class OtsAdmin {
     /**
      * 在RDB中查询所有表，返回表名的列表
      * @param tenantId
+     * @Param tableName
      * @param limit
      * @param offset
+     * @param fuzzy 是否需要模糊查询
      * @return
      */
-    public List<String> getRDBTableNameList(Long tenantId, long limit, long offset) throws ConfigException {
+    public List<String> getRDBTableNameList(Long tenantId, String tableName, long limit, long offset, Boolean fuzzy) throws ConfigException {
         Configurator configurator = new Configurator();
 
         try {
-            List<String> tableNameList = configurator.queryTableNameList(tenantId,limit,offset);
+            List<String> tableNameList = configurator.queryTableNameList(tenantId,tableName,limit,offset,fuzzy);
             return tableNameList;
         } catch (ConfigException e) {
             e.printStackTrace();

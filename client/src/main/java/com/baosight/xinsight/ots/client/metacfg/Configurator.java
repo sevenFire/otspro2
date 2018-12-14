@@ -5,6 +5,7 @@ import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.exception.PermissionSqlException;
 import com.baosight.xinsight.ots.constants.TableConstants;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 
@@ -324,20 +325,38 @@ public class Configurator {
     }
 
     /**
-     * 查询某租户下的所有表tring，返回表名的列表
+     * 查询某租户下的所有表
      * @param tenantId
+     * @param tableName
      * @param limit
      * @param offset
-     * @return
+     * @param fuzzy 是否模糊查询
+     * @return 返回表名的列表
      */
-    public List<String> queryTableNameList(Long tenantId, long limit, long offset) throws ConfigException {
+    public List<String> queryTableNameList(Long tenantId, String tableName, long limit, long offset, Boolean fuzzy) throws ConfigException {
         List<String> tableNameList = new ArrayList<>();
 
         try {
             connect();
 
             Statement st = conn.createStatement();
-            String sql = String.format("select table_name from ots_user_table where tenant_id = '%d' limit '%d' offset '%d' ",tenantId,limit,offset);
+            String sql;
+            StringBuilder sqlSB = new StringBuilder(" select table_name from ots_user_table where tenant_id = '%d'");
+
+            if (!StringUtils.isBlank(tableName)) {//带条件查询
+                sqlSB.append(" and table_name ");
+                if (fuzzy){
+                    sqlSB.append(" ~ '%s' ");
+                }else {
+                    sqlSB.append(" = '%s' ");
+                }
+                sqlSB.append(" limit '%d' offset '%d' " );
+                sql = String.format(sqlSB.toString(),tenantId,tableName,limit,offset);
+            }else {//不带条件
+                sqlSB.append(" limit '%d' offset '%d' " );
+                sql = String.format(sqlSB.toString(), tenantId, limit, offset);
+            }
+
             LOG.debug(sql);
 
             ResultSet rs = st.executeQuery(sql);
