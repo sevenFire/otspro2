@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author liyuhui
@@ -325,7 +326,7 @@ public class OtsAdmin {
     }
 
     /**
-     * 在RDB中查询表
+     * 根据表名在RDB中查询表
      * @param tenantId
      * @param tableName
      * @return
@@ -336,6 +337,27 @@ public class OtsAdmin {
         try {
             Table table = configurator.queryTable(tenantId, tableName);
             return table;
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        }finally {
+            configurator.release();
+        }
+    }
+
+    /**
+     * 在RDB中查询所有表，返回表名的列表
+     * @param tenantId
+     * @param limit
+     * @param offset
+     * @return
+     */
+    public List<String> getRDBTableNameList(Long tenantId, long limit, long offset) throws ConfigException {
+        Configurator configurator = new Configurator();
+
+        try {
+            List<String> tableNameList = configurator.queryTableNameList(tenantId,limit,offset);
+            return tableNameList;
         } catch (ConfigException e) {
             e.printStackTrace();
             throw e;

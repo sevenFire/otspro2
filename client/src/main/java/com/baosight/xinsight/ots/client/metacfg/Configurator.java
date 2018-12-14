@@ -15,6 +15,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author liyuhui
@@ -319,5 +321,35 @@ public class Configurator {
             LOG.error(ExceptionUtils.getFullStackTrace(e));
             throw new PermissionSqlException(OtsErrorCode.EC_OTS_ADD_PERMISSION_SQL_LABEL, (new StringBuilder()).append("Failed to add the permitted field to the relevant table").toString());
         }
+    }
+
+    /**
+     * 查询某租户下的所有表tring，返回表名的列表
+     * @param tenantId
+     * @param limit
+     * @param offset
+     * @return
+     */
+    public List<String> queryTableNameList(Long tenantId, long limit, long offset) throws ConfigException {
+        List<String> tableNameList = new ArrayList<>();
+
+        try {
+            connect();
+
+            Statement st = conn.createStatement();
+            String sql = String.format("select table_name from ots_user_table where tenant_id = '%d' limit '%d' offset '%d' ",tenantId,limit,offset);
+            LOG.debug(sql);
+
+            ResultSet rs = st.executeQuery(sql);
+            while (rs.next()){
+                tableNameList.add(rs.getString("table_name"));
+            }
+            st.close();
+        } catch (SQLException e) {
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query table !\n" + e.getMessage());
+        }
+
+        return tableNameList;
+
     }
 }
