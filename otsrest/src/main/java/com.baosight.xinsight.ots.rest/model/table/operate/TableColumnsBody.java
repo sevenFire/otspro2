@@ -1,26 +1,22 @@
 package com.baosight.xinsight.ots.rest.model.table.operate;
 
-import com.baosight.xinsight.utils.JsonUtil;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
+//import com.fasterxml.jackson.annotation.JsonIgnore;
+//import com.fasterxml.jackson.annotation.JsonProperty;
+//import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import java.io.Serializable;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * @author liyuhui
  * @date 2018/12/12
  * @description 表的列信息
  */
-@XmlRootElement(name="tableColumns")
-@XmlAccessorType(XmlAccessType.FIELD)
 public class TableColumnsBody implements Serializable{
 
     @JsonIgnore
@@ -42,14 +38,13 @@ public class TableColumnsBody implements Serializable{
         this.colType = colType;
     }
 
-    @JsonIgnore
-    @XmlTransient
-    @Override
-    public String toString() {
-        return JsonUtil.toJsonString(this);
-    }
+//    @JsonIgnore
+//    @XmlTransient
+//    @Override
+//    public String toString() {
+//        return JsonUtil.toJsonString(this);
+//    }
 
-    @XmlElement
     public String getColName() {
         return colName;
     }
@@ -58,7 +53,6 @@ public class TableColumnsBody implements Serializable{
         this.colName = colName;
     }
 
-    @XmlElement
     public String getColType() {
         return colType;
     }

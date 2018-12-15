@@ -1,13 +1,14 @@
-package com.baosight.xinsight.ots.rest.model.table.operate;
+package com.baosight.xinsight.ots.rest.model.table.response;
 
 import com.alibaba.fastjson.JSON;
 import com.baosight.xinsight.ots.client.metacfg.Table;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.baosight.xinsight.ots.rest.model.table.operate.TableColumnsBody;
+//import com.fasterxml.jackson.annotation.JsonIgnore;
+//import com.fasterxml.jackson.annotation.JsonProperty;
 
-//import org.codehaus.jackson.annotate.JsonIgnore;
-//import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -18,9 +19,9 @@ import java.util.List;
 /**
  * @author liyuhui
  * @date 2018/12/14
- * @description
+ * @description 表的详细参数
  */
-public class TableAllInfoBody implements Serializable {
+public class TableInfoBody implements Serializable {
     @JsonIgnore
     private static final long serialVersionUID = 1L;
 
@@ -51,17 +52,17 @@ public class TableAllInfoBody implements Serializable {
 
 
 
-    public TableAllInfoBody() {
+    public TableInfoBody() {
     }
 
-    public TableAllInfoBody(String tableName,
-                            String tableDesc,
-                            List<TableColumnsBody> tableColumns,
-                            List<String> primaryKey,
-                            String createTime,
-                            String modifyTime,
-                            Long creator,
-                            Long modifier) {
+    public TableInfoBody(String tableName,
+                         String tableDesc,
+                         List<TableColumnsBody> tableColumns,
+                         List<String> primaryKey,
+                         String createTime,
+                         String modifyTime,
+                         Long creator,
+                         Long modifier) {
         this.tableName = tableName;
         this.tableDesc = tableDesc;
         this.tableColumns = tableColumns;

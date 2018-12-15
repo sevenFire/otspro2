@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>xinsight-ots-common</artifactId>
 	<groupId>com.baosight.xinsight</groupId>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<version>${ots.version}</version>
 
 

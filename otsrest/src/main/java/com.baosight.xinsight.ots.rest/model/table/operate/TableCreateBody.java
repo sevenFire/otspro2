@@ -8,54 +8,57 @@ import com.baosight.xinsight.utils.JsonUtil;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * @author liyuhui
  * @date 2018/12/12
- * @description 创建表的body
+ * @description 创建表的请求参数
  */
-@XmlRootElement
-@XmlAccessorType(XmlAccessType.FIELD)
 public class TableCreateBody implements Serializable{
     @JsonIgnore
     private static final long serialVersionUID = 1L;
 
-    @JsonProperty(value="primary_key")
-    private List<String> primaryKey;
+    @JsonProperty(value="table_desc")
+    private String tableDesc;
 
     //table_columns是一个数组，且每个元素又有多个属性
     @JsonProperty(value="table_columns")
+    @JsonSerialize(include=JsonSerialize.Inclusion.NON_NULL)
     private List<TableColumnsBody> tableColumns = new ArrayList<TableColumnsBody>();
 
-    @JsonProperty(value="table_desc")
-    private String tableDesc;
+    @JsonProperty(value="primary_key")
+    @JsonSerialize(include=JsonSerialize.Inclusion.NON_NULL)
+    private List<String> primaryKey = new ArrayList<>();
 
     public TableCreateBody() {
     }
 
-    public TableCreateBody(List<TableColumnsBody> tableColumns, String tableDesc) {
-        this.tableColumns = tableColumns;
+    public TableCreateBody(String tableDesc, List<TableColumnsBody> tableColumns, List<String> primaryKey) {
         this.tableDesc = tableDesc;
+        this.tableColumns = tableColumns;
+        this.primaryKey = primaryKey;
     }
 
-    @JsonIgnore
-    @XmlTransient
-    @Override
-    public String toString() {
-        return JsonUtil.toJsonString(this);
-    }
+    /**
+     * 将请求体中的参数放入table的实体类中
+     * @return
+     */
+    public Table toTable() {
+        Table table = new Table();
+        table.setTableDesc(tableDesc);
+        //注意，不能用toString，不然结果会是[col1, col2, col3]而非["col1","col2","col3"]，插入数据库会出错。
+        table.setPrimaryKey(JsonUtil.toJsonString(primaryKey));
+        table.setTableColumns(JsonUtil.toJsonString(tableColumns));
 
+        return table;
+    }
     /**
      * 将json串转换成实体类
      * @param in
@@ -63,7 +66,6 @@ public class TableCreateBody implements Serializable{
      * @throws OtsException
      */
     @JsonIgnore
-    @XmlTransient
     public static TableCreateBody toClass(String in) throws OtsException {
         try {
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(in.getBytes(OtsConstants.DEFAULT_ENCODING));
@@ -76,26 +78,6 @@ public class TableCreateBody implements Serializable{
 
 
 
-    @XmlElement
-    public List<String> getPrimaryKey() {
-        return primaryKey;
-    }
-
-    public void setPrimaryKey(List<String> primaryKey) {
-        this.primaryKey = primaryKey;
-    }
-
-//    @XmlElement
-//    public List<String> getTableColumns() {
-//        List<String> tableColumnsString = new ArrayList<>();
-//        Iterator<TableColumnsBodyModel> iterable = tableColumns.iterator();
-//        while (iterable.hasNext()){
-//            tableColumnsString.add(iterable.next().toString());
-//        }
-//        return tableColumnsString;
-//    }
-
-    @XmlElement
     public List<TableColumnsBody> getTableColumns() {
         return tableColumns;
     }
@@ -108,22 +90,16 @@ public class TableCreateBody implements Serializable{
         return tableDesc;
     }
 
-    @XmlElement
-    public void setTableDesc(String tableDesc) {
-        this.tableDesc = tableDesc;
+    public List<String> getPrimaryKey() {
+        return primaryKey;
     }
 
-    /**
-     * 将请求体中的参数放入table的实体类中
-     * @return
-     */
-    public Table toTable() {
-        Table table = new Table();
-        table.setTableDesc(tableDesc);
-        table.setPrimaryKey(primaryKey.toString());
-        table.setTableColumns(tableColumns.toString());
+    public void setPrimaryKey(List<String> primaryKey) {
+        this.primaryKey = primaryKey;
+    }
 
-        return table;
+    public void setTableDesc(String tableDesc) {
+        this.tableDesc = tableDesc;
     }
 
 }

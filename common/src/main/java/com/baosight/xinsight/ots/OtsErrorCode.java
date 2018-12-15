@@ -3,24 +3,34 @@ package com.baosight.xinsight.ots;
 public class OtsErrorCode {
 	//////////////////////////////////////table
 	public static final int EC_OTS_STORAGE_BASE_NO = 174000;
-	
+
+	//对表的操作
 	public static final long EC_OTS_STORAGE_TABLE_CREATE = EC_OTS_STORAGE_BASE_NO + 1;
 	public static final long EC_OTS_STORAGE_TABLE_DELETE = EC_OTS_STORAGE_BASE_NO + 2;
 	public static final long EC_OTS_STORAGE_TABLE_UPDATE = EC_OTS_STORAGE_BASE_NO + 3;
 	public static final long EC_OTS_STORAGE_TABLE_EXIST = EC_OTS_STORAGE_BASE_NO + 4;
 	public static final long EC_OTS_STORAGE_TABLE_NOTEXIST = EC_OTS_STORAGE_BASE_NO + 5;
-	public static final long EC_OTS_STORAGE_SAVE_SQLTABLE_CONFIG = EC_OTS_STORAGE_BASE_NO + 6;	
+
+	public static final long EC_OTS_STORAGE_SAVE_SQLTABLE_CONFIG = EC_OTS_STORAGE_BASE_NO + 6;
+
+	//对记录的操作
 	public static final long EC_OTS_STORAGE_RECORD_INSERT = EC_OTS_STORAGE_BASE_NO + 7;
 	public static final long EC_OTS_STORAGE_RECORD_DELETE = EC_OTS_STORAGE_BASE_NO + 8;
 	public static final long EC_OTS_STORAGE_RECORD_QUERY = EC_OTS_STORAGE_BASE_NO + 9;
 	public static final long EC_OTS_STORAGE_RECORD_FILE_GET = EC_OTS_STORAGE_BASE_NO + 10;
-	public static final long EC_OTS_STORAGE_RECORD_FILE_INSERT = EC_OTS_STORAGE_BASE_NO + 11;	
+	public static final long EC_OTS_STORAGE_RECORD_FILE_INSERT = EC_OTS_STORAGE_BASE_NO + 11;
+
+	//非法参数
 	public static final long EC_OTS_STORAGE_INVALID_RECQUERY_RANGE = EC_OTS_STORAGE_BASE_NO + 12;
 	public static final long EC_OTS_STORAGE_INVALID_RECQUERY_KEY = EC_OTS_STORAGE_BASE_NO + 13;
 	public static final long EC_OTS_STORAGE_INVALID_RECDELETE_RANGE = EC_OTS_STORAGE_BASE_NO + 14;
 	public static final long EC_OTS_STORAGE_INVALID_RECDELETE_KEY = EC_OTS_STORAGE_BASE_NO + 15;
 	public static final long EC_OTS_STORAGE_INVALID_REGEX = EC_OTS_STORAGE_BASE_NO + 16;
-	public static final long EC_OTS_STORAGE_DELETE_RECORD_NOMATCH = EC_OTS_STORAGE_BASE_NO + 17;	
+	//空参数
+	public static final long EC_OTS_STORAGE_NULL_PARAMETER = EC_OTS_STORAGE_BASE_NO + 17;
+
+	public static final long EC_OTS_STORAGE_DELETE_RECORD_NOMATCH = EC_OTS_STORAGE_BASE_NO + 17;
+
 	public static final long EC_OTS_STORAGE_INDEX_DUPLICATE_COLUMN = EC_OTS_STORAGE_BASE_NO + 18;
 	public static final long EC_OTS_STORAGE_INDEX_REBUILD = EC_OTS_STORAGE_BASE_NO + 19;
 	public static final long EC_OTS_STORAGE_INDEX_NO_EXIST = EC_OTS_STORAGE_BASE_NO + 20;

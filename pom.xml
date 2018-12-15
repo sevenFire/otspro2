@@ -9,6 +9,11 @@
         <version>2.1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+
+    <properties>
+        <ots.version>2.1.0</ots.version>
+    </properties>
+
     <modules>
         <module>common</module>
         <module>client</module>

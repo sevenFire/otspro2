@@ -122,7 +122,7 @@ public class OtsAdmin {
      * @Param table
      * @return
      */
-    public OtsTable createTable(Long userId,
+    public void createTable(Long userId,
                                 Long tenantId,
                                 String tableName,
                                 Table table) throws OtsException {
@@ -140,10 +140,55 @@ public class OtsAdmin {
                 delRDBTable(userId,tableName);
             }
 
-            return new OtsTable(table, tenantId, this.conf);
+//            return new OtsTable(table, tenantId, this.conf);
 
         }  catch (OtsException e) {
+            e.printStackTrace();
             throw e;
+        }
+    }
+
+    /**
+     * 更新表
+     * @param userId
+     * @param tenantId
+     * @param tableName
+     * @param table
+     */
+    public void updateTable(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
+        try {
+            //在pg中更新表。
+            updateRDBTableIfExist(userId,tenantId,tableName,table);
+        } catch (OtsException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    private void updateRDBTableIfExist(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
+        Configurator configurator = new Configurator();
+
+        //查询表是否存在
+        if (!configurator.ifExistTable(tenantId, tableName)) {//不存在，则抛出异常给上层方法
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
+                    String.format("tenant (tenantId:%d) doesn't own table(tableName:%s)!", tenantId, tableName));
+        }
+
+        //查询更新后的表是否冲突
+        if (configurator.ifExistTable(tenantId, table.getTableName())) {//不存在，则抛出异常给上层方法
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
+                    String.format("tenant (tenantId:%d) already own table(tableName:%s)!", tenantId, table.getTableName()));
+        }
+
+        //更新表
+        try {
+            configurator.updateTable(userId, tenantId, tableName, table);
+        } catch (ConfigException e) {//更新失败
+            e.printStackTrace();
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
+                    String.format("user(userId:%d) in tenant(tenantId:%d) update table(tableName:%s) failed!", userId, tenantId, tableName));
+        }finally {
+            configurator.release();
         }
     }
 
@@ -178,9 +223,9 @@ public class OtsAdmin {
         Configurator configurator = new Configurator();
 
         //查询表是否存在
-        if (configurator.ifExistTable(userId, tableName)) {//已存在，则抛出异常给上层方法，因为有联动。
+        if (configurator.ifExistTable(tenantId, tableName)) {//已存在，则抛出异常给上层方法，因为有联动。
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
-                    String.format("user (userId:%d) already owned table:%s!", userId, tableName));
+                    String.format("tenant(tenantId:%d) already owned table(tableName:%s)!", tenantId, tableName));
         }
 
         //插入表
@@ -198,7 +243,7 @@ public class OtsAdmin {
         } catch (ConfigException e) {//插入失败，则抛出异常给上层方法，因为有联动。
             e.printStackTrace();
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
-                    String.format("user (userId:%d) add table:%s failed!", userId, tableName));
+                    String.format("user(userId:%d) in tenant(tenantId:%d) add table(tableName:%s) failed!", userId, tenantId, tableName));
         }finally {
             configurator.release();
         }
@@ -367,4 +412,6 @@ public class OtsAdmin {
             configurator.release();
         }
     }
+
+
 }

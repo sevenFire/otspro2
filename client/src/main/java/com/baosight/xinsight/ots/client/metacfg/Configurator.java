@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -139,6 +140,52 @@ public class Configurator {
     }
 
     /**
+     * 更新表
+     * @param userId
+     * @param tableName
+     * @param table
+     */
+    public void updateTable(Long userId, Long tenantId, String tableName, Table table) throws ConfigException{
+
+        try {
+            connect();
+            conn.setAutoCommit(false);
+
+            StringBuilder sqlSB = new StringBuilder(" update ots_user_table set modify_time = ? , modifier = ? ");
+            if (table.getTableName() != null){
+                sqlSB.append( " , table_name = '"+ table.getTableName() + "'");
+            }
+            if (table.getTableDesc() != null){
+                sqlSB.append( " , table_desc = '"+ table.getTableDesc() + "'");
+            }
+            String sql = sqlSB.append(" where tenant_id = " + tenantId + " and table_name = '" + tableName + "'").toString();
+
+            LOG.debug(sql);
+
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+
+            pstmt.setTimestamp(1, new Timestamp(new Date().getTime()));
+            pstmt.setLong(2, userId);
+
+            LOG.debug(pstmt.toString());
+
+            pstmt.execute();
+
+            conn.commit();
+            conn.setAutoCommit(true);
+            pstmt.close();
+        } catch (SQLException e) {
+            try {
+                conn.rollback();
+            } catch (SQLException e1) {
+                throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_ROLLBACK, "Failed to update table and failed to rollback db!" + e.getMessage());
+            }
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_UPDATE_TABLE, "Failed to update table " + tableName +"!\n" + e.getMessage());
+        }
+    }
+
+
+    /**
      * 根据userId和表名删除表。
      * 注意：同一个用户下不能有同名表，所以(userId,tableName)是唯一键。
      * @param userId
@@ -216,22 +263,22 @@ public class Configurator {
 
     /**
      * 判定表是否存在
-     * @param userId
+     * @param tenantId
      * @param tableName
      * @return
      * @throws ConfigException
      */
-    public Boolean ifExistTable(long userId, String tableName) throws ConfigException {
+    public Boolean ifExistTable(long tenantId, String tableName) throws ConfigException {
         Statement st = null;
         try {
             connect();
 
             st = conn.createStatement();
-            String sql = String.format("select count(1) from ots_user_table where ots_user_table.table_name = '%s' and ots_user_table.user_id = '%d';", tableName, userId);
+            String sql = String.format("select table_id from ots_user_table where ots_user_table.table_name = '%s' and ots_user_table.tenant_id = '%d';", tableName, tenantId);
             LOG.debug(sql);
 
             ResultSet rs = st.executeQuery(sql);
-            if (rs.next() && rs.getFetchSize()>0) {
+            if (rs.next()) {
                 return true;
             } else return false;
 
@@ -371,4 +418,6 @@ public class Configurator {
         return tableNameList;
 
     }
+
+
 }
