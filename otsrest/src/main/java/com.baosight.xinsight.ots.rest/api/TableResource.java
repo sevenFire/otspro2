@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -230,6 +231,31 @@ public class TableResource {
 
         // successful
         return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(0L)).build();
+    }
+
+    @DELETE
+    @Path("/{tablename}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response delete(@PathParam("tablename") String tablename) {
+        //todo lyh 校验表名
+
+        PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
+        userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
+        LOG.debug("DELETE table, user:" + userInfo.getUserName() + "@" + userInfo.getTenantName());
+
+
+        try{
+            TableService.deleteTable(userInfo,tablename);
+        } catch (OtsException e) {
+            e.printStackTrace();
+            return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
+        }
+        // successful
+        return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(0L)).build();
+
     }
 
 }

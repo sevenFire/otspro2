@@ -96,8 +96,9 @@ public class Configurator {
 
 
     //============================================CURD=========================================================
+
     //新增表
-    public long addTable(Table table) throws ConfigException	{
+    public long addTable(Table table) throws ConfigException{
         long tableId = 0;
 
 
@@ -186,19 +187,19 @@ public class Configurator {
 
 
     /**
-     * 根据userId和表名删除表。
-     * 注意：同一个用户下不能有同名表，所以(userId,tableName)是唯一键。
-     * @param userId
+     * 根据tenantId和表名删除表。
+     * 注意：同一个租户下不能有同名表，所以(tenantId,tableName)是唯一键。
+     * @param tenantId
      * @param tableName
      * @throws ConfigException
      */
-    public void delTable(long userId, String tableName) throws ConfigException {
+    public void delTableByUniqueKey(long tenantId, String tableName) throws ConfigException {
 
         try {
             connect();
 
             Statement st = conn.createStatement();
-            String sql = String.format("delete from ots_user_table where ots_user_table.user_id = '%d' and ots_user_table.table_name = '%s';", userId, tableName);
+            String sql = String.format("delete from ots_user_table where ots_user_table.tenant_id = '%d' and ots_user_table.table_name = '%s';", tenantId, tableName);
             LOG.debug(sql);
 
             st.execute(sql);
@@ -214,7 +215,7 @@ public class Configurator {
      * @param tableId
      * @throws ConfigException
      */
-    public void delTable(long tableId) throws ConfigException {
+    public void delTableByTableId(long tableId) throws ConfigException {
 
         try {
             connect();

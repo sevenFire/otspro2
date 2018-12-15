@@ -3,6 +3,7 @@ package com.baosight.xinsight.ots.client;
 import com.baosight.xinsight.ots.OtsConfiguration;
 import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
+import com.baosight.xinsight.ots.client.Database.HBase.HBaseRecordProvider;
 import com.baosight.xinsight.ots.client.Database.HBase.HBaseTableProvider;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.exception.PermissionSqlException;
@@ -285,24 +286,134 @@ public class OtsAdmin {
     }
 
     /**
-     * 在pg中删除表
-     * @param userId
+     * 删除表
+     * @param tenantId
      * @param tableName
-     * @throws OtsException
      */
-    private void delRDBTable(Long userId, String tableName) throws OtsException {
+    public void deleteTable(Long tenantId, String tableName) throws OtsException {
+
+        boolean hBaseFailed2DelPost;
+
+        try {
+            //先备份pg中旧数据
+            Table table = getRDBTable(tenantId,tableName);
+            if (table == null){
+                throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_DELETE,
+                        String.format("table(table_name %s) in tenant(tenant_id:%d) is not exist!\n", tableName, tenantId));
+            }
+            //在pg中删除表
+            delRDBTableByTableId(table.getTableId());
+
+            //在HBase中删除该小表对应的记录
+            hBaseFailed2DelPost = deleteAllRecordByTableId(tenantId,table.getTableId());
+
+            //HBase删除失败，需要回滚RDB中数据
+            if (hBaseFailed2DelPost){
+                recoveryRDBTable(table);
+            }
+
+        }  catch (OtsException e) {
+            e.printStackTrace();
+            throw e;
+        }
+
+    }
+
+    /**
+     * 恢复被删除的表
+     * @param table
+     */
+    private void recoveryRDBTable(Table table) throws OtsException {
         Configurator configurator = new Configurator();
 
         try {
-            configurator.delTable(userId,tableName);
+            configurator.addTable(table);
         } catch (ConfigException e) {//删除失败
             e.printStackTrace();
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
-                    String.format("user:%s delete table:%s failed!", userId, tableName));
+                    String.format("recovery table:%s failed!", table.getTableId()));
+        }finally {
+            configurator.release();
+        }
+
+
+    }
+
+    /**
+     * 在pg中根据表名删除表
+     * @param tableId
+     */
+    private void delRDBTableByTableId(Long tableId) throws OtsException {
+        Configurator configurator = new Configurator();
+
+        try {
+            configurator.delTableByTableId(tableId);
+        } catch (ConfigException e) {//删除失败
+            e.printStackTrace();
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
+                    String.format("Delete table:%s failed!", tableId));
+        }finally {
+            configurator.release();
+        }
+
+    }
+
+
+    /**
+     * 在pg中删除表
+     * @param tenantId
+     * @param tableName
+     * @throws OtsException
+     */
+    private void delRDBTable(Long tenantId, String tableName) throws OtsException {
+        Configurator configurator = new Configurator();
+
+        try {
+            configurator.delTableByUniqueKey(tenantId,tableName);
+        } catch (ConfigException e) {//删除失败
+            e.printStackTrace();
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
+                    String.format("user:%s delete table:%s failed!", tenantId, tableName));
         }finally {
             configurator.release();
         }
     }
+
+
+
+
+    //===========================HBASE===================================
+    /**
+     * 删除所有属于某表的记录
+     * @param tenantId
+     * @param tableId
+     * @return
+     */
+    private boolean deleteAllRecordByTableId(Long tenantId, Long tableId) {
+
+        Boolean HBaseFailed2DelPost = false;
+        Admin admin = null;
+
+        try {
+            admin = HBaseConnectionUtil.getInstance().getAdmin();
+            String tableName = new StringBuilder().append(TableConstants.HBASE_TABLE_PREFIX).append(tenantId).toString();
+            HBaseRecordProvider.deleteAllRecordByTableId(admin, TableName.valueOf(tableName),tableId);
+        } catch (OtsException ex) {
+            HBaseFailed2DelPost = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }finally {
+            try {
+                if (admin != null) {
+                    admin.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return HBaseFailed2DelPost;
+        }
+    }
+
 
     /**
      * 判定HBase中的表是否已经存在
@@ -337,38 +448,6 @@ public class OtsAdmin {
         }
     }
 
-
-    //=================================权限相关==================================
-
-    public boolean checkTablePermitted(long tableId) throws ConfigException, PermissionSqlException {
-        Configurator configurator = new Configurator();
-        try {
-            return configurator.checkPermitted(tableId);
-        } catch (ConfigException e) {
-            e.printStackTrace();
-            throw e;
-        } catch (PermissionSqlException e) {
-            e.printStackTrace();
-            throw e;
-        } finally {
-            configurator.release();
-        }
-    }
-
-    public void setTablePermission(long tableId) throws ConfigException, PermissionSqlException {
-        Configurator configurator = new Configurator();
-        try {
-            configurator.setTablePermission(tableId);
-        } catch (ConfigException e) {
-            e.printStackTrace();
-            throw e;
-        } catch (PermissionSqlException e) {
-            e.printStackTrace();
-            throw e;
-        } finally {
-            configurator.release();
-        }
-    }
 
     /**
      * 根据表名在RDB中查询表
@@ -412,6 +491,40 @@ public class OtsAdmin {
             configurator.release();
         }
     }
+
+
+    //=================================权限相关==================================
+
+    public boolean checkTablePermitted(long tableId) throws ConfigException, PermissionSqlException {
+        Configurator configurator = new Configurator();
+        try {
+            return configurator.checkPermitted(tableId);
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        } catch (PermissionSqlException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            configurator.release();
+        }
+    }
+
+    public void setTablePermission(long tableId) throws ConfigException, PermissionSqlException {
+        Configurator configurator = new Configurator();
+        try {
+            configurator.setTablePermission(tableId);
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        } catch (PermissionSqlException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            configurator.release();
+        }
+    }
+
 
 
 }

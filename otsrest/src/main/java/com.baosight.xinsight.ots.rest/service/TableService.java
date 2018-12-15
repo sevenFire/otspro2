@@ -95,7 +95,7 @@ public class TableService {
             //1.table_name和table_desc至少要有一个。
             //2.二者都要符合字段规范，其中table_desc可以为空，table_name不可以。
 
-            //修改表，以及表存在性校验
+            //修改表，包含表存在性校验
              ConfigUtil.getInstance().getOtsAdmin().updateTable(userInfo.getUserId(), userInfo.getTenantId(), tableName,tableUpdateBody.toTable());
 
             //add cache
@@ -118,6 +118,36 @@ public class TableService {
             throw e;
         }
     }
+
+    /**
+     * 删除表
+     * @param userInfo
+     * @param tableName
+     */
+    public static void deleteTable(PermissionCheckUserInfo userInfo, String tableName) throws OtsException {
+
+        try {
+            //todo lyh
+            // remove relevant permission cache of current table
+            // Kafka produces permission remove message
+
+            //删除表，包含表存在性校验、小表、HBase中对应的表记录
+            ConfigUtil.getInstance().getOtsAdmin().deleteTable(userInfo.getTenantId(), tableName);
+
+            //todo lyh
+            // delete metrics in redis
+            // delete backup state in redis
+            //delete cache
+            //Kafka produces config message
+
+        } catch (OtsException e) {
+            e.printStackTrace();
+            throw e;
+        }
+
+
+    }
+
 
     /**
      * 获取单表的详细信息
@@ -244,5 +274,6 @@ public class TableService {
 
         return Long.parseLong(limit);
     }
+
 
 }
