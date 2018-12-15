@@ -40,23 +40,21 @@ public class MetricsInfoBody implements Serializable {
 	public MetricsInfoBody() {
 	}
 
-	public MetricsInfoBody(String tableName, Long readCount, Long writeCount, Long diskSize, Long recordCount) {
+	public MetricsInfoBody(String tableName, Long readCount, Long writeCount, Long diskSize, Long recordCount,Long errcode) {
 		this.tableName = tableName;
 		this.readCount = readCount;
 		this.writeCount = writeCount;
 		this.diskSize = diskSize;
 		this.recordCount = recordCount;
+		this.errcode = errcode;
 	}
 
 	public MetricsInfoBody(String tableName) {
-		super();
 		this.tableName = tableName;
 	}
 
-	public MetricsInfoBody(String tableName, long errcode) {
-		super();
-		this.tableName = tableName;
-		this.errcode = errcode;
+	public MetricsInfoBody(String tableName, Long errcode) {
+		this(tableName,null,null,null,null,errcode);
 	}
 
 	@JsonIgnore
@@ -65,16 +63,16 @@ public class MetricsInfoBody implements Serializable {
 		return JsonUtil.toJsonString(this);
     }
 	
-	@JsonIgnore
-    public static MetricsInfoBody toClass(String in) throws OtsException {
-		try {
-			ByteArrayInputStream bais = new ByteArrayInputStream(in.getBytes(OtsConstants.DEFAULT_ENCODING));
-			return JsonUtil.readJsonFromStream(bais, MetricsInfoBody.class);
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_JSON2OBJECT, "convert json input to MetricsModel failed.");
-		}		
-    }
+//	@JsonIgnore
+//    public static MetricsInfoBody toClass(String in) throws OtsException {
+//		try {
+//			ByteArrayInputStream bais = new ByteArrayInputStream(in.getBytes(OtsConstants.DEFAULT_ENCODING));
+//			return JsonUtil.readJsonFromStream(bais, MetricsInfoBody.class);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_JSON2OBJECT, "convert json input to MetricsModel failed.");
+//		}
+//    }
 
 	public Long getErrcode() {
 		return errcode;

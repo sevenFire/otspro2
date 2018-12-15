@@ -246,6 +246,26 @@ public class OtsAdmin {
         }
     }
 
+    /**
+     * 在RDB中查询所有表，返回表名的列表
+     * @param tenantId
+     * @return
+     */
+    public List<String> getTableNameList(long tenantId) throws ConfigException {
+        Configurator configurator = new Configurator();
+
+        try {
+            List<String> tableNameList = configurator.queryTableNameList(tenantId);
+            return tableNameList;
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        }finally {
+            configurator.release();
+        }
+
+    }
+
 
     //====================================HBase==================================================
 

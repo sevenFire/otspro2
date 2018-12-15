@@ -31,7 +31,7 @@ public class TableCreateBody implements Serializable{
     //table_columns是一个数组，且每个元素又有多个属性
     @JsonProperty(value="table_columns")
     @JsonSerialize(include=JsonSerialize.Inclusion.NON_NULL)
-    private List<TableColumnsBody> tableColumns = new ArrayList<TableColumnsBody>();
+    private List<TableColumnsBody> tableColumns = new ArrayList<>();
 
     @JsonProperty(value="primary_key")
     @JsonSerialize(include=JsonSerialize.Inclusion.NON_NULL)

@@ -381,7 +381,7 @@ public class Configurator {
      * @param fuzzy 是否模糊查询
      * @return 返回表名的列表
      */
-    public List<String> queryTableNameList(Long tenantId, String tableName, long limit, long offset, Boolean fuzzy) throws ConfigException {
+    public List<String> queryTableNameList(Long tenantId, String tableName, Long limit, Long offset, Boolean fuzzy) throws ConfigException {
         List<String> tableNameList = new ArrayList<>();
 
         try {
@@ -400,9 +400,11 @@ public class Configurator {
                 }
                 sqlSB.append(" limit '%d' offset '%d' " );
                 sql = String.format(sqlSB.toString(),tenantId,tableName,limit,offset);
-            }else {//不带条件
+            }else if(limit != null && offset != null){
                 sqlSB.append(" limit '%d' offset '%d' " );
                 sql = String.format(sqlSB.toString(), tenantId, limit, offset);
+            }else{
+                sql = String.format(sqlSB.toString(), tenantId);
             }
 
             LOG.debug(sql);
@@ -419,6 +421,14 @@ public class Configurator {
         return tableNameList;
 
     }
+
+    /**
+     * 查询某租户下的所有表，返回表名list
+     */
+    public List<String> queryTableNameList(long tenantId) throws ConfigException {
+        return queryTableNameList(tenantId,null,null,null,null);
+    }
+
 
 
 }
