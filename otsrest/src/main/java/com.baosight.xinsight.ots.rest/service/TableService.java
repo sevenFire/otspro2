@@ -17,6 +17,7 @@ import com.baosight.xinsight.ots.rest.model.table.response.TableNameListBody;
 import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 import com.baosight.xinsight.ots.rest.util.MessageBuilder;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableCreateBody;
+import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -42,19 +43,19 @@ public class TableService {
     public static void createTable(PermissionCheckUserInfo userInfo, String tableName, TableCreateBody tableCreateBody) throws OtsException {
         try {
             //todo lyh
-//            //存入userInfo到缓存
-//            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
-//                PermissionUtil.CacheInfo info = PermissionUtil.GetInstance().otsPermissionHandler(userInfo, -1, PermissionUtil.PermissionOpesration.OTSMANAGEW);
-//                MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
-//                        .sendData(userInfo.getTenantId(), MessageBuilder.buildPermissionMessage(userInfo, RestConstants.OTS_MANAGE_PERMISSION_OPERATION,
-//                                info.isReadPermission(), info.isWritePermission(), info.isPermissionFlag(), info.getCurrentTime()));
-//            }
+            //存入userInfo到缓存
+            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
+                PermissionUtil.CacheInfo info = PermissionUtil.GetInstance().otsPermissionHandler(userInfo, -1, PermissionUtil.PermissionOpesration.OTSMANAGEW);
+                MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
+                        .sendData(userInfo.getTenantId(), MessageBuilder.buildPermissionMessage(userInfo, RestConstants.OTS_MANAGE_PERMISSION_OPERATION,
+                                info.isReadPermission(), info.isWritePermission(), info.isPermissionFlag(), info.getCurrentTime()));
+            }
 
             //创建表（包含大表和小表），以及表存在性校验
             ConfigUtil.getInstance().getOtsAdmin().createTable(userInfo.getUserId(), userInfo.getTenantId(), tableName,tableCreateBody.toTable());
 
-            //add cache
-            //todo lyh 存入cache的格式是什么？
+//            //add cache
+            //todo lyh
 //            TableInfoModel info = new TableInfoModel(table.getTableName());
 //            info.setKeyType(table.getKeyType());
 //            info.setHashKeyType(table.getHashKeyType());
@@ -159,7 +160,7 @@ public class TableService {
         TableInfoBody tableAllInfoBody = new TableInfoBody();
 
         try {
-            Table table = ConfigUtil.getInstance().getOtsAdmin().getRDBTable(userInfo.getTenantId(),tableName);
+            Table table = ConfigUtil.getInstance().getOtsAdmin().getTableInfo(userInfo.getTenantId(),tableName);
             if (table == null) {
                 throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST,
                         String.format("tenant (id:%d) was not owned table:%s!", userInfo.getTenantId(), tableName));
@@ -216,7 +217,7 @@ public class TableService {
         TableNameListBody tableNameListModel = new TableNameListBody();
 
         try {
-            List<String> tableNameList = ConfigUtil.getInstance().getOtsAdmin().getRDBTableNameList(userInfo.getTenantId(), tableName, limit, offset, Fuzzy);
+            List<String> tableNameList = ConfigUtil.getInstance().getOtsAdmin().getTableNameList(userInfo.getTenantId(), tableName, limit, offset, Fuzzy);
             if (CollectionUtils.isEmpty(tableNameList)) {
                 throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST,
                         String.format("tenant (id:%d) didn't own any tables with table_name ~'%s'!", userInfo.getTenantId(), tableName));

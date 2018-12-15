@@ -34,7 +34,7 @@ public class RestConstants {
 	public static final String METRICS_TABLE_READ_COUNT = "read_count";
 	public static final String METRICS_TABLE_WRITE_COUNT = "write_count";
 	public static final String METRICS_TABLE_DISK_SIZE = "disk_size";
-	public static final String METRICS_TABLE_ROW_COUNT = "record_count";
+	public static final String METRICS_TABLE_RECORD_COUNT = "record_count";
 	public static final String METRICS_REGION_COUNT = "region_count";
 		
 	public static final String Query_name = "name";

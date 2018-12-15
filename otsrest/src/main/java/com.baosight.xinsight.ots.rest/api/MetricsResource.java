@@ -1,9 +1,16 @@
 package com.baosight.xinsight.ots.rest.api;
 
+import com.baosight.xinsight.common.CommonConstants;
+import com.baosight.xinsight.ots.OtsErrorCode;
+import com.baosight.xinsight.ots.exception.OtsException;
+import com.baosight.xinsight.ots.rest.constant.ErrorMode;
+import com.baosight.xinsight.ots.rest.service.MetricsService;
+
 import org.apache.log4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -12,6 +19,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
+import static org.hsqldb.HsqlDateTime.e;
 
 /**
  * @author liyuhui
@@ -35,14 +44,33 @@ public class MetricsResource {
     HttpServletRequest request;
 
 
-
-    @POST
-    @Path("/{tttttttt}")
-    @Consumes({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
+    /**
+     * 查询单表的监控信息
+     */
+    @GET
+    @Path("/{tablename}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response post(@PathParam("tttttttt") String tableName, String body) {
-        //todo
-        return null;
-    }
+    public Response getMetricsInfoByTableName(@PathParam("tablename") String tableName, String body) {
+        //todo lyh 表名校验
 
+        long userId = Long.parseLong(request.getAttribute(CommonConstants.SESSION_USERID_KEY).toString());
+        long tenantId = Long.parseLong(request.getAttribute(CommonConstants.SESSION_TENANTID_KEY).toString());
+
+        try {
+            //校验namespace是否存在
+            if (!MetricsService.isNamespaceExist(tenantId)) {
+                return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON)
+                        .entity(new ErrorMode((long) OtsErrorCode.EC_RDS_FAILED_QUERY_TENANT, Response.Status.NOT_FOUND.name() + ": tenantid '" + tenantId + "' is not exist.")).build();
+            } else {//查询监控信息
+                return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
+                        .entity(MetricsService.getMetricsInfoByTableName(tenantId, tableName)).build();
+            }
+        } catch (OtsException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
+        }
+    }
 }

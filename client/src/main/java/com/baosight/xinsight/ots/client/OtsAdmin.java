@@ -3,6 +3,7 @@ package com.baosight.xinsight.ots.client;
 import com.baosight.xinsight.ots.OtsConfiguration;
 import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
+import com.baosight.xinsight.ots.client.Database.HBase.HBaseMetricsProvider;
 import com.baosight.xinsight.ots.client.Database.HBase.HBaseRecordProvider;
 import com.baosight.xinsight.ots.client.Database.HBase.HBaseTableProvider;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
@@ -112,6 +113,8 @@ public class OtsAdmin {
 //        OtsIndex.Release();
     }
 
+
+    //===============================================CRUD====================================
     /**
      * 创建表
      * 1.首先在pg中创建表
@@ -138,7 +141,7 @@ public class OtsAdmin {
 
             //HBase创建失败，需要回滚RDB中数据
             if (hBaseFailed2DelPost){
-                delRDBTable(userId,tableName);
+                delTableByUniqueKey(tenantId,tableName);
             }
 
 //            return new OtsTable(table, tenantId, this.conf);
@@ -166,32 +169,85 @@ public class OtsAdmin {
         }
     }
 
-    private void updateRDBTableIfExist(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
+    /**
+     * 删除表
+     * @param tenantId
+     * @param tableName
+     */
+    public void deleteTable(Long tenantId, String tableName) throws OtsException {
+
+        boolean hBaseFailed2DelPost;
+
+        try {
+            //先备份pg中旧数据
+            Table table = getTableInfo(tenantId,tableName);
+            if (table == null){
+                throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_DELETE,
+                        String.format("table(table_name %s) in tenant(tenant_id:%d) is not exist!\n", tableName, tenantId));
+            }
+            //在pg中删除表
+            delRDBTableByTableId(table.getTableId());
+
+            //在HBase中删除该小表对应的记录
+            hBaseFailed2DelPost = deleteAllRecordByTableId(tenantId,table.getTableId());
+
+            //HBase删除失败，需要回滚RDB中数据
+            if (hBaseFailed2DelPost){
+                recoveryRDBTable(table);
+            }
+
+        }  catch (OtsException e) {
+            e.printStackTrace();
+            throw e;
+        }
+
+    }
+
+    /**
+     * 根据表名在RDB中查询表
+     * @param tenantId
+     * @param tableName
+     * @return
+     */
+    public Table getTableInfo(Long tenantId, String tableName) throws ConfigException {
         Configurator configurator = new Configurator();
 
-        //查询表是否存在
-        if (!configurator.ifExistTable(tenantId, tableName)) {//不存在，则抛出异常给上层方法
-            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
-                    String.format("tenant (tenantId:%d) doesn't own table(tableName:%s)!", tenantId, tableName));
-        }
-
-        //查询更新后的表是否冲突
-        if (configurator.ifExistTable(tenantId, table.getTableName())) {//不存在，则抛出异常给上层方法
-            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
-                    String.format("tenant (tenantId:%d) already own table(tableName:%s)!", tenantId, table.getTableName()));
-        }
-
-        //更新表
         try {
-            configurator.updateTable(userId, tenantId, tableName, table);
-        } catch (ConfigException e) {//更新失败
+            Table table = configurator.queryTable(tenantId, tableName);
+            return table;
+        } catch (ConfigException e) {
             e.printStackTrace();
-            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
-                    String.format("user(userId:%d) in tenant(tenantId:%d) update table(tableName:%s) failed!", userId, tenantId, tableName));
+            throw e;
         }finally {
             configurator.release();
         }
     }
+
+    /**
+     * 在RDB中查询所有表，返回表名的列表
+     * @param tenantId
+     * @Param tableName
+     * @param limit
+     * @param offset
+     * @param fuzzy 是否需要模糊查询
+     * @return
+     */
+    public List<String> getTableNameList(Long tenantId, String tableName, long limit, long offset, Boolean fuzzy) throws ConfigException {
+        Configurator configurator = new Configurator();
+
+        try {
+            List<String> tableNameList = configurator.queryTableNameList(tenantId,tableName,limit,offset,fuzzy);
+            return tableNameList;
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        }finally {
+            configurator.release();
+        }
+    }
+
+
+    //====================================HBase==================================================
 
     /**
      * 在HBase中创建表，一个租户共用一张表
@@ -213,43 +269,6 @@ public class OtsAdmin {
         }
     }
 
-    /**
-     * 在pg中创建表，如果已经存在则报异常。
-     * @param userId
-     * @param tenantId
-     * @param tableName
-     * @param table
-     */
-    public void createRDBTableIfNotExist(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
-        Configurator configurator = new Configurator();
-
-        //查询表是否存在
-        if (configurator.ifExistTable(tenantId, tableName)) {//已存在，则抛出异常给上层方法，因为有联动。
-            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
-                    String.format("tenant(tenantId:%d) already owned table(tableName:%s)!", tenantId, tableName));
-        }
-
-        //插入表
-        table.setUserId(userId);
-        table.setTenantId(tenantId);
-        table.setTableName(tableName);
-        table.setCreator(userId);
-        table.setModifier(userId);
-        table.setCreateTime(new Date());
-        table.setModifyTime(table.getCreateTime());
-
-        long tableId;
-        try {
-            tableId = configurator.addTable(table);
-        } catch (ConfigException e) {//插入失败，则抛出异常给上层方法，因为有联动。
-            e.printStackTrace();
-            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
-                    String.format("user(userId:%d) in tenant(tenantId:%d) add table(tableName:%s) failed!", userId, tenantId, tableName));
-        }finally {
-            configurator.release();
-        }
-        table.setTableId(tableId);
-    }
 
     /**
      * 在HBase中插入表
@@ -285,99 +304,11 @@ public class OtsAdmin {
         }
     }
 
-    /**
-     * 删除表
-     * @param tenantId
-     * @param tableName
-     */
-    public void deleteTable(Long tenantId, String tableName) throws OtsException {
-
-        boolean hBaseFailed2DelPost;
-
-        try {
-            //先备份pg中旧数据
-            Table table = getRDBTable(tenantId,tableName);
-            if (table == null){
-                throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_DELETE,
-                        String.format("table(table_name %s) in tenant(tenant_id:%d) is not exist!\n", tableName, tenantId));
-            }
-            //在pg中删除表
-            delRDBTableByTableId(table.getTableId());
-
-            //在HBase中删除该小表对应的记录
-            hBaseFailed2DelPost = deleteAllRecordByTableId(tenantId,table.getTableId());
-
-            //HBase删除失败，需要回滚RDB中数据
-            if (hBaseFailed2DelPost){
-                recoveryRDBTable(table);
-            }
-
-        }  catch (OtsException e) {
-            e.printStackTrace();
-            throw e;
-        }
-
-    }
-
-    /**
-     * 恢复被删除的表
-     * @param table
-     */
-    private void recoveryRDBTable(Table table) throws OtsException {
-        Configurator configurator = new Configurator();
-
-        try {
-            configurator.addTable(table);
-        } catch (ConfigException e) {//删除失败
-            e.printStackTrace();
-            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
-                    String.format("recovery table:%s failed!", table.getTableId()));
-        }finally {
-            configurator.release();
-        }
 
 
-    }
-
-    /**
-     * 在pg中根据表名删除表
-     * @param tableId
-     */
-    private void delRDBTableByTableId(Long tableId) throws OtsException {
-        Configurator configurator = new Configurator();
-
-        try {
-            configurator.delTableByTableId(tableId);
-        } catch (ConfigException e) {//删除失败
-            e.printStackTrace();
-            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
-                    String.format("Delete table:%s failed!", tableId));
-        }finally {
-            configurator.release();
-        }
-
-    }
 
 
-    /**
-     * 在pg中删除表
-     * @param tenantId
-     * @param tableName
-     * @throws OtsException
-     */
-    private void delRDBTable(Long tenantId, String tableName) throws OtsException {
-        Configurator configurator = new Configurator();
 
-        try {
-            configurator.delTableByUniqueKey(tenantId,tableName);
-        } catch (ConfigException e) {//删除失败
-            e.printStackTrace();
-            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
-                    String.format("user:%s delete table:%s failed!", tenantId, tableName));
-        }finally {
-            configurator.release();
-        }
-    }
 
 
 
@@ -448,45 +379,166 @@ public class OtsAdmin {
         }
     }
 
-
     /**
-     * 根据表名在RDB中查询表
+     * 判定namespace是否存在
      * @param tenantId
-     * @param tableName
      * @return
      */
-    public Table getRDBTable(Long tenantId, String tableName) throws ConfigException {
+    public boolean isNamespaceExist(long tenantId) throws OtsException {
+        Admin admin = null;
+        try {
+            admin = HBaseConnectionUtil.getInstance().getAdmin();
+            return HBaseMetricsProvider.isNamespaceExist(admin, String.valueOf(tenantId));
+        } catch (MasterNotRunningException e) {
+            e.printStackTrace();
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_NO_RUNNING_HBASE_MASTER, "Failed to check if namespace exist because hbase master no running!");
+        } catch (ZooKeeperConnectionException e) {
+            e.printStackTrace();
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_FAILED_CONN_ZK,	"Failed to check if namespace exist because can not connecto to zookeeper!");
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_INVALID_TENANT, "Failed to check if namespace exist!");
+        } finally {
+            try {
+                if (admin != null) {
+                    admin.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+
+    //===================================RDB============================================
+
+    /**
+     * 在pg中创建表，如果已经存在则报异常。
+     * @param userId
+     * @param tenantId
+     * @param tableName
+     * @param table
+     */
+    public void createRDBTableIfNotExist(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
+        Configurator configurator = new Configurator();
+
+        //查询表是否存在
+        if (configurator.ifExistTable(tenantId, tableName)) {//已存在，则抛出异常给上层方法，因为有联动。
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
+                    String.format("tenant(tenantId:%d) already owned table(tableName:%s)!", tenantId, tableName));
+        }
+
+        //插入表
+        table.setUserId(userId);
+        table.setTenantId(tenantId);
+        table.setTableName(tableName);
+        table.setCreator(userId);
+        table.setModifier(userId);
+        table.setCreateTime(new Date());
+        table.setModifyTime(table.getCreateTime());
+
+        long tableId;
+        try {
+            tableId = configurator.addTable(table);
+        } catch (ConfigException e) {//插入失败，则抛出异常给上层方法，因为有联动。
+            e.printStackTrace();
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
+                    String.format("user(userId:%d) in tenant(tenantId:%d) add table(tableName:%s) failed!", userId, tenantId, tableName));
+        }finally {
+            configurator.release();
+        }
+        table.setTableId(tableId);
+    }
+
+    /**
+     * 在pg中根据表名删除表
+     * @param tableId
+     */
+    private void delRDBTableByTableId(Long tableId) throws OtsException {
         Configurator configurator = new Configurator();
 
         try {
-            Table table = configurator.queryTable(tenantId, tableName);
-            return table;
-        } catch (ConfigException e) {
+            configurator.delTableByTableId(tableId);
+        } catch (ConfigException e) {//删除失败
             e.printStackTrace();
-            throw e;
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
+                    String.format("Delete table:%s failed!", tableId));
+        }finally {
+            configurator.release();
+        }
+
+    }
+
+    /**
+     * 在pg中删除表
+     * @param tenantId
+     * @param tableName
+     * @throws OtsException
+     */
+    private void delTableByUniqueKey(Long tenantId, String tableName) throws OtsException {
+        Configurator configurator = new Configurator();
+
+        try {
+            configurator.delTableByUniqueKey(tenantId,tableName);
+        } catch (ConfigException e) {//删除失败
+            e.printStackTrace();
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
+                    String.format("user:%s delete table:%s failed!", tenantId, tableName));
         }finally {
             configurator.release();
         }
     }
 
     /**
-     * 在RDB中查询所有表，返回表名的列表
+     * 更新表（带校验）
+     * @param userId
      * @param tenantId
-     * @Param tableName
-     * @param limit
-     * @param offset
-     * @param fuzzy 是否需要模糊查询
-     * @return
+     * @param tableName
+     * @param table
+     * @throws OtsException
      */
-    public List<String> getRDBTableNameList(Long tenantId, String tableName, long limit, long offset, Boolean fuzzy) throws ConfigException {
+    private void updateRDBTableIfExist(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
+        Configurator configurator = new Configurator();
+
+        //查询表是否存在
+        if (!configurator.ifExistTable(tenantId, tableName)) {//不存在，则抛出异常给上层方法
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
+                    String.format("tenant (tenantId:%d) doesn't own table(tableName:%s)!", tenantId, tableName));
+        }
+
+        //查询更新后的表是否冲突
+        if (configurator.ifExistTable(tenantId, table.getTableName())) {//不存在，则抛出异常给上层方法
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
+                    String.format("tenant (tenantId:%d) already own table(tableName:%s)!", tenantId, table.getTableName()));
+        }
+
+        //更新表
+        try {
+            configurator.updateTable(userId, tenantId, tableName, table);
+        } catch (ConfigException e) {//更新失败
+            e.printStackTrace();
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
+                    String.format("user(userId:%d) in tenant(tenantId:%d) update table(tableName:%s) failed!", userId, tenantId, tableName));
+        }finally {
+            configurator.release();
+        }
+    }
+
+
+    /**
+     * 恢复被删除的表
+     * @param table
+     */
+    private void recoveryRDBTable(Table table) throws OtsException {
         Configurator configurator = new Configurator();
 
         try {
-            List<String> tableNameList = configurator.queryTableNameList(tenantId,tableName,limit,offset,fuzzy);
-            return tableNameList;
-        } catch (ConfigException e) {
+            configurator.addTable(table);
+        } catch (ConfigException e) {//删除失败
             e.printStackTrace();
-            throw e;
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
+                    String.format("recovery table:%s failed!", table.getTableId()));
         }finally {
             configurator.release();
         }
@@ -524,7 +576,5 @@ public class OtsAdmin {
             configurator.release();
         }
     }
-
-
 
 }

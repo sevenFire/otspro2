@@ -37,10 +37,10 @@ public class RecordResource {
 
 
     @POST
-    @Path("/{tttttttt}")
+    @Path("/{tablename}")
     @Consumes({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response post(@PathParam("tttttttt") String tableName, String body) {
+    public Response post(@PathParam("tablename") String tableName, String body) {
         //todo
         return null;
     }
