@@ -77,7 +77,7 @@
     </dependencies>
 
     <build>
-        <finalName>zsxt</finalName>
+        <finalName>otsrest</finalName>
         <plugins>
             <plugin>
                 <groupId>org.mybatis.generator</groupId>

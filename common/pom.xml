@@ -43,10 +43,12 @@
 			<artifactId>commons-lang</artifactId>
 			<version>${commons-lang.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>com.baosight.xinsight</groupId>
 			<artifactId>xinsight-common</artifactId>
-			<version>${com.version}</version>
+			<version>${ots.version}</version>
 		</dependency>
+
 	</dependencies>
 </project>
