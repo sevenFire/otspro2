@@ -17,10 +17,6 @@
     <servlet-class>
       com.sun.jersey.spi.container.servlet.ServletContainer
     </servlet-class>
-    <!--<init-param>-->
-      <!--<param-name>com.sun.jersey.config.property.packages</param-name>-->
-      <!--<param-value>sample.hello.resources</param-value>-->
-    <!--</init-param>-->
     <init-param>
       <param-name>com.sun.jersey.config.property.packages</param-name>
       <param-value>com.baosight.xinsight.ots.rest.api</param-value>
@@ -29,11 +25,6 @@
       <param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>
       <param-value>true</param-value>
     </init-param>
-    <!--<init-param>-->
-      <!--<param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>-->
-      <!--&lt;!&ndash; 如果想加入多个拦截器，请用;隔开 &ndash;&gt;-->
-      <!--<param-value>sample.hello.filter.TestRequestFilter</param-value>-->
-    <!--</init-param>-->
     <init-param>
       <param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>
       <param-value>com.baosight.xinsight.ots.rest.filter.AuthorizationFilter</param-value>

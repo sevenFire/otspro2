@@ -1,4 +1,4 @@
-package com.baosight.xinsight.ots.rest.model.table.message;
+package com.baosight.xinsight.ots.rest.model.table.vo;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 
@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement(name="tableColumnsInfo")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class TableColumnsInfoVo {
+public class TableColumnsInfoModel {
 
     @JsonProperty(value="col_name")
     private String colName;

@@ -6,8 +6,10 @@ import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.client.Database.HBase.HBaseMetricsProvider;
 import com.baosight.xinsight.ots.client.Database.HBase.HBaseRecordProvider;
 import com.baosight.xinsight.ots.client.Database.HBase.HBaseTableProvider;
+import com.baosight.xinsight.ots.client.Database.HBase.RowRecord;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.exception.PermissionSqlException;
+import com.baosight.xinsight.ots.client.exception.TableException;
 import com.baosight.xinsight.ots.client.metacfg.Configurator;
 import com.baosight.xinsight.ots.client.metacfg.Table;
 import com.baosight.xinsight.ots.client.util.HBaseConnectionUtil;
@@ -126,7 +128,7 @@ public class OtsAdmin {
      * @Param table
      * @return
      */
-    public void createTable(Long userId,
+    public Table createTable(Long userId,
                                 Long tenantId,
                                 String tableName,
                                 Table table) throws OtsException {
@@ -150,6 +152,7 @@ public class OtsAdmin {
             e.printStackTrace();
             throw e;
         }
+        return table;
     }
 
     /**
@@ -159,7 +162,7 @@ public class OtsAdmin {
      * @param tableName
      * @param table
      */
-    public void updateTable(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
+    public Table updateTable(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
         try {
             //在pg中更新表。
             updateRDBTableIfExist(userId,tenantId,tableName,table);
@@ -167,6 +170,7 @@ public class OtsAdmin {
             e.printStackTrace();
             throw e;
         }
+        return table;
     }
 
     /**
@@ -174,7 +178,7 @@ public class OtsAdmin {
      * @param tenantId
      * @param tableName
      */
-    public void deleteTable(Long tenantId, String tableName) throws OtsException {
+    public Table deleteTable(Long tenantId, String tableName) throws OtsException {
 
         boolean hBaseFailed2DelPost;
 
@@ -191,16 +195,16 @@ public class OtsAdmin {
             //在HBase中删除该小表对应的记录
             hBaseFailed2DelPost = deleteAllRecordByTableId(tenantId,table.getTableId());
 
-            //HBase删除失败，需要回滚RDB中数据
+            //HBase删除失败，需要回滚RDB中数据，并报异常
             if (hBaseFailed2DelPost){
                 recoveryRDBTable(table);
             }
 
+            return table;
         }  catch (OtsException e) {
             e.printStackTrace();
             throw e;
         }
-
     }
 
     /**
@@ -430,6 +434,16 @@ public class OtsAdmin {
 
     }
 
+    /**
+     * 在表中插入数据
+     * @param tenantId
+     * @param records
+     */
+    public void insertRecords(Long tenantId, List<RowRecord> records) throws IOException, TableException {
+        String tableName = new StringBuilder().append(TableConstants.HBASE_TABLE_PREFIX).append(tenantId).toString();
+        HBaseRecordProvider.insertRecords(TableName.valueOf(tableName),records);
+    }
+
 
     //===================================RDB============================================
 
@@ -597,4 +611,28 @@ public class OtsAdmin {
         }
     }
 
+
+//    /**
+//     * 获取表，过滤掉无权限的
+//     * @param userId
+//     * @param tenantId
+//     * @return
+//     */
+//    public List<Table> getPermissionTables(Long userId, Long tenantId) throws ConfigException {
+//        Configurator configurator = new Configurator();
+//        try {
+//            List<Table> tableList = configurator.queryPermisstionTables(userId, tenantId);
+//            for (Table table: tableList) {
+//                tableList.add(new OtsTable(table, tenantId, this.conf));
+//            }
+//        } catch (ConfigException e) {
+//            e.printStackTrace();
+//            throw e;
+//        } finally {
+//            configurator.release();
+//        }
+//
+//        return lstTable;
+//
+//    }
 }

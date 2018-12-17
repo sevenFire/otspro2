@@ -13,14 +13,21 @@ import com.baosight.xinsight.ots.rest.model.table.operate.TableCreateBody;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableUpdateBody;
 import com.baosight.xinsight.ots.rest.model.table.response.TableInfoBody;
 import com.baosight.xinsight.ots.rest.model.table.response.TableNameListBody;
+import com.baosight.xinsight.ots.rest.model.table.vo.TableInfoVo;
+import com.baosight.xinsight.ots.rest.permission.CachePermission;
 import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 import com.baosight.xinsight.ots.rest.util.MessageBuilder;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
+import com.baosight.xinsight.ots.rest.util.TableConfigUtil;
+import com.baosight.xinsight.utils.AasPermissionUtil;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,35 +47,31 @@ public class TableService {
      */
     public static void createTable(PermissionCheckUserInfo userInfo, String tableName, TableCreateBody tableCreateBody) throws OtsException {
         try {
-            //todo lyh
-            //存入userInfo到缓存
+            //将权限信息并发送到kafka
             if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
                 PermissionUtil.CacheInfo info = PermissionUtil.GetInstance().otsPermissionHandler(userInfo, -1, PermissionUtil.PermissionOpesration.OTSMANAGEW); //todo lyh managew?
 
-                //ots_config_change
                 MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
                         .sendData(userInfo.getTenantId(), MessageBuilder.buildPermissionMessage(userInfo, RestConstants.OTS_MANAGE_PERMISSION_OPERATION,
                                 info.isReadPermission(), info.isWritePermission(), info.isPermissionFlag(), info.getCurrentTime()));
+
+                LOG.debug("messageHandlerFactory: message" + MessageBuilder.buildPermissionMessage(userInfo, RestConstants.OTS_MANAGE_PERMISSION_OPERATION,
+                        info.isReadPermission(), info.isWritePermission(), info.isPermissionFlag(), info.getCurrentTime()));
             }
 
             //创建表（包含大表和小表），以及表存在性校验
-            ConfigUtil.getInstance().getOtsAdmin().createTable(userInfo.getUserId(), userInfo.getTenantId(), tableName,tableCreateBody.toTable());
+            Table table = ConfigUtil.getInstance().getOtsAdmin().createTable(userInfo.getUserId(), userInfo.getTenantId(), tableName,tableCreateBody.toTable());
 
-//            //add cache
-            //todo lyh
-//            TableInfoModel info = new TableInfoModel(table.getTableName());
-//            info.setKeyType(table.getKeyType());
-//            info.setHashKeyType(table.getHashKeyType());
-//            info.setRangeKeyType(table.getRangeKeyType());
-//            TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), info);
+            //添加到缓存中
+            TableInfoVo info = new TableInfoVo(table.getTableName());
+            info.setTableColumns(table.getTableColumns());
+            info.setPrimaryKey(table.getPrimaryKey());
+            TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), info);
 
-            //todo lyh 创建表时为什么旧代码没有在redis里为它开辟ots_metric_ ？
-//            ConfigUtil.getInstance().getRedisUtil().setHSet(RestConstants.DEFAULT_METRICS_PREFIX + userInfo.getTenantId(), tableName, ?);
-
-            //Kafka produces config message
+            //将表信息并发送到kafka
             MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
                     .sendData(userInfo.getTenantId(), MessageBuilder.buildConfigMessage(0, userInfo.getTenantId(), userInfo.getUserId(), tableName));
-
+            LOG.debug("messageHandlerFactory: message" + MessageBuilder.buildConfigMessage(0, userInfo.getTenantId(), userInfo.getUserId(), tableName));
         } catch (TableException e) {
             throw e;
         } catch (ConfigException e) {
@@ -86,31 +89,25 @@ public class TableService {
      */
     public static void updateTable(PermissionCheckUserInfo userInfo, String tableName, TableUpdateBody tableUpdateBody) throws OtsException {
         try {
-            //todo lyh
-//            //存入userInfo到缓存
-//            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
-//                PermissionUtil.CacheInfo info = PermissionUtil.GetInstance().otsPermissionHandler(userInfo, -1, PermissionUtil.PermissionOpesration.OTSMANAGEW);
-//                MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
-//                        .sendData(userInfo.getTenantId(), MessageBuilder.buildPermissionMessage(userInfo, RestConstants.OTS_MANAGE_PERMISSION_OPERATION,
-//                                info.isReadPermission(), info.isWritePermission(), info.isPermissionFlag(), info.getCurrentTime()));
-//            }
+            //校验权限信息
+            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
+                PermissionUtil.GetInstance().otsPermissionHandler(userInfo, userInfo.getUserId(), PermissionUtil.PermissionOpesration.READ);
+            }
 
             //todo lyh 校验修改后的参数是否正确
             //1.table_name和table_desc至少要有一个。
             //2.二者都要符合字段规范，其中table_desc可以为空，table_name不可以。
 
             //修改表，包含表存在性校验
-             ConfigUtil.getInstance().getOtsAdmin().updateTable(userInfo.getUserId(), userInfo.getTenantId(), tableName,tableUpdateBody.toTable());
+            Table table = ConfigUtil.getInstance().getOtsAdmin().updateTable(userInfo.getUserId(), userInfo.getTenantId(), tableName,tableUpdateBody.toTable());
 
-            //add cache
-            //todo lyh 存入cache的格式是什么？
-//            TableInfoModel info = new TableInfoModel(table.getTableName());
-//            info.setKeyType(table.getKeyType());
-//            info.setHashKeyType(table.getHashKeyType());
-//            info.setRangeKeyType(table.getRangeKeyType());
-//            TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), info);
+            //更新缓存
+            TableInfoVo info = new TableInfoVo(table.getTableName());
+            info.setTableColumns(table.getTableColumns());
+            info.setPrimaryKey(table.getPrimaryKey());
+            TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), info);
 
-            //Kafka produces config message
+            //将表信息并发送到kafka
             MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
                     .sendData(userInfo.getTenantId(), MessageBuilder.buildConfigMessage(0, userInfo.getTenantId(), userInfo.getUserId(), tableName));
 
@@ -128,30 +125,38 @@ public class TableService {
      * @param userInfo
      * @param tableName
      */
-    public static void deleteTable(PermissionCheckUserInfo userInfo, String tableName) throws OtsException {
+    public static void deleteTable(PermissionCheckUserInfo userInfo, String tableName) throws OtsException, IOException {
 
         try {
-            //todo lyh
-            // remove relevant permission cache of current table
-            // Kafka produces permission remove message
-
             //删除表，包含表存在性校验、小表、HBase中对应的表记录
-            ConfigUtil.getInstance().getOtsAdmin().deleteTable(userInfo.getTenantId(), tableName);
+            Table table = ConfigUtil.getInstance().getOtsAdmin().deleteTable(userInfo.getTenantId(), tableName);
 
+            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
+                PermissionUtil.GetInstance().otsPermissionHandler(userInfo, -1, PermissionUtil.PermissionOpesration.OTSMANAGEW);
+                // 删除缓存中此表的相关权限信息
+                CachePermission.getInstance().batchRemove((new StringBuilder()).append(RestConstants.OTS_PERMISSION_CACHE_KEY)
+                        .append(userInfo.getUserId()).append(CommonConstants.DEFAULT_SINGLE_UNLINE_SPLIT).append(table.getTableId()).toString());
+
+                // kafka发送删除信息
+                MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
+                        .sendData(userInfo.getTenantId(), MessageBuilder.buildPermissionRemoveMessage((new StringBuilder()).append(RestConstants.OTS_PERMISSION_CACHE_KEY)
+                                .append(userInfo.getUserId()).append(CommonConstants.DEFAULT_SINGLE_UNLINE_SPLIT).append(table.getTableId()).toString()));
+            }
 
             // 删除redis中的metric记录
             ConfigUtil.getInstance().getRedisUtil().delHSet(RestConstants.DEFAULT_METRICS_PREFIX + userInfo.getTenantId(), tableName);
 
-            //todo lyh
-            // delete backup state in redis
-            //delete cache
-            //Kafka produces config message
+            TableConfigUtil.deleteTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableName);
+
+            MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
+                    .sendData(userInfo.getTenantId(), MessageBuilder.buildConfigMessage(1, userInfo.getTenantId(), userInfo.getUserId(), tableName));
+
+            LOG.debug("deleteTable successful: uid=" + userInfo.getUserId() + ", namespace=" + userInfo.getUserId() + ", tablename=" + tableName);
 
         } catch (OtsException e) {
             e.printStackTrace();
             throw e;
         }
-
 
     }
 
@@ -163,30 +168,32 @@ public class TableService {
      * @return
      */
     public static TableInfoBody getTableInfo(PermissionCheckUserInfo userInfo, String tableName) throws OtsException {
-        TableInfoBody tableAllInfoBody = new TableInfoBody();
+        TableInfoBody tableInfoBody = new TableInfoBody();
 
         try {
+            //获取表信息
             Table table = ConfigUtil.getInstance().getOtsAdmin().getTableInfo(userInfo.getTenantId(),tableName);
             if (table == null) {
                 throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST,
                         String.format("tenant (id:%d) was not owned table:%s!", userInfo.getTenantId(), tableName));
             }
 
-//            long tableId = table.getTableId();
-//            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
-//                //todo lyh 这段的权限校验逻辑？
-//                PermissionUtil.CacheInfo cacheInfo = PermissionUtil.GetInstance()
-//                        .otsPermissionHandler(userInfo, tableId, PermissionUtil.PermissionOpesration.READ);
-//
-//                MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
-//                        .sendData(userInfo.getTenantId(),MessageBuilder.buildPermissionMessage(userInfo, table.getTableId(), cacheInfo.isReadPermission(), cacheInfo.isWritePermission(), cacheInfo.isPermissionFlag(), cacheInfo.getCurrentTime()));
-//            }
+            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
+                //判定并获取权限信息
+                PermissionUtil.CacheInfo cacheInfo = PermissionUtil.GetInstance()
+                        .otsPermissionHandler(userInfo, table.getTableId(), PermissionUtil.PermissionOpesration.READ);
+                //通过kafka将权限信息发送
+                MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
+                        .sendData(userInfo.getTenantId(),MessageBuilder.buildPermissionMessage(userInfo, table.getTableId(), cacheInfo.isReadPermission(), cacheInfo.isWritePermission(), cacheInfo.isPermissionFlag(), cacheInfo.getCurrentTime()));
+            }
 
-            tableAllInfoBody.fromTable(table);
+            //更新缓存
+            TableInfoVo tableInfoVo = new TableInfoVo();
+            tableInfoVo.fromTable(table);
+            TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableInfoVo);
 
-            //todo lyh cache未处理
-//            // update cache
-//            TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableAllInfoBody);
+            //返回
+            tableInfoBody.fromTable(table);
 
         } catch (ConfigException e) {
             e.printStackTrace();
@@ -196,8 +203,9 @@ public class TableService {
             throw e;
         }
 
-        return tableAllInfoBody;
+        return tableInfoBody;
     }
+
 
 
     /**
@@ -223,15 +231,34 @@ public class TableService {
         TableNameListBody tableNameListModel = new TableNameListBody();
 
         try {
+//            List<Long> noGetPermissionList = null;
+//            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
+//                // 过滤出id list
+//                List<Table> permittedTables = ConfigUtil.getInstance().getOtsAdmin().getPermissionTables(userInfo.getUserId(), userInfo.getTenantId());
+//
+//                List<Long> byPermittedObjects = new ArrayList<>();
+//                for (Table table : permittedTables) {
+//                    byPermittedObjects.add(table.getTableId());
+//                }
+//                // 再调用AasPermissionUtil接口获取ConfigUtil.getInstance().getAuthServerAddr()，noGetPermissionList
+//                try {
+//                    noGetPermissionList = AasPermissionUtil.obtainNoGetPermissionInstanceList(ConfigUtil.getInstance().getAuthServerAddr(), userInfo, byPermittedObjects);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    LOG.error(ExceptionUtils.getFullStackTrace(e));
+//                }
+//            }
+
+            //获取表
             List<String> tableNameList = ConfigUtil.getInstance().getOtsAdmin().getTableNameList(userInfo.getTenantId(), tableName, limit, offset, Fuzzy);
             if (CollectionUtils.isEmpty(tableNameList)) {
                 throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST,
                         String.format("tenant (id:%d) didn't own any tables with table_name ~'%s'!", userInfo.getTenantId(), tableName));
             }
 
+
 //            long tableId = table.getTableId();
 //            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
-//                //todo lyh 这段的权限校验逻辑？
 //                PermissionUtil.CacheInfo cacheInfo = PermissionUtil.GetInstance()
 //                        .otsPermissionHandler(userInfo, tableId, PermissionUtil.PermissionOpesration.READ);
 //

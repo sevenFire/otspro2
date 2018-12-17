@@ -27,7 +27,7 @@ public class OtsErrorCode {
 	public static final long EC_OTS_STORAGE_INVALID_RECDELETE_KEY = EC_OTS_STORAGE_BASE_NO + 15;
 	public static final long EC_OTS_STORAGE_INVALID_REGEX = EC_OTS_STORAGE_BASE_NO + 16;
 	//空参数
-	public static final long EC_OTS_STORAGE_NULL_PARAMETER = EC_OTS_STORAGE_BASE_NO + 17;
+	public static final long EC_OTS_STORAGE_NULL_PARAMETER = EC_OTS_STORAGE_BASE_NO + 31;
 
 	public static final long EC_OTS_STORAGE_DELETE_RECORD_NOMATCH = EC_OTS_STORAGE_BASE_NO + 17;
 
@@ -144,5 +144,11 @@ public class OtsErrorCode {
 	public static final long EC_OTS_AAS_REQUEST_UNAVAILABLE = EC_PERMISSION_NO + 12;
 	public static final long EC_OTS_AAS_SUPER_ACCOUNT_TOKEN_UNAVAILABLE = EC_PERMISSION_NO + 13;
 	public static final long EC_OTS_AAS_REGISTER_RESSOURCE_FAILED = EC_PERMISSION_NO + 14;
+
+
+	//todo lyh
+	public static final long INCORRECT_CONTENT = EC_OTS_STORAGE_BASE_NO + 32;
+	public static final long INCORRECT_ENCODING = EC_OTS_STORAGE_BASE_NO + 33;
+	public static final long PARSE_JSONSTRING_ERROR = EC_OTS_STORAGE_BASE_NO + 33;
 }
 

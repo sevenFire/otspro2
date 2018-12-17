@@ -22,4 +22,7 @@ public class RestErrorCode {
 	public static final long EC_OTS_REST_GET_TABLE_PERMISSION_EXCEPTION = EC_OTS_REST_BASE_NO + 14;
 	public static final long EC_OTS_AAS_REGISTER_RESSOURCE_FAILED = EC_OTS_REST_BASE_NO + 15;
 	public static final long EC_OTS_REST_INIT_INNERTABLE = EC_OTS_REST_BASE_NO + 16;
+
+	//插入数据失败
+    public static final long EC_OTS_INSERT_RECORDS = EC_OTS_REST_BASE_NO + 17;
 }

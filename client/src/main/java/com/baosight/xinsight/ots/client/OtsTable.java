@@ -12,7 +12,7 @@ import java.util.Date;
 
 /**
  * @author liyuhui
- * @date {DATE}
+ * @date 2018/12/15
  * @description
  */
 public class OtsTable {

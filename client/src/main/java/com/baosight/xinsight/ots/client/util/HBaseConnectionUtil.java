@@ -98,6 +98,10 @@ public class HBaseConnectionUtil {
 		return connection.getTable(TableName.valueOf(tableName));
 	}
 
+	public Table getTable(TableName tableName) throws IOException {
+		return connection.getTable(tableName);
+	}
+
 	public Configuration getConfiguration() {
 		return conf;
 	}

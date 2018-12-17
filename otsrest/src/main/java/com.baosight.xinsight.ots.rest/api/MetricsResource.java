@@ -1,5 +1,6 @@
 package com.baosight.xinsight.ots.rest.api;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.common.CommonConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
@@ -12,6 +13,7 @@ import org.apache.log4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -34,7 +36,7 @@ import javax.ws.rs.core.UriInfo;
  *
  */
 @Path("/metrics")
-public class MetricsResource {
+public class MetricsResource extends RestBase{
     private static final Logger LOG = Logger.getLogger(MetricsResource.class);
 
     @Context
@@ -107,4 +109,17 @@ public class MetricsResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
         }
     }
+
+
+//    @PUT
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public Response putMetrics() {
+//        try {
+//            JSONObject jsonObject = readJsonToMap();
+//            System.out.println(jsonObject);
+//        } catch (sample.hello.exception.OtsException e) {
+//            e.printStackTrace();
+//        }
+//        return null;
+//    }
 }

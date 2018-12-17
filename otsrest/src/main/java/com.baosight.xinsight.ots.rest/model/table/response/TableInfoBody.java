@@ -3,6 +3,7 @@ package com.baosight.xinsight.ots.rest.model.table.response;
 import com.alibaba.fastjson.JSON;
 import com.baosight.xinsight.ots.client.metacfg.Table;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableColumnsBody;
+import com.baosight.xinsight.utils.JsonUtil;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -157,9 +158,9 @@ public class TableInfoBody implements Serializable {
 
     }
 
-//    @JsonIgnore
-//    @Override
-//    public String toString() {
-//        return JsonUtil.toJsonString(this);
-//    }
+    @JsonIgnore
+    @Override
+    public String toString() {
+        return JsonUtil.toJsonString(this);
+    }
 }
