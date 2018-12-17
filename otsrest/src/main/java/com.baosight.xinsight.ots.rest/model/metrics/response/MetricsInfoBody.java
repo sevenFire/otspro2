@@ -1,15 +1,11 @@
 package com.baosight.xinsight.ots.rest.model.metrics.response;
 
-import com.baosight.xinsight.ots.OtsConstants;
-import com.baosight.xinsight.ots.OtsErrorCode;
-import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.utils.JsonUtil;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
-import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 
 public class MetricsInfoBody implements Serializable {

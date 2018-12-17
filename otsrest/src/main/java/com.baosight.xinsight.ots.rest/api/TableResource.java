@@ -5,11 +5,10 @@ import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.ots.rest.constant.ErrorMode;
 import com.baosight.xinsight.ots.rest.constant.RestConstants;
+import com.baosight.xinsight.ots.rest.model.table.operate.TableCreateBody;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableUpdateBody;
 import com.baosight.xinsight.ots.rest.service.TableService;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
-import com.baosight.xinsight.ots.rest.model.table.operate.TableCreateBody;
-import com.baosight.xinsight.ots.rest.util.RegexUtil;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;

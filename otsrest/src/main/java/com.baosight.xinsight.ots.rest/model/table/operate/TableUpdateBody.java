@@ -9,7 +9,6 @@ import com.baosight.xinsight.utils.JsonUtil;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
-
 import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 

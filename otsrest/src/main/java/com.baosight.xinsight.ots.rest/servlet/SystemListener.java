@@ -4,10 +4,9 @@ import com.baosight.xinsight.common.CommonConstants;
 import com.baosight.xinsight.kafka.MessageConsumerThread;
 import com.baosight.xinsight.kafka.MessageHandlerFactory;
 import com.baosight.xinsight.ots.OtsConstants;
-//import com.baosight.xinsight.ots.rest.message.handler.ConfigMessageHandlerImpl;
 import com.baosight.xinsight.ots.rest.message.handler.PermissionClearHandlerImpl;
-import com.baosight.xinsight.ots.rest.message.handler.PermissionUpdateHandlerImpl;
 import com.baosight.xinsight.ots.rest.message.handler.PermissionMessageHandlerImpl;
+import com.baosight.xinsight.ots.rest.message.handler.PermissionUpdateHandlerImpl;
 import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 import com.baosight.xinsight.utils.ImmolateUtil;
@@ -17,6 +16,8 @@ import org.apache.log4j.Logger;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+
+//import com.baosight.xinsight.ots.rest.message.handler.ConfigMessageHandlerImpl;
 
 public class SystemListener implements ServletContextListener {
 	private final static Logger LOG = Logger.getLogger(SystemListener.class);

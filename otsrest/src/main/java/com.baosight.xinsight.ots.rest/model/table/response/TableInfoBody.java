@@ -2,10 +2,7 @@ package com.baosight.xinsight.ots.rest.model.table.response;
 
 import com.alibaba.fastjson.JSON;
 import com.baosight.xinsight.ots.client.metacfg.Table;
-
 import com.baosight.xinsight.ots.rest.model.table.operate.TableColumnsBody;
-//import com.fasterxml.jackson.annotation.JsonIgnore;
-//import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -14,6 +11,9 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+
+//import com.fasterxml.jackson.annotation.JsonIgnore;
+//import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 /**

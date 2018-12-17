@@ -1,6 +1,5 @@
 package com.baosight.xinsight.ots.rest.model.metrics.response;
 
-import com.baosight.xinsight.ots.rest.model.table.operate.TableColumnsBody;
 import com.baosight.xinsight.utils.JsonUtil;
 
 import org.codehaus.jackson.annotate.JsonIgnore;

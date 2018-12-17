@@ -7,13 +7,11 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 
+import java.io.Serializable;
+
 //import com.fasterxml.jackson.annotation.JsonIgnore;
 //import com.fasterxml.jackson.annotation.JsonProperty;
 //import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import java.io.Serializable;
-
-import javax.xml.bind.annotation.XmlTransient;
 
 
 /**

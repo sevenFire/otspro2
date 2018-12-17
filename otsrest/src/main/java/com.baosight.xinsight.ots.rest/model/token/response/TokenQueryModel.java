@@ -1,9 +1,10 @@
 package com.baosight.xinsight.ots.rest.model.token.response;
 
-import java.io.Serializable;
-
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
+
+import java.io.Serializable;
+
 /**
  * @author liyuhui
  * @date 2018/12/14
