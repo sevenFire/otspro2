@@ -1,5 +1,8 @@
 package com.baosight.xinsight.ots.rest.api;
 
+import com.baosight.xinsight.model.PermissionCheckUserInfo;
+import com.baosight.xinsight.ots.rest.util.PermissionUtil;
+
 import org.apache.log4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,7 +44,23 @@ public class RecordResource {
     @Consumes({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public Response post(@PathParam("tablename") String tableName, String body) {
-        //todo
+        //todo lyh 对表名的校验
+
+        PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
+        userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
+
+        if (body.length() > 1000) {
+            LOG.debug("Post:" + tableName + "\n Part Content:\n" + body.substring(0, 999));
+        } else {
+            LOG.debug("Post:" + tableName + "\nContent:\n" + body);
+        }
+
+//        RecordListModel model = RecordListModel.toClass(body);
+
+
+
+
+
         return null;
     }
 

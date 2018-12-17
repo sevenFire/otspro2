@@ -67,23 +67,8 @@ public class MetricsService {
         return metricsInfoListBody;
     }
 
-
     /**
-     * 根据字段名拼接在redis中的值
-     * @param tenantId
-     * @param tableName
-     * @param propertyName
-     * @return
-     */
-    private static String getMetricsValue(long tenantId, String tableName, String propertyName) {
-        //拼接完整字段
-        String key =  RestConstants.DEFAULT_METRICS_PREFIX + String.valueOf(tenantId) + TableName.NAMESPACE_DELIM + tableName;
-        return ConfigUtil.getInstance().getRedisUtil().getHSet(key, propertyName);
-    }
-
-
-    /*
-     * todo lyh 为什么获取监控信息前需要先知道namespace(tenantId)是否存在
+     * 验证namespace是否存在
      */
     public static boolean isNamespaceExist(long tenantId) throws OtsException {
         try {
@@ -103,4 +88,16 @@ public class MetricsService {
         return value != null ? Long.parseLong(value) : 0;
     }
 
+    /**
+     * 根据字段名拼接在redis中的值
+     * @param tenantId
+     * @param tableName
+     * @param propertyName
+     * @return
+     */
+    private static String getMetricsValue(long tenantId, String tableName, String propertyName) {
+        //拼接完整字段
+        String key =  RestConstants.DEFAULT_METRICS_PREFIX + String.valueOf(tenantId) + TableName.NAMESPACE_DELIM + tableName;
+        return ConfigUtil.getInstance().getRedisUtil().getHSet(key, propertyName);
+    }
 }

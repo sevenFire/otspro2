@@ -46,8 +46,13 @@ public class TableCreateBody implements Serializable{
         this.primaryKey = primaryKey;
     }
 
+    @JsonIgnore
+    public String toString() {
+        return JsonUtil.toJsonString(this);
+    }
+
     /**
-     * 将请求体中的参数放入table的实体类中
+     * 将实体body中的参数放入table的实体类中
      * @return
      */
     public Table toTable() {
@@ -60,7 +65,7 @@ public class TableCreateBody implements Serializable{
         return table;
     }
     /**
-     * 将json串转换成实体类
+     * 将json串转换成实体body
      * @param in
      * @return
      * @throws OtsException
@@ -75,8 +80,6 @@ public class TableCreateBody implements Serializable{
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_JSON2OBJECT, "convert json input to TableCreateBody failed.");
         }
     }
-
-
 
     public List<TableColumnsBody> getTableColumns() {
         return tableColumns;

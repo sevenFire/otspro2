@@ -61,7 +61,7 @@ public class MetricsResource {
                         .entity(new ErrorMode((long) OtsErrorCode.EC_RDS_FAILED_QUERY_TENANT, Response.Status.NOT_FOUND.name() + ": tenantId '" + tenantId + "' is not exist.")).build();
             } else {//查询监控信息
                 MetricsInfoBody metricsInfoBody = MetricsService.getMetricsInfoByTableName(tenantId, tableName);
-                metricsInfoBody.setErrcode(0L);
+                metricsInfoBody.setErrcode(0L);//写在外面而非getMetricsInfoByTableName的原因是，作为子body使用时，不希望返回参数里有errorcode。
 
                 return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
                         .entity(metricsInfoBody).build();

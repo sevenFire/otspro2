@@ -12,8 +12,8 @@ import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
-public class PermitionMessageHandlerImpl implements MessageHandler {
-	private static final Logger LOG = Logger.getLogger(PermitionMessageHandlerImpl.class);
+public class PermissionMessageHandlerImpl implements MessageHandler {
+	private static final Logger LOG = Logger.getLogger(PermissionMessageHandlerImpl.class);
 	
 	@Override
 	public void execute(CommonMessage message) {

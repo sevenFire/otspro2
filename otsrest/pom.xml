@@ -30,19 +30,50 @@
       <groupId>com.baosight.xinsight</groupId>
       <artifactId>xinsight-ots-client</artifactId>
       <version>${ots.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.codehaus.jackson</groupId>
+          <artifactId>jackson-core-asl</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!--<dependency>-->
       <!--<groupId>com.baosight.xinsight</groupId>-->
       <!--<artifactId>xinsight-ots-common</artifactId>-->
       <!--<version>${ots.version}</version>-->
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.codehaus.jackson</groupId>-->
+          <!--<artifactId>jackson-core-asl</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
     <!--</dependency>-->
 
     <!--<dependency>-->
       <!--<groupId>com.baosight.xinsight</groupId>-->
       <!--<artifactId>xinsight-common</artifactId>-->
       <!--<version>${ots.version}</version>-->
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.codehaus.jackson</groupId>-->
+          <!--<artifactId>jackson-core-asl</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
     <!--</dependency>-->
+
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-core-asl</artifactId>
+      <!--<version>${codehaus.jackson.version}</version>-->
+      <version>1.9.11</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-mapper-asl</artifactId>
+      <version>1.9.11</version>
+    </dependency>
 
     <dependency>
       <groupId>javax.servlet</groupId>

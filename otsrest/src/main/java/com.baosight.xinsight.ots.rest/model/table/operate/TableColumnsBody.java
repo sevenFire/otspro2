@@ -1,6 +1,8 @@
 package com.baosight.xinsight.ots.rest.model.table.operate;
 
 
+import com.baosight.xinsight.utils.JsonUtil;
+
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -10,6 +12,8 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 //import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.Serializable;
+
+import javax.xml.bind.annotation.XmlTransient;
 
 
 /**
@@ -38,12 +42,10 @@ public class TableColumnsBody implements Serializable{
         this.colType = colType;
     }
 
-//    @JsonIgnore
-//    @XmlTransient
-//    @Override
-//    public String toString() {
-//        return JsonUtil.toJsonString(this);
-//    }
+    @JsonIgnore
+    public String toString() {
+        return JsonUtil.toJsonString(this);
+    }
 
     public String getColName() {
         return colName;

@@ -45,7 +45,9 @@ public class TableService {
             //todo lyh
             //存入userInfo到缓存
             if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
-                PermissionUtil.CacheInfo info = PermissionUtil.GetInstance().otsPermissionHandler(userInfo, -1, PermissionUtil.PermissionOpesration.OTSMANAGEW);
+                PermissionUtil.CacheInfo info = PermissionUtil.GetInstance().otsPermissionHandler(userInfo, -1, PermissionUtil.PermissionOpesration.OTSMANAGEW); //todo lyh managew?
+
+                //ots_config_change
                 MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
                         .sendData(userInfo.getTenantId(), MessageBuilder.buildPermissionMessage(userInfo, RestConstants.OTS_MANAGE_PERMISSION_OPERATION,
                                 info.isReadPermission(), info.isWritePermission(), info.isPermissionFlag(), info.getCurrentTime()));
@@ -61,6 +63,9 @@ public class TableService {
 //            info.setHashKeyType(table.getHashKeyType());
 //            info.setRangeKeyType(table.getRangeKeyType());
 //            TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), info);
+
+            //todo lyh 创建表时为什么旧代码没有在redis里为它开辟ots_metric_ ？
+//            ConfigUtil.getInstance().getRedisUtil().setHSet(RestConstants.DEFAULT_METRICS_PREFIX + userInfo.getTenantId(), tableName, ?);
 
             //Kafka produces config message
             MessageHandlerFactory.getMessageProducer(CommonConstants.OTS_CONFIG_TOPIC)
@@ -135,8 +140,11 @@ public class TableService {
             //删除表，包含表存在性校验、小表、HBase中对应的表记录
             ConfigUtil.getInstance().getOtsAdmin().deleteTable(userInfo.getTenantId(), tableName);
 
+
+            // 删除redis中的metric记录
+            ConfigUtil.getInstance().getRedisUtil().delHSet(RestConstants.DEFAULT_METRICS_PREFIX + userInfo.getTenantId(), tableName);
+
             //todo lyh
-            // delete metrics in redis
             // delete backup state in redis
             //delete cache
             //Kafka produces config message
