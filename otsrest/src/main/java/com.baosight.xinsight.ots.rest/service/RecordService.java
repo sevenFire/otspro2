@@ -29,6 +29,15 @@ import java.util.List;
  * @description
  */
 public class RecordService {
+    /**
+     * 插入记录
+     * 如果记录原本存在，覆盖记录
+     * @param userInfo
+     * @param tableName
+     * @param postBody
+     * @return
+     * @throws OtsException
+     */
     public static ErrorMode insertRecords(PermissionCheckUserInfo userInfo, String tableName, JSONObject postBody) throws OtsException{
         ErrorMode rMode = new ErrorMode(0L);
 
@@ -38,13 +47,46 @@ public class RecordService {
             PermissionUtil.GetInstance().otsPermissionHandler(userInfo, info.getTableId(), PermissionUtil.PermissionOpesration.EDIT);
         }
 
-        JSONArray recordsJSONArray = postBody.getJSONArray(ParamConstant.KEY_RECORDS);
+        //generate records
+        List<RowRecord> records = generateRecords(userInfo.getTenantId(),tableName,postBody);
+
+        //add records in the big table
+        try {
+            ConfigUtil.getInstance().getOtsAdmin().insertRecords(userInfo.getTenantId(), records);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new OtsException(RestErrorCode.EC_OTS_INSERT_RECORDS, e.getMessage());
+        }
+        return rMode;
+    }
+
+    /**
+     * 更新记录
+     * 如果记录原本不存在，则插入
+     * @param userInfo
+     * @param tableName
+     * @param putBody
+     * @return
+     */
+    public static ErrorMode updateRecords(PermissionCheckUserInfo userInfo, String tableName, JSONObject putBody) throws OtsException {
+        return insertRecords(userInfo,tableName,putBody);
+    }
+
+    /**
+     * 转换生成要插入/更新的记录
+     * @param tenantId
+     * @param tableName
+     * @param body
+     * @return
+     */
+    private static List<RowRecord> generateRecords(long tenantId, String tableName, JSONObject body) throws OtsException {
+        JSONArray recordsJSONArray = body.getJSONArray(ParamConstant.KEY_RECORDS);
         if(recordsJSONArray == null){//必填项
             throw new OtsException(ParamErrorCode.PARAM_RECORDS_IS_NULL);
         }
 
         //查询创建表时的表结构
-        Table table = ConfigUtil.getInstance().getOtsAdmin().getTableInfo(userInfo.getTenantId(),tableName);
+        Table table = ConfigUtil.getInstance().getOtsAdmin().getTableInfo(tenantId,tableName);
         JSONArray primaryKey = JSONArray.parseArray(table.getPrimaryKey());
         JSONArray tableColumns = JSONArray.parseArray(table.getTableColumns());
 
@@ -69,29 +111,6 @@ public class RecordService {
             records.add(rec);
         }
 
-        //add records in the big table
-        try {
-            ConfigUtil.getInstance().getOtsAdmin().insertRecords(userInfo.getTenantId(), records);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new OtsException(RestErrorCode.EC_OTS_INSERT_RECORDS, e.getMessage());
-        }
-        return rMode;
-    }
-
-
-
-    /**
-     *
-     * @param record
-     */
-    private static void validateRequiredFields(JSONObject record) throws OtsException {
-        if (!record.containsKey(ParamConstant.KEY_PRIMARY_KEY)){
-            throw new OtsException(ParamErrorCode.PARAM_PRIMARY_KEY_IS_NULL);
-        }
-    }
-
-    private static void toTableFromMap(JSONObject record, Table table) {
-
+        return records;
     }
 }

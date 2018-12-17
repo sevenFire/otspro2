@@ -89,16 +89,46 @@ public class RecordResource extends RestBase{
     }
 
 
-//    @PUT
-//    @Produces(MediaType.APPLICATION_JSON)
-//    public Response putRecord() {
-//        try {
-//            JSONObject jsonObject = readJsonToMap();
-//            System.out.println(jsonObject);
-//        } catch (sample.hello.exception.OtsException e) {
-//            e.printStackTrace();
-//        }
-//        return null;
-//    }
+    @PUT
+    @Path("/{tablename}")
+    @Consumes({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response putRecord(@PathParam("tablename") String tableName) {
+        //todo lyh 对表名的校验
 
+        //get userInfo
+        PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
+        userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
+
+        //get body
+        JSONObject putBody;
+        try {
+            putBody = readJsonToMap();
+        } catch (OtsException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
+
+        }
+        if (putBody.size() > 1000) {
+            LOG.debug("PUT:" + tableName + "\n Part Content:\n" + putBody.toString().substring(0, 999));
+        } else {
+            LOG.debug("PUT:" + tableName + "\nContent:\n" + putBody);
+        }
+
+        //put record
+        try {
+            return Response.status(Response.Status.CREATED)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(RecordService.updateRecords(userInfo, tableName, putBody)).build();
+        }catch (OtsException e) {
+            e.printStackTrace();
+            return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
+        }
+
+    }
 }

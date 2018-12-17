@@ -96,4 +96,8 @@ public class HBaseRecordProvider {
         }
 
     }
+
+    public static void updateRecords(TableName tableName, List<RowRecord> records) throws IOException, TableException {
+        insertRecords(tableName,records);
+    }
 }

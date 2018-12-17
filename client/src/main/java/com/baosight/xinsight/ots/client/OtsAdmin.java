@@ -444,6 +444,16 @@ public class OtsAdmin {
         HBaseRecordProvider.insertRecords(TableName.valueOf(tableName),records);
     }
 
+    /**
+     * 更新记录
+     * @param tenantId
+     * @param records
+     */
+    public void updateRecords(Long tenantId, List<RowRecord> records) throws IOException, TableException {
+        String tableName = new StringBuilder().append(TableConstants.HBASE_TABLE_PREFIX).append(tenantId).toString();
+        HBaseRecordProvider.updateRecords(TableName.valueOf(tableName),records);
+    }
+
 
     //===================================RDB============================================
 
@@ -610,6 +620,7 @@ public class OtsAdmin {
             configurator.release();
         }
     }
+
 
 
 //    /**
