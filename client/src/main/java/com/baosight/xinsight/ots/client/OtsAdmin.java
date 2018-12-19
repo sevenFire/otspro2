@@ -6,6 +6,8 @@ import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.client.Database.HBase.HBaseMetricsProvider;
 import com.baosight.xinsight.ots.client.Database.HBase.HBaseRecordProvider;
 import com.baosight.xinsight.ots.client.Database.HBase.HBaseTableProvider;
+import com.baosight.xinsight.ots.client.Database.HBase.RecordQueryOption;
+import com.baosight.xinsight.ots.client.Database.HBase.RecordResult;
 import com.baosight.xinsight.ots.client.Database.HBase.RowRecord;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.exception.PermissionSqlException;
@@ -16,6 +18,7 @@ import com.baosight.xinsight.ots.client.util.HBaseConnectionUtil;
 import com.baosight.xinsight.ots.constants.TableConstants;
 import com.baosight.xinsight.ots.exception.OtsException;
 
+import org.apache.commons.codec.DecoderException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
@@ -28,6 +31,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author liyuhui
@@ -622,7 +626,6 @@ public class OtsAdmin {
     }
 
 
-
 //    /**
 //     * 获取表，过滤掉无权限的
 //     * @param userId
@@ -646,4 +649,54 @@ public class OtsAdmin {
 //        return lstTable;
 //
 //    }
+
+    //========================records=================================
+
+    /**
+     * 查询记录
+     * @param tenantId
+     * @param startKey
+     * @param endKey
+     * @return
+     */
+    public RecordResult getRecords(Long tenantId, RecordQueryOption query, byte[] startKey, byte[] endKey) throws OtsException {
+
+        try {
+            org.apache.hadoop.hbase.client.Table hTable =
+                    HBaseConnectionUtil.getInstance().getTable(generateHBaseTableName(tenantId));
+            return HBaseRecordProvider.getRecordsByRange(hTable, query, startKey, endKey);
+        }catch (MasterNotRunningException e) {
+            e.printStackTrace();
+            LOG.error("Failed to query records because hbase master no running!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_NO_RUNNING_HBASE_MASTER, "Failed to query records because hbase master no running!\n" + e.getMessage());
+        } catch (ZooKeeperConnectionException e) {
+            e.printStackTrace();
+            LOG.error("Failed to query because can not connecto to zookeeper!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_FAILED_CONN_ZK,	"Failed to query because can not connecto to zookeeper!\n" + e.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error("Failed to query records!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_RECORD_QUERY, "Failed to query records!\n" + e.getMessage());
+        } catch (TableException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
+            throw e;
+        } catch (DecoderException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_RECORD_QUERY, "Failed to query records!\n" + e.getMessage());
+        }
+
+    }
+
+
+    /**
+     * 根据租户id拼接生成HBase中真正的表名
+     * 1:ots_${tenantId}
+     * @param tenantId
+     * @return
+     */
+    private String generateHBaseTableName(Long tenantId) {
+        return (TableConstants.HBASE_TABLE_PREFIX + String.valueOf(tenantId));
+    }
 }

@@ -14,7 +14,8 @@ import scala.collection.parallel.mutable.ParArray;
 public class ColumnsUtil {
 
     /**
-     * 校验列
+     * 生成要插入HBase的cell中的值
+     * 这里暂时存了所有列的值，后续还要处理存的格式。//todo lyh
      * @param tableColumns
      * @param record
      * @return

@@ -10,9 +10,9 @@ public class RecordResult implements Serializable {
 	
 	private Long count;
 	
-	private String next_rowkey;//base64
+	private String next_rowKey;//base64
 		
-	private List<RowRecord> listRecords = new ArrayList<RowRecord>();
+	private List<RowRecord> recordList = new ArrayList<>();
 	
 	/**
 	 * Default constructor
@@ -20,46 +20,54 @@ public class RecordResult implements Serializable {
 	public RecordResult() {
 		super();
 		this.count = 0L;
-		this.next_rowkey = null;
-		this.listRecords.clear();
+		this.next_rowKey = null;
+		this.recordList.clear();
 	}
 	
-	public RecordResult(Long count, List<RowRecord> listRecords) {
+	public RecordResult(Long count, List<RowRecord> recordList) {
 		super();
 		this.count = count;
-		this.next_rowkey = null;
-		this.listRecords = listRecords;
+		this.next_rowKey = null;
+		this.recordList = recordList;
 	}
 	
-	public RecordResult(Long count, String next_rowkey, List<RowRecord> listRecords) {
+	public RecordResult(Long count, String next_rowKey, List<RowRecord> recordList) {
 		super();
 		this.count = count;
-		this.next_rowkey = next_rowkey;
-		this.listRecords = listRecords;
-	}
-	
-	public List<RowRecord> getListRecords() {
-		return listRecords;
+		this.next_rowKey = next_rowKey;
+		this.recordList = recordList;
 	}
 
-	public void setListRecords(List<RowRecord> listRecords) {
-		this.listRecords = listRecords;
+	public String getNext_rowKey() {
+		return next_rowKey;
 	}
-	
-	public void add(RowRecord r) {
-		listRecords.add(r);
+
+	public void setNext_rowKey(String next_rowKey) {
+		this.next_rowKey = next_rowKey;
+	}
+
+	public List<RowRecord> getRecordList() {
+		return recordList;
+	}
+
+	public void setRecordList(List<RowRecord> recordList) {
+		this.recordList = recordList;
+	}
+
+	public void add(RowRecord rowRecord) {
+		recordList.add(rowRecord);
 	}
 	
 	public int size() {
-		return listRecords.size();
+		return recordList.size();
 	}
 	
-	public RowRecord getRec(int index) {
-		return listRecords.get(index);
+	public RowRecord getRowRecord(int index) {
+		return recordList.get(index);
 	}
 
 	public void clear() {
-		listRecords.clear();
+		recordList.clear();
 	}
 
 	public Long getCount() {
@@ -70,19 +78,4 @@ public class RecordResult implements Serializable {
 		this.count = count;
 	}
 
-	public String getNext_rowkey() {
-		return next_rowkey;
-	}
-
-	public void setNext_rowkey(String next_rowkey) {
-		this.next_rowkey = next_rowkey;
-	}
-
-//	@Override
-//	public  String toString(){
-//		for(int i = 0;i < listRecords.size();i++){
-//			System.out.println("3_lists:" + listRecords.get(i));
-//		}
-//		return null;
-//	}
 }

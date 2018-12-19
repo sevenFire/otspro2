@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -129,6 +130,79 @@ public class RecordResource extends RestBase{
             e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
         }
+    }
+
+    @POST
+    @Path("/{tablename}/query")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getRecordsByPrimaryKey(@PathParam("tablename") String tableName) {
+        //todo lyh 对表名的校验
+
+        //get userInfo
+        PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
+        userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
+
+        //get body
+        JSONObject getBody;
+        try {
+            getBody = readJsonToMap();
+        } catch (OtsException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
+
+        }
+
+        //get record
+        try {
+            return Response.status(Response.Status.CREATED)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(RecordService.getRecordsByPrimaryKey(userInfo, tableName, getBody)).build();
+        }catch (OtsException e) {
+            e.printStackTrace();
+            return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
+        }
 
     }
+
+    @POST
+    @Path("/{tablename}/keys")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getRecordsByPrimaryKeys(@PathParam("tablename") String tableName){
+        //get userInfo
+        PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
+        userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
+
+        //get body
+        JSONObject getBody;
+        try {
+            getBody = readJsonToMap();
+        } catch (OtsException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
+
+        }
+
+        //get records
+        try {
+            return Response.status(Response.Status.CREATED)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(RecordService.getRecordsByPrimaryKeys(userInfo, tableName, getBody)).build();
+        }catch (OtsException e) {
+            e.printStackTrace();
+            return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
+        }
+
+
+    }
+
 }
