@@ -11,7 +11,7 @@ import java.util.List;
  *
  */
 public class RecordQueryOption {
-	protected List<byte[]> returnColumns;
+	protected List<String> returnColumns;
 	protected Long limit;
 	protected Long offset;
 	protected  Integer caching;
@@ -23,19 +23,19 @@ public class RecordQueryOption {
 	public RecordQueryOption(){
 	}
 
-	public RecordQueryOption(List<byte[]>  columns, Long limit, Long offset, Boolean descending) {
+	public RecordQueryOption(List<String>  columns, Long limit, Long offset, Boolean descending) {
 		this(columns, limit, offset, null, descending, null);
 	}
 
-	public RecordQueryOption(List<byte[]>  columns, String cursor_mark, Boolean descending) {
+	public RecordQueryOption(List<String>  columns, String cursor_mark, Boolean descending) {
 		this(columns, null, null, cursor_mark, descending, null);
 	}
 
-	public RecordQueryOption(List<byte[]>  columns, Long limit, String cursor_mark, Boolean descending) {
+	public RecordQueryOption(List<String>  columns, Long limit, String cursor_mark, Boolean descending) {
 		this(columns, limit, null, cursor_mark, descending, null);
 	}
 	
-	public RecordQueryOption(List<byte[]> returnColumns, Long limit, Long offset, String cursor_mark, Boolean descending,
+	public RecordQueryOption(List<String> returnColumns, Long limit, Long offset, String cursor_mark, Boolean descending,
                              Filter filter) {
 		this.returnColumns = returnColumns;
 		this.limit = limit;
@@ -105,11 +105,11 @@ public class RecordQueryOption {
 		return false;
 	}
 	
-	public List<byte[]>  getReturnColumns() {
+	public List<String>  getReturnColumns() {
 		return returnColumns;
 	}
 
-	public void setReturnColumns(List<byte[]>  returnColumns) {
+	public void setReturnColumns(List<String>  returnColumns) {
 		this.returnColumns = returnColumns;
 	}
 

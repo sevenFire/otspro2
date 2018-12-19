@@ -15,7 +15,6 @@ import com.baosight.xinsight.ots.rest.constant.ParamConstant;
 import com.baosight.xinsight.ots.rest.constant.ParamErrorCode;
 import com.baosight.xinsight.ots.rest.constant.RestErrorCode;
 import com.baosight.xinsight.ots.rest.model.record.request.RecordInfoListRequestBody;
-import com.baosight.xinsight.ots.rest.model.record.same.RecordInfoBody;
 import com.baosight.xinsight.ots.rest.model.table.vo.TableInfoVo;
 import com.baosight.xinsight.ots.rest.util.ColumnsUtil;
 import com.baosight.xinsight.ots.rest.util.ConfigUtil;
@@ -27,7 +26,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author liyuhui
@@ -94,22 +92,24 @@ public class RecordService {
                                                                    JSONObject getBody) throws OtsException {
 
         TableInfoVo info = TableConfigUtil.getTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableName);
-        if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
+        if (userInfo.getTenantId() != null && userInfo.getUserId() != null && info!=null) {
             PermissionUtil.GetInstance().otsPermissionHandler(userInfo, info.getTableId(), PermissionUtil.PermissionOpesration.READ);
         }
 
         //查询创建表时的表结构
         Table table = ConfigUtil.getInstance().getOtsAdmin().getTableInfo(userInfo.getTenantId(),tableName);
-        JSONArray primaryKey = JSONArray.parseArray(table.getPrimaryKey());
-        JSONArray tableColumns = JSONArray.parseArray(table.getTableColumns());
+        JSONArray schema_primaryKey = JSONArray.parseArray(table.getPrimaryKey());
+        JSONArray schema_tableColumns = JSONArray.parseArray(table.getTableColumns());
 
         //body中的参数存到query中
         JSONArray primaryKeyInput = (JSONArray) getBody.get(ParamConstant.KEY_PRIMARY_KEY);
-        RecordQueryOption query = generateRecoedQueryOptionByReuqestBody(getBody);
+        RecordQueryOption query = generateRecordQueryOptionByRequestBody(getBody);
 
         //拼接rowkey的前缀
-        JSONArray rowkeyPrefix = PrimaryKeyUtil.generateRowKeyPrefix(table.getTableId(), primaryKeyInput);
-
+        List<byte[]> rowKeyRange = PrimaryKeyUtil.generateRowKeyRange(table.getTableId(),
+                                                                      schema_primaryKey,
+                                                                      schema_tableColumns,
+                                                                      primaryKeyInput);
         //query
 //        RecordInfoListRequestBody recordInfoListRequestBody = new RecordInfoListRequestBody();
 //        List<RecordInfoBody> recordInfoBodyList = new ArrayList<>();
@@ -117,12 +117,12 @@ public class RecordService {
 //        recordInfoListRequestBody.setRecords(recordInfoBodyList);
 
         RecordResult records;
-        if (rowkeyPrefix.size() == 1){//只有startKey
+        if (rowKeyRange.size() == 1){//只有startKey
              records = ConfigUtil.getInstance().getOtsAdmin()
-                     .getRecords(table.getTenantId(), query, (byte[]) rowkeyPrefix.get(0),null);
+                     .getRecords(table.getTenantId(), query,  rowKeyRange.get(0),null);
         }else {//范围查询
             records = ConfigUtil.getInstance().getOtsAdmin()
-                    .getRecords(table.getTenantId(), query, (byte[]) rowkeyPrefix.get(0), (byte[]) rowkeyPrefix.get(1));
+                    .getRecords(table.getTenantId(), query,  rowKeyRange.get(0), rowKeyRange.get(1));
         }
 
 //        return recordInfoListRequestBody;
@@ -153,9 +153,9 @@ public class RecordService {
      * @param getBody
      * @return
      */
-    private static RecordQueryOption generateRecoedQueryOptionByReuqestBody(JSONObject getBody) {
+    private static RecordQueryOption generateRecordQueryOptionByRequestBody(JSONObject getBody) {
 
-        List<byte[]> returnColumns = (List<byte[]>) getBody.get(ParamConstant.KEY_RETURN_COLUMNS);
+        List<String> returnColumns = (List<String>) getBody.get(ParamConstant.KEY_RETURN_COLUMNS);
         Long limit = getBody.getLong(ParamConstant.KEY_LIMIT);
         String cursorMark = getBody.getString(ParamConstant.KEY_CURSOR_MARK);
         Boolean descending = ParamConstant.DEFAULT_DESCENING;
@@ -198,7 +198,7 @@ public class RecordService {
             JSONObject recordJSONObject = recordsJSONArray.getJSONObject(i);
 
             //set rowKey
-            byte[] rowKey = PrimaryKeyUtil.generateRowKey(table.getTableId(), schema_primaryKey, schema_tableColumns, recordJSONObject);
+            byte[] rowKey = PrimaryKeyUtil.generateRowKey(table.getTableId(), schema_primaryKey, schema_tableColumns, recordJSONObject,false);
             rowRecord.setRowkey(rowKey);
 
             //set cell

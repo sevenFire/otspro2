@@ -1,14 +1,12 @@
 package com.baosight.xinsight.ots.rest.util;
 
-import com.google.common.collect.Lists;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.ots.rest.constant.ParamConstant;
+import com.baosight.xinsight.ots.rest.constant.ParamErrorCode;
 import com.baosight.xinsight.utils.BytesUtil;
-
-import org.noggit.JSONUtil;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -17,7 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
 
 /**
  * @author liyuhui
@@ -48,7 +46,11 @@ public class PrimaryKeyUtil {
      * @param record
      * @return
      */
-    public static byte[] generateRowKey(long tableId, JSONArray schema_primaryKey, JSONArray schema_tableColumns, JSONObject record) {
+    public static byte[] generateRowKey(long tableId,
+                                        JSONArray schema_primaryKey,
+                                        JSONArray schema_tableColumns,
+                                        JSONObject record,
+                                        Boolean prefix) throws OtsException {
         
         Map<String,String> tableColumnsMap = dealWithTableColumns(schema_tableColumns);
 
@@ -57,7 +59,11 @@ public class PrimaryKeyUtil {
         int lenTotal = 0;
         for (int i=0; i<schema_primaryKey.size(); i++){
             if (!record.containsKey(schema_primaryKey.get(i))){
-                //报错
+                if (!prefix){//要计算全部primaryKey的
+                    throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
+                }else{//只需要计算到这里
+                    break;
+                }
             }
             //get col_name
             String primaryKey_colName = (String) schema_primaryKey.get(i);
@@ -80,6 +86,11 @@ public class PrimaryKeyUtil {
             lenTotal += valueByte.length + lenByte.length;
         }
 
+        if (prefix){//前缀查询的时候，要删除后面的Len
+            byte[] lastLen = primaryKeyValueAndLength.get(primaryKeyValueAndLength.size()-1);
+            primaryKeyValueAndLength.remove(lastLen);
+            lenTotal -= lastLen.length;
+        }
         return generateRowKey(tableId,lenTotal,primaryKeyValueAndLength);
     }
 
@@ -133,38 +144,63 @@ public class PrimaryKeyUtil {
     /**
      * 得到rowkey的取值范围
      * @param tableId
+     * @param schema_primaryKey
+     * @param schema_tableColumns
      * @param primaryKeyInput 实际输入的主键值
+     *
+     *
      */
-    public static JSONArray generateRowKeyPrefix(long tableId, JSONArray primaryKeyInput) {
-        JSONArray rowkeys = new JSONArray();
+    public static List<byte[]> generateRowKeyRange(long tableId,
+                                                JSONArray schema_primaryKey,
+                                                JSONArray schema_tableColumns,
+                                                JSONArray primaryKeyInput) throws OtsException {
+        if (primaryKeyInput==null || primaryKeyInput.size()==0){
+            throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
+        }
+        List<byte[]> rowKeys = new ArrayList<>();
 
-        JSONArray primaryKeyValue = new JSONArray();
-        Object colStart = null;
-        Object colEnd = null;
-
+        JSONObject recordStart = new JSONObject();
+        JSONObject recordEnd = new JSONObject();
 
         for (int i = primaryKeyInput.size()-1 ; i >= 0; i--) {
-           JSONObject colOne = (JSONObject) primaryKeyInput.get(i);
+            JSONObject colOne = (JSONObject) primaryKeyInput.get(i);
 
             //先获取最后一位，只有这一位有两种可能
-           if (i==primaryKeyInput.size()-1){
-               if(colOne.containsKey(ParamConstant.KEY_COL_VALUE)){
-                   Object colValue = colOne.get(ParamConstant.KEY_COL_VALUE);
-                   primaryKeyValue.add(colValue);
-               }else if (colOne.containsKey(ParamConstant.KEY_COL_START) && colOne.containsKey(ParamConstant.KEY_COL_END)){
-                   colStart = colOne.get(ParamConstant.KEY_COL_START);
-                   colEnd = colOne.get(ParamConstant.KEY_COL_END);
+            if (i == primaryKeyInput.size() - 1) {
+                if (colOne.containsKey(ParamConstant.KEY_COL_VALUE)) {
+                    Object colValue = colOne.get(ParamConstant.KEY_COL_VALUE);
+                    String colName = colOne.getString(ParamConstant.KEY_COL_NAME);
 
-               }
-           }else{
-               Object colValue = colOne.get(ParamConstant.KEY_COL_VALUE);
-               primaryKeyValue.add(colValue);
-           }
+                    recordStart.put(colName, colValue);
+
+                } else if (colOne.containsKey(ParamConstant.KEY_COL_START)
+                        && colOne.containsKey(ParamConstant.KEY_COL_END)) {
+                    Object colStart = colOne.get(ParamConstant.KEY_COL_START);
+                    Object colEnd = colOne.get(ParamConstant.KEY_COL_END);
+                    String colName = colOne.getString(ParamConstant.KEY_COL_NAME);
+
+                    recordStart.put(colName, colStart);
+                    recordEnd.put(colName, colEnd);
+
+                } else {
+                    throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
+                }
+            } else {
+                if (!colOne.containsKey(ParamConstant.KEY_COL_VALUE)) {
+                    throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
+                }
+                Object colValue = colOne.get(ParamConstant.KEY_COL_VALUE);
+                String colName = colOne.getString(ParamConstant.KEY_COL_NAME);
+                recordStart.put(colName, colValue);
+                recordEnd.put(colName, colValue);
+            }
         }
 
-//        rowkeys.set(generateRowKeyPrefix(tableId, primaryKeyValue, colStart));
-//        rowkeys.set(generateRowKeyPrefix(tableId, primaryKeyValue, colEnd));
-        return rowkeys;
+        rowKeys.add(generateRowKey(tableId, schema_primaryKey, schema_tableColumns, recordStart, true));
+        if (recordEnd.size() == recordStart.size()) {
+            rowKeys.add(generateRowKey(tableId, schema_primaryKey, schema_tableColumns, recordEnd, true));
+        }
+        return rowKeys;
     }
 
 
@@ -235,46 +271,46 @@ public class PrimaryKeyUtil {
 
 
 
-    public static void main(String[] args) {
-//        long tableId = 1;
-//        JSONArray schema_primaryKey = new JSONArray();
-//        schema_primaryKey.add("col1");
-//        schema_primaryKey.add("col2");
-//        schema_primaryKey.add("col3");
-//
-//        JSONArray schema_tableColumns = new JSONArray();
-//        JSONObject one = new JSONObject();
-//        one.put("col_name","col1");
-//        one.put("col_type","string");
-//        schema_tableColumns.add(one);
-//        JSONObject two = new JSONObject();
-//        two.put("col_name","col2");
-//        two.put("col_type","string");
-//        schema_tableColumns.add(two);
-//        JSONObject three = new JSONObject();
-//        three.put("col_name","col3");
-//        three.put("col_type","string");
-//        schema_tableColumns.add(three);
-//
-//        JSONObject record = new JSONObject();
-//        record.put("col1","value1");
-//        record.put("col2","value2");
-//        record.put("col3","value3");
-//        record.put("col4","value4");
-//        record.put("col5","value5");
-//
-//        byte[] rowKey = generateRowKey(tableId, schema_primaryKey, schema_tableColumns, record);
-//        for (int i = 0; i < rowKey.length; i++) {
-//            System.out.println(rowKey[i]);
-//        }
+    public static void main(String[] args) throws OtsException {
+        long tableId = 1;
+        JSONArray schema_primaryKey = new JSONArray();
+        schema_primaryKey.add("col1");
+        schema_primaryKey.add("col2");
+        schema_primaryKey.add("col3");
 
-        int a = 0;
-        long b = 0l;
-        float c = 0;
+        JSONArray schema_tableColumns = new JSONArray();
+        JSONObject one = new JSONObject();
+        one.put("col_name","col1");
+        one.put("col_type","string");
+        schema_tableColumns.add(one);
+        JSONObject two = new JSONObject();
+        two.put("col_name","col2");
+        two.put("col_type","string");
+        schema_tableColumns.add(two);
+        JSONObject three = new JSONObject();
+        three.put("col_name","col3");
+        three.put("col_type","string");
+        schema_tableColumns.add(three);
 
-        System.out.println(BytesUtil.toBytes(a).length);
-        System.out.println(BytesUtil.toBytes(b).length);
-        System.out.println(BytesUtil.toBytes(c).length);
+        JSONObject record = new JSONObject();
+        record.put("col1","value0");
+        record.put("col2","value0");
+        record.put("col3","value5");
+        record.put("col4","value0");
+        record.put("col5","value0");
+
+        byte[] rowKey = generateRowKey(tableId, schema_primaryKey, schema_tableColumns, record,false);
+        for (int i = 0; i < rowKey.length; i++) {
+            System.out.println(rowKey[i]);
+        }
+
+//        int a = 0;
+//        long b = 0l;
+//        float c = 0;
+//
+//        System.out.println(BytesUtil.toBytes(a).length);
+//        System.out.println(BytesUtil.toBytes(b).length);
+//        System.out.println(BytesUtil.toBytes(c).length);
 
     }
 

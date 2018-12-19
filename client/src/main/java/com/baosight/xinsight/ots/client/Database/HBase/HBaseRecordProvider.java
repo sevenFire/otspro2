@@ -5,6 +5,7 @@ import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.client.exception.TableException;
 import com.baosight.xinsight.ots.client.util.HBaseConnectionUtil;
 import com.baosight.xinsight.ots.exception.OtsException;
+import com.mchange.lang.ByteUtils;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
@@ -127,7 +128,7 @@ public class HBaseRecordProvider {
 
 
         byte[] realStartKey = startKey;
-        if (query.getCursor_mark().equals(OtsConstants.DEFAULT_QUERY_CURSOR_START)) {
+        if (!query.getCursor_mark().equals(OtsConstants.DEFAULT_QUERY_CURSOR_START)) {
             realStartKey = Hex.decodeHex(query.getCursor_mark().toCharArray());
             scan.setStartRow(realStartKey==null? HConstants.EMPTY_START_ROW:realStartKey);//important
         }
@@ -146,10 +147,13 @@ public class HBaseRecordProvider {
         }
 
         if (query.hasReturnColumns()) {
-            List<byte[]> returnColumns = query.getReturnColumns();
+            List<String> returnColumns = query.getReturnColumns();
             boolean onlyRowKey = query.onlyGetRowKey();
             if (!onlyRowKey) {
-                for (byte[] col : returnColumns) {
+                for (int i = 0; i < returnColumns.size(); i++) {
+                    System.out.println(returnColumns.get(i).getClass());
+
+                    byte[] col = returnColumns.get(i).getBytes();
                     scan.addColumn(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME), col);
                 }
                 scan.setBatch(returnColumns.size());
