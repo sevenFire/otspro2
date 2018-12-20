@@ -9,7 +9,7 @@ import com.baosight.xinsight.ots.cfgsvr.util.ThreadUtil;
 //import com.baosight.xinsight.ots.rest.message.handler.ConfigMessageHandlerImpl;
 import com.baosight.xinsight.ots.rest.message.handler.PermissionClearHandlerImpl;
 import com.baosight.xinsight.ots.rest.message.handler.PermissionUpdateHandlerImpl;
-import com.baosight.xinsight.ots.rest.message.handler.PermitionMessageHandlerImpl;
+import com.baosight.xinsight.ots.rest.message.handler.PermissionMessageHandlerImpl;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 import com.baosight.xinsight.utils.ImmolateUtil;
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -60,7 +60,7 @@ public class SystemListener implements ServletContextListener {
 			consumerThread = MessageHandlerFactory.getMessageConsumerThread(CommonConstants.OTS_CONFIG_TOPIC, ConfigUtil.getSystemIdentifier());
 			consumerThread.start();
 			
-			consumerThread.registerMsgHandler(CommonConstants.OTS_PERMISSION_MESSAGE_ID, new PermitionMessageHandlerImpl());
+			consumerThread.registerMsgHandler(CommonConstants.OTS_PERMISSION_MESSAGE_ID, new PermissionMessageHandlerImpl());
 			consumerThread.registerMsgHandler(CommonConstants.OTS_PERMISSION_REMOVE_MESSAGE_ID, new PermissionClearHandlerImpl());
 			consumerThread.registerMsgHandler(CommonConstants.OTS_PERMISSION_UPDATE_MESSAGE_ID, new PermissionUpdateHandlerImpl());
 //			consumerThread.registerMsgHandler(CommonConstants.OTS_CONFIG_MESSAGE_ID, new ConfigMessageHandlerImpl());

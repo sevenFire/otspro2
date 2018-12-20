@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"  pageEncoding="UTF-8"%> 
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8"  pageEncoding="UTF-8"%> 
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -7,10 +7,12 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">       
 	<title>首页--xInsight big-data</title>		
 	<link rel="shortcut icon" href="jsp/images/icon.ico"/>
-	<script>	    
-	    window.onload = function() {	    	
-	         	window.onload = new function(){ window.location = 'dashboard/index.jsp' }
-	    } 
+	<script>
+	    
+	    window.onload = function() {
+	        	window.onload = new function(){ window.location = 'table.jsp'; }
+	    }    
+
 	</script>
 </head>
 <body>
