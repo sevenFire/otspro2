@@ -105,7 +105,7 @@ public class RecordService {
         JSONArray primaryKeyInput = (JSONArray) getBody.get(ParamConstant.KEY_PRIMARY_KEY);
         RecordQueryOption query = generateRecordQueryOptionByRequestBody(getBody);
 
-        //拼接rowkey的前缀
+        //拼接rowKey的前缀
         List<byte[]> rowKeyRange = PrimaryKeyUtil.generateRowKeyRange(table.getTableId(),
                                                                       schema_primaryKey,
                                                                       schema_tableColumns,
