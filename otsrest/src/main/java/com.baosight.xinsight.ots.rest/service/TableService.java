@@ -4,6 +4,7 @@ import com.baosight.xinsight.common.CommonConstants;
 import com.baosight.xinsight.kafka.MessageHandlerFactory;
 import com.baosight.xinsight.model.PermissionCheckUserInfo;
 import com.baosight.xinsight.ots.OtsErrorCode;
+import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.exception.TableException;
 import com.baosight.xinsight.ots.client.metacfg.Table;
@@ -12,6 +13,7 @@ import com.baosight.xinsight.ots.rest.constant.RestConstants;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableCreateBody;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableUpdateBody;
 import com.baosight.xinsight.ots.rest.model.table.response.TableInfoBody;
+import com.baosight.xinsight.ots.rest.model.table.response.TableInfoListBody;
 import com.baosight.xinsight.ots.rest.model.table.response.TableNameListBody;
 import com.baosight.xinsight.ots.rest.model.table.vo.TableInfoVo;
 import com.baosight.xinsight.ots.rest.permission.CachePermission;
@@ -204,6 +206,46 @@ public class TableService {
         }
 
         return tableInfoBody;
+    }
+
+    /**
+     * 获取所有表的详细信息
+     * @param userInfo
+     * @return
+     */
+    public static Object getAllTablesInfo(PermissionCheckUserInfo userInfo) throws IOException, ConfigException {
+        TableInfoListBody tableInfoListBody = new TableInfoListBody();
+
+        try {
+
+            List<Long> noGetPermissionList = null;
+            if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
+                // 过滤出id list
+                List<Long> permittedIds = ConfigUtil.getInstance().getOtsAdmin().getPermissionTableIds(userInfo.getTenantId());
+                // 再调用AasPermissionUtil接口获取ConfigUtil.getInstance().getAuthServerAddr()，noGetPermissionList
+                try {
+                    noGetPermissionList = AasPermissionUtil.obtainNoGetPermissionInstanceList(ConfigUtil.getInstance().getAuthServerAddr(), userInfo, permittedIds);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    LOG.error(ExceptionUtils.getFullStackTrace(e));
+                }
+            }
+            List<OtsTable> otsTableList = ConfigUtil.getInstance().getOtsAdmin().getAllOtsTables(userInfo.getUserId(), userInfo.getTenantId(), noGetPermissionList);
+            for (OtsTable otsTable : otsTableList) {
+                TableInfoBody tableInfoBody = new TableInfoBody();
+                tableInfoBody.fromTable(otsTable);
+                otsTableList.add(otsTable);
+                //update cache
+                TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableInfoBody);
+            }
+        }catch (ConfigException e) {
+            throw e;
+        }
+        tableInfoListBody.setErrcode(0L);
+        tableInfoListBody.setCount(tableInfoListBody.getTableInfoList().size());
+
+        LOG.debug("RETURN:" + tableInfoListBody.toString());
+        return tableInfoListBody;
     }
 
 

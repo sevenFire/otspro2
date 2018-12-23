@@ -1,6 +1,8 @@
 package com.baosight.xinsight.ots.rest.model.table.response;
 
 import com.alibaba.fastjson.JSON;
+import com.baosight.xinsight.ots.client.OtsTable;
+import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.metacfg.Table;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableColumnsBody;
 import com.baosight.xinsight.utils.JsonUtil;
@@ -8,6 +10,7 @@ import com.baosight.xinsight.utils.JsonUtil;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -55,6 +58,8 @@ public class TableInfoBody implements Serializable {
 
     public TableInfoBody() {
     }
+
+
 
     public TableInfoBody(String tableName,
                          String tableDesc,
@@ -139,6 +144,7 @@ public class TableInfoBody implements Serializable {
     }
 
     /**
+     *  将要废弃
      * 将实体中的参数存入其中
      * @param table
      */
@@ -162,5 +168,28 @@ public class TableInfoBody implements Serializable {
     @Override
     public String toString() {
         return JsonUtil.toJsonString(this);
+    }
+
+    public void fromTable(OtsTable otsTable) {
+        Table table = null;
+        try {
+            table = otsTable.getInfo();
+        } catch (ConfigException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        this.tableName = table.getTableName();
+        this.tableDesc = table.getTableDesc();
+
+        //需要特殊处理的参数
+        this.tableColumns = JSON.parseArray(table.getTableColumns(),TableColumnsBody.class);
+        this.primaryKey = JSON.parseArray(table.getPrimaryKey(),String.class);
+
+        SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // 时间格式化的格式
+        this.createTime = sDateFormat.format(table.getCreateTime());
+        this.modifyTime = sDateFormat.format(table.getModifyTime());
+        this.creator = table.getCreator();
+        this.modifier = table.getModifier();
     }
 }

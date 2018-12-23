@@ -3,6 +3,7 @@ package com.baosight.xinsight.ots.rest.util;
 import com.baosight.xinsight.common.CommonConstants;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.metacfg.Table;
+import com.baosight.xinsight.ots.rest.model.table.response.TableInfoBody;
 import com.baosight.xinsight.ots.rest.model.table.vo.TableInfoVo;
 
 import java.util.HashMap;
@@ -19,12 +20,33 @@ public class TableConfigUtil {
 
     /**
      * 添加tableInfo
+     * 将被废弃
      * @param userId
      * @param tenantId
      * @param info
      * @throws ConfigException
      */
     public static void addTableConfig(long userId, long tenantId, TableInfoVo info) throws ConfigException {
+        String key = generateConfigKey(userId,tenantId);
+
+        if (tbConfig.containsKey(key)) {
+            tbConfig.get(key).put(info.getTableName(), info);
+            return;
+        }
+
+        Map<String, TableInfoVo> tbConfigMap = new HashMap<>();
+        tbConfigMap.put(info.getTableName(), info);
+        tbConfig.put(key, tbConfigMap);
+    }
+
+    /**
+     * 添加tableInfo
+     * @param userId
+     * @param tenantId
+     * @param info
+     * @throws ConfigException
+     */
+    public static void addTableConfig(long userId, long tenantId, TableInfoBody info) throws ConfigException {
         String key = generateConfigKey(userId,tenantId);
 
         if (tbConfig.containsKey(key)) {

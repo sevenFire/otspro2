@@ -261,6 +261,41 @@ public class Configurator {
         return table;
     }
 
+    /**
+     * 获取所有表，包含权限筛选
+     * @param tenantId
+     * @param noGetPermissionList
+     * @return
+     */
+    public List<Table> queryAllOtsTables(Long tenantId, List<Long> noGetPermissionList) throws ConfigException {
+        List<Table> tableList = new ArrayList<>();
+
+        try {
+            connect();
+            Statement st = conn.createStatement();
+            String sql;
+            if (noGetPermissionList != null && !noGetPermissionList.isEmpty()) {
+                String list2String = StringUtils.join(noGetPermissionList.toArray(), ",");
+                StringBuilder noGetPermissionObj = new StringBuilder().append("(").append(list2String).append(")");
+                sql = String.format("select * from ots_user_table where ots_user_table.tenant_id = '%d' and ots_user_table.table_id not in %s order by ots_user_table.table_id;", tenantId, noGetPermissionObj);
+            } else {
+                sql = String.format("select * from ots_user_table where ots_user_table.tenant_id = '%d' order by ots_user_table.table_id;", tenantId);
+            }
+
+            LOG.debug(sql);
+            ResultSet rs = st.executeQuery(sql);
+            while (rs.next())	{
+                Table table = resultSetToTable(rs);
+                tableList.add(table);
+            }
+            st.close();
+        } catch (SQLException e) {
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query all table!\n" + e.getMessage());
+        }
+
+        return tableList;
+    }
+
 
     /**
      * 判定表是否存在
@@ -350,6 +385,51 @@ public class Configurator {
             throw new PermissionSqlException(OtsErrorCode.EC_OTS_QUERY_PERMISSION_SQL_LABEL, (new StringBuilder()).append("Failed to query the specified value of permission label fields ").toString());
         }
         return permitted;
+    }
+
+    /**
+     * 查询有权限的表
+     * @param tenantId
+     * @return
+     */
+    public List<Table> queryPermissionTables(Long tenantId) throws ConfigException {
+        List<Table> tableList = new ArrayList<>();
+        try {
+            connect();
+            Statement st = conn.createStatement();
+            String sqlByPermittedList = String.format("select * from ots_user_table where permission=true and ots_user_table.tenant_id = '%d'", tenantId);
+            ResultSet rs = st.executeQuery(sqlByPermittedList);
+            while (rs.next())	{
+                Table table = resultSetToTable(rs);
+                tableList.add(table);
+            }
+            st.close();
+        } catch (SQLException e) {
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query all table!\n" + e.getMessage());
+        }
+        return tableList;
+    }
+
+    /**
+     * 查询有权限的表的Id
+     * @param tenantId
+     * @return
+     */
+    public List<Long> queryPermissionTableIds(Long tenantId) throws ConfigException {
+        List<Long> idList = new ArrayList<>();
+        try {
+            connect();
+            Statement st = conn.createStatement();
+            String sqlByPermittedList = String.format("select table_id from ots_user_table where permission=true and ots_user_table.tenant_id = '%d'", tenantId);
+            ResultSet rs = st.executeQuery(sqlByPermittedList);
+            while (rs.next())	{
+                idList.add(rs.getLong(TableConstants.TABLE_ID));
+            }
+            st.close();
+        } catch (SQLException e) {
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query all table!\n" + e.getMessage());
+        }
+        return idList;
     }
 
 

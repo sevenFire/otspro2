@@ -30,6 +30,7 @@ import org.apache.hadoop.hbase.client.Admin;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -256,6 +257,32 @@ public class OtsAdmin {
         }finally {
             configurator.release();
         }
+    }
+
+    /**
+     * 获取所有的表，包含权限筛选。
+     * @param userId
+     * @param tenantId
+     * @param noGetPermissionList
+     * @return
+     */
+    public List<OtsTable> getAllOtsTables(Long userId, Long tenantId, List<Long> noGetPermissionList) throws ConfigException {
+        List<OtsTable> lstTable = new ArrayList<>();
+
+        Configurator configurator = new Configurator();
+        try {
+            List<Table> lstTables = configurator.queryAllOtsTables(userId, tenantId, noGetPermissionList);
+            for (Table table: lstTables) {
+                lstTable.add(new OtsTable(table, tenantId, this.conf));
+            }
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            configurator.release();
+        }
+
+        return lstTable;
     }
 
     /**
@@ -653,29 +680,50 @@ public class OtsAdmin {
     }
 
 
-//    /**
-//     * 获取表，过滤掉无权限的
-//     * @param userId
-//     * @param tenantId
-//     * @return
-//     */
-//    public List<Table> getPermissionTables(Long userId, Long tenantId) throws ConfigException {
-//        Configurator configurator = new Configurator();
-//        try {
-//            List<Table> tableList = configurator.queryPermisstionTables(userId, tenantId);
-//            for (Table table: tableList) {
-//                tableList.add(new OtsTable(table, tenantId, this.conf));
-//            }
-//        } catch (ConfigException e) {
-//            e.printStackTrace();
-//            throw e;
-//        } finally {
-//            configurator.release();
-//        }
-//
-//        return lstTable;
-//
-//    }
+    /**
+     * 获取表，过滤掉无权限的。
+     * @param tenantId
+     * @return
+     */
+    public List<OtsTable> getPermissionTables(Long tenantId) throws ConfigException {
+        List<OtsTable> otsTableList = new ArrayList<>();
+
+        Configurator configurator = new Configurator();
+        try {
+            List<Table> tableList = configurator.queryPermissionTables(tenantId);
+            for (Table table: tableList) {
+                otsTableList.add(new OtsTable(table, tenantId, this.conf));
+            }
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            configurator.release();
+        }
+
+        return otsTableList;
+    }
+
+    /**
+     * 获取表的Id，过滤掉无权限的。
+     * @param tenantId
+     * @return
+     */
+    public List<Long> getPermissionTableIds(Long tenantId) throws ConfigException {
+        List<Long> IdList = new ArrayList<>();
+
+        Configurator configurator = new Configurator();
+        try {
+            IdList = configurator.queryPermissionTableIds(tenantId);
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            configurator.release();
+        }
+
+        return IdList;
+    }
 
     //========================records=================================
 
@@ -726,6 +774,7 @@ public class OtsAdmin {
     private String generateHBaseTableName(Long tenantId) {
         return (TableConstants.HBASE_TABLE_PREFIX + String.valueOf(tenantId));
     }
+
 
 
     //============================================index===========================================
