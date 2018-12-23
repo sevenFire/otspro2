@@ -7,6 +7,7 @@ import com.baosight.xinsight.ots.client.Database.HBase.RecordQueryOption;
 import com.baosight.xinsight.ots.client.Database.HBase.RecordResult;
 import com.baosight.xinsight.ots.client.Database.HBase.RowCell;
 import com.baosight.xinsight.ots.client.Database.HBase.RowRecord;
+import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.client.metacfg.Table;
 import com.baosight.xinsight.ots.constants.TableConstants;
 import com.baosight.xinsight.ots.exception.OtsException;
@@ -15,7 +16,7 @@ import com.baosight.xinsight.ots.rest.constant.ParamConstant;
 import com.baosight.xinsight.ots.rest.constant.ParamErrorCode;
 import com.baosight.xinsight.ots.rest.constant.RestErrorCode;
 import com.baosight.xinsight.ots.rest.model.record.request.RecordInfoListRequestBody;
-import com.baosight.xinsight.ots.rest.model.table.vo.TableInfoVo;
+import com.baosight.xinsight.ots.rest.model.table.response.TableInfoBody;
 import com.baosight.xinsight.ots.rest.util.ColumnsUtil;
 import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
@@ -44,11 +45,11 @@ public class RecordService {
      */
     public static ErrorMode insertRecords(PermissionCheckUserInfo userInfo,
                                           String tableName,
-                                          JSONObject postBody) throws OtsException{
+                                          JSONObject postBody) throws OtsException, IOException {
         ErrorMode rMode = new ErrorMode(0L);
 
         //read from cache
-        TableInfoVo info = TableConfigUtil.getTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableName);
+        TableInfoBody info = TableConfigUtil.getTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableName);
         if (userInfo.getTenantId() != null && userInfo.getUserId() != null && info != null) {
             PermissionUtil.GetInstance().otsPermissionHandler(userInfo, info.getTableId(), PermissionUtil.PermissionOpesration.EDIT);
         }
@@ -76,7 +77,7 @@ public class RecordService {
      */
     public static ErrorMode updateRecords(PermissionCheckUserInfo userInfo,
                                           String tableName,
-                                          JSONObject putBody) throws OtsException {
+                                          JSONObject putBody) throws OtsException, IOException {
         return insertRecords(userInfo,tableName,putBody);
     }
 
@@ -89,15 +90,16 @@ public class RecordService {
      */
     public static RecordInfoListRequestBody getRecordsByPrimaryKey(PermissionCheckUserInfo userInfo,
                                                                    String tableName,
-                                                                   JSONObject getBody) throws OtsException {
+                                                                   JSONObject getBody) throws OtsException, IOException {
 
-        TableInfoVo info = TableConfigUtil.getTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableName);
+        TableInfoBody info = TableConfigUtil.getTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableName);
         if (userInfo.getTenantId() != null && userInfo.getUserId() != null && info!=null) {
             PermissionUtil.GetInstance().otsPermissionHandler(userInfo, info.getTableId(), PermissionUtil.PermissionOpesration.READ);
         }
 
         //查询创建表时的表结构
-        Table table = ConfigUtil.getInstance().getOtsAdmin().getTableInfo(userInfo.getTenantId(),tableName);
+        OtsTable otsTable = ConfigUtil.getInstance().getOtsAdmin().getTableInfo(userInfo.getTenantId(),tableName);
+        Table table = otsTable.getInfo();
         JSONArray schema_primaryKey = JSONArray.parseArray(table.getPrimaryKey());
         JSONArray schema_tableColumns = JSONArray.parseArray(table.getTableColumns());
 
@@ -179,14 +181,15 @@ public class RecordService {
      */
     private static List<RowRecord> generateRowRecords(long tenantId,
                                                       String tableName,
-                                                      JSONObject body) throws OtsException {
+                                                      JSONObject body) throws OtsException, IOException {
         JSONArray recordsJSONArray = body.getJSONArray(ParamConstant.KEY_RECORDS);
         if(recordsJSONArray == null){//必填项
             throw new OtsException(ParamErrorCode.PARAM_RECORDS_IS_NULL);
         }
 
         //查询创建表时的表结构
-        Table table = ConfigUtil.getInstance().getOtsAdmin().getTableInfo(tenantId,tableName);
+        OtsTable otsTable = ConfigUtil.getInstance().getOtsAdmin().getTableInfo(tenantId,tableName);
+        Table table = otsTable.getInfo();
         JSONArray schema_primaryKey = JSONArray.parseArray(table.getPrimaryKey());
         JSONArray schema_tableColumns = JSONArray.parseArray(table.getTableColumns());
 

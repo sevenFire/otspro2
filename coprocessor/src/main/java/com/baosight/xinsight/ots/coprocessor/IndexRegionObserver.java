@@ -187,7 +187,7 @@ public class IndexRegionObserver extends BaseRegionObserver implements RegionObs
 		try {
 			List<SecondaryIndexInfo> indexes = SecondaryIndexUtil.parseIndexes(htd.getValue(OtsConstants.OTS_INDEXES));
 			for (SecondaryIndexInfo index : indexes) {
-				String indexTableName = SecondaryIndexUtil.getIndexTableName(htd.getTableName().getNameAsString(), index.getName());
+				String indexTableName = SecondaryIndexUtil.getIndexTableName(htd.getTableName().getNameAsString(), index.getIndexName());
 				
 				Table table = null;
 				try{

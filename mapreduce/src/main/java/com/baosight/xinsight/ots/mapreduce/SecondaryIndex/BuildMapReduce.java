@@ -150,7 +150,7 @@ public class BuildMapReduce implements OtsMapreduce{
 			}
 	    	List<SecondaryIndexInfo> indexes = SecondaryIndexUtil.parseIndexes(strIndexes);
 	    	for(SecondaryIndexInfo index:indexes) {
-	    		if(index.getName().equals(indexName)) {
+	    		if(index.getIndexName().equals(indexName)) {
 	    			return index;
 	    		}
 	    	}

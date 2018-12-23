@@ -1,13 +1,19 @@
 package com.baosight.xinsight.ots.client.metacfg;
 
+import com.baosight.xinsight.ots.OtsConfiguration;
 import com.baosight.xinsight.ots.OtsErrorCode;
+import com.baosight.xinsight.ots.client.Ots;
+import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.exception.PermissionSqlException;
 import com.baosight.xinsight.ots.constants.TableConstants;
+import com.baosight.xinsight.ots.exception.OtsException;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
+import org.apache.lucene.util.CollectionUtil;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -240,13 +246,35 @@ public class Configurator {
      * @throws ConfigException
      */
     public Table queryTable(long tenantId, String tableName) throws ConfigException{
+        return queryTableWithPermission(tenantId,tableName,null);
+    }
+
+    /**
+     * 查询并返回表的详细信息，带权限校验
+     * @param tenantId
+     * @param tableName
+     * @param noGetPermissionList
+     * @return
+     */
+    public Table queryTableWithPermission(Long tenantId,
+                                          String tableName,
+                                          List<Long> noGetPermissionList) throws ConfigException {
+
         Table table = null;
 
         try {
             connect();
-
             Statement st = conn.createStatement();
-            String sql = String.format("select * from ots_user_table where ots_user_table.table_name = '%s' and ots_user_table.tenant_id = '%d';", tableName, tenantId);
+
+            String sql;
+            if (noGetPermissionList == null) {
+                sql = String.format("select * from ots_user_table where ots_user_table.table_name = '%s' and ots_user_table.tenant_id = '%d';", tableName, tenantId);
+            }else {
+                String list2String = StringUtils.join(noGetPermissionList.toArray(), ",");
+                StringBuilder noGetPermissionObj = new StringBuilder().append("(").append(list2String).append(")");
+                sql = String.format("select * from ots_user_table where ots_user_table.tenant_id = '%d' and ots_user_table.table_id not in %s order by ots_user_table.table_id;",
+                        tenantId, noGetPermissionObj);
+            }
             LOG.debug(sql);
 
             ResultSet rs = st.executeQuery(sql);
@@ -267,7 +295,7 @@ public class Configurator {
      * @param noGetPermissionList
      * @return
      */
-    public List<Table> queryAllOtsTables(Long tenantId, List<Long> noGetPermissionList) throws ConfigException {
+    public List<Table> queryAllTablesWithPermission(Long tenantId, List<Long> noGetPermissionList) throws ConfigException {
         List<Table> tableList = new ArrayList<>();
 
         try {
@@ -277,7 +305,8 @@ public class Configurator {
             if (noGetPermissionList != null && !noGetPermissionList.isEmpty()) {
                 String list2String = StringUtils.join(noGetPermissionList.toArray(), ",");
                 StringBuilder noGetPermissionObj = new StringBuilder().append("(").append(list2String).append(")");
-                sql = String.format("select * from ots_user_table where ots_user_table.tenant_id = '%d' and ots_user_table.table_id not in %s order by ots_user_table.table_id;", tenantId, noGetPermissionObj);
+                sql = String.format("select * from ots_user_table where ots_user_table.tenant_id = '%d' and ots_user_table.table_id not in %s order by ots_user_table.table_id;",
+                        tenantId, noGetPermissionObj);
             } else {
                 sql = String.format("select * from ots_user_table where ots_user_table.tenant_id = '%d' order by ots_user_table.table_id;", tenantId);
             }
@@ -295,6 +324,73 @@ public class Configurator {
 
         return tableList;
     }
+
+
+    /**
+     * 查询某租户下的所有表， 带权限筛选
+     * @param tenantId
+     * @param tableName
+     * @param limit
+     * @param offset
+     * @param fuzzy 是否模糊查询
+     * @return 返回表的列表
+     */
+    public List<Table> queryAllTablesWithPermission(Long tenantId,
+                                                          String tableName,
+                                                          Long limit,
+                                                          Long offset,
+                                                          Boolean fuzzy,
+                                                          List<Long> noGetPermissionList) throws ConfigException {
+        List<Table> tableList = new ArrayList<>();
+
+        try {
+            connect();
+
+            Statement st = conn.createStatement();
+            String sql;
+            StringBuilder sqlSB = new StringBuilder(" select * from ots_user_table where tenant_id = '%d' ");
+
+            if (CollectionUtils.isEmpty(noGetPermissionList)) {
+                throw new ConfigException(OtsErrorCode.EC_OTS_TABLE_INVALID_PARAM,
+                        "Failed to query table because the param noGetPermissionList is null!\n" );
+            }
+
+            String list2String = StringUtils.join(noGetPermissionList.toArray(), ",");
+            StringBuilder noGetPermissionObj = new StringBuilder().append("(").append(list2String).append(")");
+            sqlSB.append(" and ots_user_table.table_id not in %s ");
+
+            if (!StringUtils.isBlank(tableName)) {//带条件查询
+                sqlSB.append(" and table_name ");
+                if (fuzzy){
+                    sqlSB.append(" ~ '%s' ");
+                }else {
+                    sqlSB.append(" = '%s' ");
+                }
+                sqlSB.append(" limit '%d' offset '%d' " );
+                sql = String.format(sqlSB.toString(),tenantId,tableName,limit,offset);
+            }else if(limit != null && offset != null){
+                sqlSB.append(" limit '%d' offset '%d' " );
+                sql = String.format(sqlSB.toString(), tenantId, noGetPermissionObj, limit, offset);
+            }else{
+                sql = String.format(sqlSB.toString(), tenantId, noGetPermissionObj);
+            }
+
+            LOG.debug(sql);
+
+            ResultSet rs = st.executeQuery(sql);
+            while (rs.next()){
+                Table table = resultSetToTable(rs);
+                tableList.add(table);
+            }
+            st.close();
+        } catch (SQLException e) {
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query table !\n" + e.getMessage());
+        }
+
+        return tableList;
+
+    }
+
 
 
     /**
@@ -330,6 +426,7 @@ public class Configurator {
     }
 
     /**
+     * 即将废弃
      * 将查询的结果存入table对象中
      * @param rs
      * @return
@@ -356,6 +453,7 @@ public class Configurator {
 
         return table;
     }
+
 
 
     /**
@@ -411,6 +509,29 @@ public class Configurator {
     }
 
     /**
+     * 查询有权限的表
+     * @param tenantId
+     * @return
+     */
+    public Table queryPermissionTable(Long tenantId,String tableName) throws ConfigException {
+        Table table = new Table();
+        try {
+            connect();
+            Statement st = conn.createStatement();
+            String sqlByPermittedList = String.format("select * from ots_user_table where permission=true and ots_user_table.tenant_id = '%d' and table_name = '%s'",
+                    tenantId,tableName);
+            ResultSet rs = st.executeQuery(sqlByPermittedList);
+            while (rs.next())	{
+                table = resultSetToTable(rs);
+            }
+            st.close();
+        } catch (SQLException e) {
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query all table!\n" + e.getMessage());
+        }
+        return table;
+    }
+
+    /**
      * 查询有权限的表的Id
      * @param tenantId
      * @return
@@ -456,62 +577,62 @@ public class Configurator {
         }
     }
 
-    /**
-     * 查询某租户下的所有表
-     * @param tenantId
-     * @param tableName
-     * @param limit
-     * @param offset
-     * @param fuzzy 是否模糊查询
-     * @return 返回表名的列表
-     */
-    public List<String> queryTableNameList(Long tenantId, String tableName, Long limit, Long offset, Boolean fuzzy) throws ConfigException {
-        List<String> tableNameList = new ArrayList<>();
-
-        try {
-            connect();
-
-            Statement st = conn.createStatement();
-            String sql;
-            StringBuilder sqlSB = new StringBuilder(" select table_name from ots_user_table where tenant_id = '%d'");
-
-            if (!StringUtils.isBlank(tableName)) {//带条件查询
-                sqlSB.append(" and table_name ");
-                if (fuzzy){
-                    sqlSB.append(" ~ '%s' ");
-                }else {
-                    sqlSB.append(" = '%s' ");
-                }
-                sqlSB.append(" limit '%d' offset '%d' " );
-                sql = String.format(sqlSB.toString(),tenantId,tableName,limit,offset);
-            }else if(limit != null && offset != null){
-                sqlSB.append(" limit '%d' offset '%d' " );
-                sql = String.format(sqlSB.toString(), tenantId, limit, offset);
-            }else{
-                sql = String.format(sqlSB.toString(), tenantId);
-            }
-
-            LOG.debug(sql);
-
-            ResultSet rs = st.executeQuery(sql);
-            while (rs.next()){
-                tableNameList.add(rs.getString("table_name"));
-            }
-            st.close();
-        } catch (SQLException e) {
-            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query table !\n" + e.getMessage());
-        }
-
-        return tableNameList;
-
-    }
-
-    /**
-     * 查询某租户下的所有表，返回表名list
-     */
-    public List<String> queryTableNameList(long tenantId) throws ConfigException {
-        return queryTableNameList(tenantId,null,null,null,null);
-    }
+//    /**
+//     * 查询某租户下的所有表
+//     * @param tenantId
+//     * @param tableName
+//     * @param limit
+//     * @param offset
+//     * @param fuzzy 是否模糊查询
+//     * @return 返回表名的列表
+//     */
+//    public List<String> queryTableNameList(Long tenantId, String tableName, Long limit, Long offset, Boolean fuzzy) throws ConfigException {
+//        List<String> tableNameList = new ArrayList<>();
+//
+//        try {
+//            connect();
+//
+//            Statement st = conn.createStatement();
+//            String sql;
+//            StringBuilder sqlSB = new StringBuilder(" select table_name from ots_user_table where tenant_id = '%d'");
+//
+//            if (!StringUtils.isBlank(tableName)) {//带条件查询
+//                sqlSB.append(" and table_name ");
+//                if (fuzzy){
+//                    sqlSB.append(" ~ '%s' ");
+//                }else {
+//                    sqlSB.append(" = '%s' ");
+//                }
+//                sqlSB.append(" limit '%d' offset '%d' " );
+//                sql = String.format(sqlSB.toString(),tenantId,tableName,limit,offset);
+//            }else if(limit != null && offset != null){
+//                sqlSB.append(" limit '%d' offset '%d' " );
+//                sql = String.format(sqlSB.toString(), tenantId, limit, offset);
+//            }else{
+//                sql = String.format(sqlSB.toString(), tenantId);
+//            }
+//
+//            LOG.debug(sql);
+//
+//            ResultSet rs = st.executeQuery(sql);
+//            while (rs.next()){
+//                tableNameList.add(rs.getString("table_name"));
+//            }
+//            st.close();
+//        } catch (SQLException e) {
+//            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query table !\n" + e.getMessage());
+//        }
+//
+//        return tableNameList;
+//
+//    }
+//
+//    /**
+//     * 查询某租户下的所有表，返回表名list
+//     */
+//    public List<String> queryTableNameList(long tenantId) throws ConfigException {
+//        return queryTableNameList(tenantId,null,null,null,null);
+//    }
 
     //=================索引===========================
 

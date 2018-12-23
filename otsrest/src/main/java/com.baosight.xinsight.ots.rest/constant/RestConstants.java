@@ -39,6 +39,7 @@ public class RestConstants {
 		
 	public static final String Query_name = "name";
 	public static final String Query_all_tables = "_all_tables";
+	public static final String Query_all_tables_info = "_all_tables_info";
 	public static final String Query_column = "column";
 	public static final String Query_columns = "columns";
 	public static final String Query_limit = "limit";

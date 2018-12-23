@@ -48,6 +48,8 @@ public class TableNameListBody implements Serializable {
 
     }
 
+
+
     public int getTotalCount() {
         return totalCount;
     }
@@ -73,4 +75,7 @@ public class TableNameListBody implements Serializable {
     }
 
 
+    public void addTableName(String tableName) {
+        this.tableNames.add(tableName);
+    }
 }

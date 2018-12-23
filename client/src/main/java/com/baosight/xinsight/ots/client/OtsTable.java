@@ -92,6 +92,10 @@ public class OtsTable {
         }
     }
 
+    public long getId() throws IOException, ConfigException {
+        return getInfo().getTableId();
+    }
+
     /**
      * 查询表是否拥有该索引
      * @param indexName

@@ -149,6 +149,8 @@ public class OtsErrorCode {
 	//todo lyh
 	public static final long INCORRECT_CONTENT = EC_OTS_STORAGE_BASE_NO + 32;
 	public static final long INCORRECT_ENCODING = EC_OTS_STORAGE_BASE_NO + 33;
-	public static final long PARSE_JSONSTRING_ERROR = EC_OTS_STORAGE_BASE_NO + 33;
+	public static final long PARSE_JSONSTRING_ERROR = EC_OTS_STORAGE_BASE_NO + 34;
+	public static final long EC_OTS_TABLE_INVALID_PARAM = EC_OTS_STORAGE_BASE_NO + 35;
+			;
 }
 

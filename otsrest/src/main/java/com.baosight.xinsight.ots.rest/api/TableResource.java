@@ -9,6 +9,7 @@ import com.baosight.xinsight.ots.rest.model.table.operate.TableCreateBody;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableUpdateBody;
 import com.baosight.xinsight.ots.rest.service.TableService;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
+import com.baosight.xinsight.ots.rest.util.RegexUtil;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -62,30 +63,28 @@ public class TableResource {
     @Consumes({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public Response postTable(@PathParam("tablename") String tableName, String body) {
-        //todo lyh 校验表名合法性
-//        if (!RegexUtil.isValidTableName(tablename)) {
-//            LOG.error(Response.Status.FORBIDDEN.name() + ": tablename '" + tablename + "' contains illegal char.");
-//            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST, Response.Status.FORBIDDEN.name() + ": tablename '" + tablename + "' contains illegal char.");
-//        }
+        try{
+            //todo lyh 校验表名合法性
+            if (!RegexUtil.isValidTableName(tableName)) {
+                LOG.error(Response.Status.FORBIDDEN.name() + ": tablename '" + tableName + "' contains illegal char.");
+                throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST,
+                        Response.Status.FORBIDDEN.name() + ": tablename '" + tableName + "' contains illegal char.");
+            }
+            //获得userInfo
+            PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
+            userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
+            LOG.debug("Post:" + tableName + "\nContent:\n" + body);
 
-        //获得userInfo
-        PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
-        userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
-        LOG.debug("Post:" + tableName + "\nContent:\n" + body);
+            //生成body对应的model
+            TableCreateBody tableCreateBody = TableCreateBody.toClass(body);
 
-        //生成body对应的model
-        TableCreateBody tableCreateBody;
-        try {
-            tableCreateBody = TableCreateBody.toClass(body);
-        } catch (OtsException e) {
+            //创建表，包含小表和大表（如果大表不存在）。
+            TableService.createTable(userInfo, tableName, tableCreateBody);
+
+        }catch (OtsException e) {
             e.printStackTrace();
             LOG.error(ExceptionUtils.getFullStackTrace(e));
-            return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT ? Response.Status.FORBIDDEN :Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
-        }
-
-        //创建表，包含小表和大表（如果大表不存在）。
-        try {
-            TableService.createTable(userInfo, tableName, tableCreateBody);
+            return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
         } catch (Exception e) {
             e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
@@ -96,7 +95,7 @@ public class TableResource {
     }
 
     /**
-     * 获取单表的详细信息
+     * 获取表的详细信息， 注意权限的筛选
      * @param tableName
      * @return
      */
@@ -109,31 +108,33 @@ public class TableResource {
         userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
         LOG.debug("GET:" + tableName);
 
-        //校验表名合法性
-        //todo lyh 错误码和校验规则
-//        if (!RegexUtil.isValidTableName(tableName)) {
-//            LOG.error(Response.Status.FORBIDDEN.name() + ":" + tableName + " is not a valid table name.");
-//            return Response.status(Response.Status.FORBIDDEN).type(MediaType.APPLICATION_JSON).entity(
-//                    new ErrorMode(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST, Response.Status.FORBIDDEN.name() + ":" + tableName + " is not a valid table name.")).build();
-//        }
-
-
-        //获取表信息。若不存在返回错误提示。
+        //获取表信息。若不存在则提示错误：不存在该表。
         try {
-            return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-                    .entity(TableService.getTableInfo(userInfo, tableName)).build();
-        } catch (OtsException e) {
-            e.printStackTrace();
-            if (e.getErrorCode() == OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST){
-                return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON).entity(
-                        new ErrorMode(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST, Response.Status.NOT_FOUND.name() + ":" + tableName + " is not exist.")).build();
-            }else if(e.getErrorCode() == OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST){
-                return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON)
-                        .entity(new ErrorMode(500L, e.getMessage())).build();
-            }else{
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON)
-                        .entity(new ErrorMode(500L, e.getMessage())).build();
+            //获取所有表的详细信息
+            if (tableName.equals(RestConstants.Query_all_tables_info)) {
+                String limit = StringUtils.trim(uriInfo.getQueryParameters().getFirst(RestConstants.Query_limit));
+                String offset = StringUtils.trim(uriInfo.getQueryParameters().getFirst(RestConstants.Query_offset));
+
+                return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
+                        .entity(TableService.getAllTableInfoList(userInfo, TableService.dealWithLimit(limit), TableService.dealWithOffset(offset))).build();
+            } else {
+                //todo lyh 错误码和校验规则
+                if (!RegexUtil.isValidTableName(tableName)) {
+                    LOG.error(Response.Status.FORBIDDEN.name() + ":" + tableName + " is not a valid table name.");
+                    return Response.status(Response.Status.FORBIDDEN).type(MediaType.APPLICATION_JSON).entity(
+                            new ErrorMode(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST, Response.Status.FORBIDDEN.name() + ":" + tableName + " is not a valid table name.")).build();
+                }
+
+                return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
+                        .entity(TableService.getTableInfo(userInfo,tableName)).build();
+
             }
+        }catch (OtsException e) {
+            e.printStackTrace();
+            return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
         }
     }
 
@@ -168,9 +169,6 @@ public class TableResource {
 
     }
 
-
-
-
     /**
      * 查询所有表
      * @return 表名的列表
@@ -178,7 +176,7 @@ public class TableResource {
     @GET
     @Path("/_all_tables")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getAllTableList() {
+    public Response getAllTableNameList() {
         PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
         userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
         LOG.debug("Get table list, user:" + userInfo.getUserName() + "@" + userInfo.getTenantName());
@@ -188,7 +186,7 @@ public class TableResource {
 
         try{
              return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON).entity(
-                TableService.getTableNameList(userInfo,TableService.dealWithLimit(limit),TableService.dealWithOffset(offset))).build();
+                TableService.getAllTableNameList(userInfo,TableService.dealWithLimit(limit),TableService.dealWithOffset(offset))).build();
         } catch (OtsException e) {
             e.printStackTrace();
             return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
@@ -197,6 +195,7 @@ public class TableResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
         }
     }
+
 
     @PUT
     @Path("/{tablename}")
@@ -209,20 +208,16 @@ public class TableResource {
         userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
         LOG.debug("PUT table, user:" + userInfo.getUserName() + "@" + userInfo.getTenantName());
 
-        //生成body对应的model
-        TableUpdateBody tableUpdateBody;
         try {
-            tableUpdateBody = TableUpdateBody.toClass(body);
+            //生成body对应的model
+            TableUpdateBody tableUpdateBody = TableUpdateBody.toClass(body);
+            //修改表
+            TableService.updateTable(userInfo, tableName, tableUpdateBody);
         } catch (OtsException e) {
             e.printStackTrace();
             LOG.error(ExceptionUtils.getFullStackTrace(e));
             return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT ? Response.Status.FORBIDDEN :Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
-        }
-
-        //修改表
-        try {
-            TableService.updateTable(userInfo, tableName, tableUpdateBody);
-        } catch (Exception e) {
+        }catch (Exception e) {
             e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
         }
@@ -256,27 +251,5 @@ public class TableResource {
 
     }
 
-    /**
-     * 获取所有表的详细信息
-     * @return
-     */
-    @GET
-    @Path("/_all_tables_info")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getAllTablesInfo() {
-        try {
-            LOG.debug("Get: all tables information!");
-            PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
-            userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
-            return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-                    .entity(TableService.getAllTablesInfo(userInfo)).build();
-        } catch (OtsException e) {
-            e.printStackTrace();
-            return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(500L, e.getMessage())).build();
-        }
-    }
 
 }

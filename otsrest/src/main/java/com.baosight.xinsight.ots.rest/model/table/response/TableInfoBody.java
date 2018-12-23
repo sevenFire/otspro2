@@ -29,6 +29,9 @@ public class TableInfoBody implements Serializable {
     @JsonIgnore
     private static final long serialVersionUID = 1L;
 
+    @JsonProperty(value="table_id")
+    private Long tableId;
+
     @JsonProperty(value="table_name")
     private String tableName;
 
@@ -37,10 +40,10 @@ public class TableInfoBody implements Serializable {
 
     //table_columns是一个数组，且每个元素又有多个属性
     @JsonProperty(value="table_columns")
-    private List<TableColumnsBody> tableColumns = new ArrayList<TableColumnsBody>();
+    private String tableColumns;
 
     @JsonProperty(value="primary_key")
-    private List<String> primaryKey = new ArrayList<>();
+    private String primaryKey;
 
     @JsonProperty(value="create_time")
     private String createTime;
@@ -61,14 +64,16 @@ public class TableInfoBody implements Serializable {
 
 
 
-    public TableInfoBody(String tableName,
+    public TableInfoBody(Long tableId,
+                         String tableName,
                          String tableDesc,
-                         List<TableColumnsBody> tableColumns,
-                         List<String> primaryKey,
+                         String tableColumns,
+                         String primaryKey,
                          String createTime,
                          String modifyTime,
                          Long creator,
                          Long modifier) {
+        this.tableId = tableId;
         this.tableName = tableName;
         this.tableDesc = tableDesc;
         this.tableColumns = tableColumns;
@@ -77,6 +82,10 @@ public class TableInfoBody implements Serializable {
         this.modifyTime = modifyTime;
         this.creator = creator;
         this.modifier = modifier;
+    }
+
+    public TableInfoBody(String tableName) {
+        this.tableName = tableName;
     }
 
     public String getTableName() {
@@ -95,19 +104,19 @@ public class TableInfoBody implements Serializable {
         this.tableDesc = tableDesc;
     }
 
-    public List<TableColumnsBody> getTableColumns() {
+    public String getTableColumns() {
         return tableColumns;
     }
 
-    public void setTableColumns(List<TableColumnsBody> tableColumns) {
+    public void setTableColumns(String tableColumns) {
         this.tableColumns = tableColumns;
     }
 
-    public List<String> getPrimaryKey() {
+    public String getPrimaryKey() {
         return primaryKey;
     }
 
-    public void setPrimaryKey(List<String> primaryKey) {
+    public void setPrimaryKey(String primaryKey) {
         this.primaryKey = primaryKey;
     }
 
@@ -143,27 +152,6 @@ public class TableInfoBody implements Serializable {
         this.modifier = modifier;
     }
 
-    /**
-     *  将要废弃
-     * 将实体中的参数存入其中
-     * @param table
-     */
-    public void fromTable(Table table) {
-        this.tableName = table.getTableName();
-        this.tableDesc = table.getTableDesc();
-
-        //需要特殊处理的参数
-        this.tableColumns = JSON.parseArray(table.getTableColumns(),TableColumnsBody.class);
-        this.primaryKey = JSON.parseArray(table.getPrimaryKey(),String.class);
-
-        SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // 时间格式化的格式
-        this.createTime = sDateFormat.format(table.getCreateTime());
-        this.modifyTime = sDateFormat.format(table.getModifyTime());
-        this.creator = table.getCreator();
-        this.modifier = table.getModifier();
-
-    }
-
     @JsonIgnore
     @Override
     public String toString() {
@@ -179,17 +167,25 @@ public class TableInfoBody implements Serializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        this.tableId = table.getTableId();
         this.tableName = table.getTableName();
         this.tableDesc = table.getTableDesc();
-
-        //需要特殊处理的参数
-        this.tableColumns = JSON.parseArray(table.getTableColumns(),TableColumnsBody.class);
-        this.primaryKey = JSON.parseArray(table.getPrimaryKey(),String.class);
+        this.tableColumns = table.getTableColumns();
+        this.primaryKey = table.getPrimaryKey();
 
         SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // 时间格式化的格式
         this.createTime = sDateFormat.format(table.getCreateTime());
         this.modifyTime = sDateFormat.format(table.getModifyTime());
         this.creator = table.getCreator();
         this.modifier = table.getModifier();
+    }
+
+    public Long getTableId() {
+        return tableId;
+    }
+
+    public void setTableId(Long tableId) {
+        this.tableId = tableId;
     }
 }

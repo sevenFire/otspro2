@@ -1,10 +1,9 @@
 package com.baosight.xinsight.ots.rest.util;
 
 import com.baosight.xinsight.common.CommonConstants;
+import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
-import com.baosight.xinsight.ots.client.metacfg.Table;
 import com.baosight.xinsight.ots.rest.model.table.response.TableInfoBody;
-import com.baosight.xinsight.ots.rest.model.table.vo.TableInfoVo;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,29 +14,7 @@ import java.util.Map;
  * @description
  */
 public class TableConfigUtil {
-    private static Map<String, Map<String, TableInfoVo>> tbConfig = new HashMap<>();
-
-
-    /**
-     * 添加tableInfo
-     * 将被废弃
-     * @param userId
-     * @param tenantId
-     * @param info
-     * @throws ConfigException
-     */
-    public static void addTableConfig(long userId, long tenantId, TableInfoVo info) throws ConfigException {
-        String key = generateConfigKey(userId,tenantId);
-
-        if (tbConfig.containsKey(key)) {
-            tbConfig.get(key).put(info.getTableName(), info);
-            return;
-        }
-
-        Map<String, TableInfoVo> tbConfigMap = new HashMap<>();
-        tbConfigMap.put(info.getTableName(), info);
-        tbConfig.put(key, tbConfigMap);
-    }
+    private static Map<String, Map<String, TableInfoBody>> tbConfig = new HashMap<>();
 
     /**
      * 添加tableInfo
@@ -54,7 +31,7 @@ public class TableConfigUtil {
             return;
         }
 
-        Map<String, TableInfoVo> tbConfigMap = new HashMap<>();
+        Map<String, TableInfoBody> tbConfigMap = new HashMap<>();
         tbConfigMap.put(info.getTableName(), info);
         tbConfig.put(key, tbConfigMap);
     }
@@ -72,7 +49,7 @@ public class TableConfigUtil {
      * @param tableName
      * @return
      */
-    public static TableInfoVo getTableConfig(Long userId, Long tenantId, String tableName) {
+    public static TableInfoBody getTableConfig(Long userId, Long tenantId, String tableName) {
         String key = generateConfigKey(userId,tenantId);
 
         if (tbConfig.containsKey(key)) {
@@ -109,15 +86,15 @@ public class TableConfigUtil {
      */
     public static synchronized void syncAdd(long userId, long tenantId, String tableName) throws ConfigException, Exception {
         try {
-            Table table = ConfigUtil.getInstance().getOtsAdmin().getTableInfo(tenantId, tableName);
-            if (table == null) {
+            OtsTable otsTable = ConfigUtil.getInstance().getOtsAdmin().getTableInfo(tenantId, tableName);
+            if (otsTable == null) {
                 return;
             }
 
-            TableInfoVo info = new TableInfoVo(tableName);
-            info.setTableId(table.getTableId());
-            info.setPrimaryKey(table.getPrimaryKey());
-            info.setTableColumns(table.getTableColumns());
+            TableInfoBody info = new TableInfoBody(tableName);
+            info.setTableId(otsTable.getTableId());
+            info.setPrimaryKey(otsTable.getPrimaryKey());
+            info.setTableColumns(otsTable.getTableColumns());
 
             addTableConfig(userId, tenantId, info);
         } catch (ConfigException e) {
@@ -129,34 +106,34 @@ public class TableConfigUtil {
 
     /**
      * 删除
-     * @param tenantid
-     * @param userid
-     * @param tablename
+     * @param tenantId
+     * @param userId
+     * @param tableName
      */
-    public static synchronized void syncDel(long tenantid, long userid, String tablename) {
-        String key = String.valueOf(tenantid) + CommonConstants.DEFAULT_DOMAIN_SPLIT + String.valueOf(userid);
+    public static synchronized void syncDel(long tenantId, long userId, String tableName) {
+        String key = String.valueOf(tenantId) + CommonConstants.DEFAULT_DOMAIN_SPLIT + String.valueOf(userId);
         if (tbConfig.containsKey(key)) {
-            if (tbConfig.get(key).containsKey(tablename)) {
-                tbConfig.get(key).remove(tablename);
+            if (tbConfig.get(key).containsKey(tableName)) {
+                tbConfig.get(key).remove(tableName);
             }
         }
     }
 
     /**
      * 更新
-     * @param tenantid
-     * @param userid
-     * @param tablename
+     * @param tenantId
+     * @param userId
+     * @param tableName
      * @throws ConfigException
      * @throws Exception
      */
-    public static synchronized void syncUpdate(long tenantid, long userid, String tablename) throws ConfigException, Exception {
-        String key = String.valueOf(tenantid) + CommonConstants.DEFAULT_DOMAIN_SPLIT + String.valueOf(userid);
+    public static synchronized void syncUpdate(long tenantId, long userId, String tableName) throws Exception {
+        String key = String.valueOf(tenantId) + CommonConstants.DEFAULT_DOMAIN_SPLIT + String.valueOf(userId);
         if (tbConfig.containsKey(key)) {
-            if (tbConfig.get(key).containsKey(tablename)) {
-                tbConfig.get(key).remove(tablename);
+            if (tbConfig.get(key).containsKey(tableName)) {
+                tbConfig.get(key).remove(tableName);
 
-                syncAdd(tenantid, userid, tablename);
+                syncAdd(tenantId, userId, tableName);
             }
         }
     }

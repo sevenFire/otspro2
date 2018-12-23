@@ -134,7 +134,7 @@ public class OtsAdmin {
      * @Param table
      * @return
      */
-    public Table createTable(Long userId,
+    public OtsTable createTable(Long userId,
                                 Long tenantId,
                                 String tableName,
                                 Table table) throws OtsException {
@@ -142,23 +142,21 @@ public class OtsAdmin {
         boolean hBaseFailed2DelPost;
 
         try {
-            //在pg中创建表。
+            //在pg中创建表，如果存在则报异常。
             createRDBTableIfNotExist(userId,tenantId,tableName,table);
-            //在HBase中创建大表
+            //在HBase中创建大表，如果该租户下已经有大表，则不再创建
             hBaseFailed2DelPost = createHBaseTableIfNotExist(tenantId);
 
             //HBase创建失败，需要回滚RDB中数据
             if (hBaseFailed2DelPost){
                 delTableByUniqueKey(tenantId,tableName);
             }
-
-//            return new OtsTable(table, tenantId, this.conf);
+            return new OtsTable(table, tenantId, this.conf);
 
         }  catch (OtsException e) {
             e.printStackTrace();
             throw e;
         }
-        return table;
     }
 
     /**
@@ -168,7 +166,7 @@ public class OtsAdmin {
      * @param tableName
      * @param table
      */
-    public Table updateTable(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
+    public OtsTable updateTable(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
         try {
             //在pg中更新表。
             updateRDBTableIfExist(userId,tenantId,tableName,table);
@@ -176,7 +174,7 @@ public class OtsAdmin {
             e.printStackTrace();
             throw e;
         }
-        return table;
+        return new OtsTable(table,this.conf);
     }
 
     /**
@@ -184,34 +182,39 @@ public class OtsAdmin {
      * @param tenantId
      * @param tableName
      */
-    public Table deleteTable(Long tenantId, String tableName) throws OtsException {
+    public OtsTable deleteTable(Long tenantId, String tableName) throws OtsException, IOException {
 
         boolean hBaseFailed2DelPost;
 
         try {
             //先备份pg中旧数据
-            Table table = getTableInfo(tenantId,tableName);
-            if (table == null){
+            OtsTable otsTable = getTableInfo(tenantId,tableName);
+            if (otsTable == null){
                 throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_DELETE,
                         String.format("table(table_name %s) in tenant(tenant_id:%d) is not exist!\n", tableName, tenantId));
             }
             //在pg中删除表
-            delRDBTableByTableId(table.getTableId());
+            delRDBTableByTableId(otsTable.getInfo().getTableId());
 
             //在HBase中删除该小表对应的记录
-            hBaseFailed2DelPost = deleteAllRecordByTableId(tenantId,table.getTableId());
+            hBaseFailed2DelPost = deleteAllRecordByTableId(tenantId,otsTable.getTableId());
+
+            //删除小表的索引 //todo lyh
+
+
 
             //HBase删除失败，需要回滚RDB中数据，并报异常
             if (hBaseFailed2DelPost){
-                recoveryRDBTable(table);
+                recoveryRDBTable(otsTable.getInfo());
             }
 
-            return table;
+            return otsTable;
         }  catch (OtsException e) {
             e.printStackTrace();
             throw e;
         }
     }
+
 
     /**
      * 根据表名在RDB中查询表
@@ -236,19 +239,27 @@ public class OtsAdmin {
         }
     }
 
+    public OtsTable getTableInfo(Long tenantId,
+                              String tableName) throws ConfigException {
+
+        return getTableInfoWithPermission(tenantId,tableName,null);
+    }
+
     /**
      * 根据表名在RDB中查询表
      * @param tenantId
      * @param tableName
      * @return
      */
-    public Table getTableInfo(Long tenantId, String tableName) throws ConfigException {
+    public OtsTable getTableInfoWithPermission(Long tenantId,
+                                               String tableName,
+                                               List<Long> noGetPermissionList) throws ConfigException {
         Configurator configurator = new Configurator();
 
         try {
-            Table table = configurator.queryTable(tenantId, tableName);
+            Table table = configurator.queryTableWithPermission(tenantId, tableName, noGetPermissionList);
             if (table != null) {
-                return table;
+                return new OtsTable(table, tenantId, this.conf);
             }
             return null;
         } catch (ConfigException e) {
@@ -261,73 +272,40 @@ public class OtsAdmin {
 
     /**
      * 获取所有的表，包含权限筛选。
-     * @param userId
      * @param tenantId
      * @param noGetPermissionList
      * @return
      */
-    public List<OtsTable> getAllOtsTables(Long userId, Long tenantId, List<Long> noGetPermissionList) throws ConfigException {
-        List<OtsTable> lstTable = new ArrayList<>();
+    public List<OtsTable> getAllOtsTablesWithPermission(Long tenantId,
+                                                        long limit,
+                                                        long offset,
+                                                        List<Long> noGetPermissionList) throws ConfigException {
+       return getAllOtsTablesWithPermission(tenantId,null,limit,offset,true,noGetPermissionList);
+    }
 
+
+    public List<OtsTable> getAllOtsTablesWithPermission(Long tenantId,
+                                          String tableName,
+                                          long limit,
+                                          long offset,
+                                          Boolean fuzzy,
+                                          List<Long> noGetPermissionList) throws ConfigException {
+        List<OtsTable> otsTableList = new ArrayList<>();
         Configurator configurator = new Configurator();
+
         try {
-            List<Table> lstTables = configurator.queryAllOtsTables(userId, tenantId, noGetPermissionList);
+            List<Table> lstTables = configurator.queryAllTablesWithPermission(tenantId,tableName,limit,offset,fuzzy,noGetPermissionList);
             for (Table table: lstTables) {
-                lstTable.add(new OtsTable(table, tenantId, this.conf));
+                otsTableList.add(new OtsTable(table, tenantId, this.conf));
             }
         } catch (ConfigException e) {
             e.printStackTrace();
             throw e;
-        } finally {
-            configurator.release();
-        }
-
-        return lstTable;
-    }
-
-    /**
-     * 在RDB中查询所有表，返回表名的列表
-     * @param tenantId
-     * @Param tableName
-     * @param limit
-     * @param offset
-     * @param fuzzy 是否需要模糊查询
-     * @return
-     */
-    public List<String> getTableNameList(Long tenantId, String tableName, long limit, long offset, Boolean fuzzy) throws ConfigException {
-        Configurator configurator = new Configurator();
-
-        try {
-            List<String> tableNameList = configurator.queryTableNameList(tenantId,tableName,limit,offset,fuzzy);
-            return tableNameList;
-        } catch (ConfigException e) {
-            e.printStackTrace();
-            throw e;
         }finally {
             configurator.release();
         }
+        return otsTableList;
     }
-
-    /**
-     * 在RDB中查询所有表，返回表名的列表
-     * @param tenantId
-     * @return
-     */
-    public List<String> getTableNameList(long tenantId) throws ConfigException {
-        Configurator configurator = new Configurator();
-
-        try {
-            List<String> tableNameList = configurator.queryTableNameList(tenantId);
-            return tableNameList;
-        } catch (ConfigException e) {
-            e.printStackTrace();
-            throw e;
-        }finally {
-            configurator.release();
-        }
-
-    }
-
 
     //====================================HBase==================================================
 
@@ -543,7 +521,7 @@ public class OtsAdmin {
         long tableId;
         try {
             tableId = configurator.addTable(table);
-        } catch (ConfigException e) {//插入失败，则抛出异常给上层方法，因为有联动。
+        } catch (ConfigException e) {//插入失败，则抛出异常给上层。
             e.printStackTrace();
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
                     String.format("user(userId:%d) in tenant(tenantId:%d) add table(tableName:%s) failed!", userId, tenantId, tableName));
@@ -703,6 +681,27 @@ public class OtsAdmin {
 
         return otsTableList;
     }
+
+    /**
+     * 获取表，过滤掉无权限的。
+     * @param tenantId
+     * @return
+     */
+    public OtsTable getPermissionTable(Long tenantId, String tableName) throws ConfigException {
+
+        Configurator configurator = new Configurator();
+        try {
+            Table table = configurator.queryPermissionTable(tenantId,tableName);
+            return new OtsTable(table,this.conf);
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            configurator.release();
+        }
+
+    }
+
 
     /**
      * 获取表的Id，过滤掉无权限的。
