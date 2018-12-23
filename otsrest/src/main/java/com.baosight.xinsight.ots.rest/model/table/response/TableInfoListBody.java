@@ -74,4 +74,9 @@ public class TableInfoListBody implements Serializable {
     public String toString() {
         return JsonUtil.toJsonString(this);
     }
+
+    public void addTable(TableInfoBody tableInfoBody) {
+        this.tableInfoList.add(tableInfoBody);
+
+    }
 }

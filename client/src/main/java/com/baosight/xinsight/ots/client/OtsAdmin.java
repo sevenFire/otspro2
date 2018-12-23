@@ -13,7 +13,6 @@ import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.exception.PermissionSqlException;
 import com.baosight.xinsight.ots.client.exception.TableException;
 import com.baosight.xinsight.ots.client.metacfg.Configurator;
-import com.baosight.xinsight.ots.client.metacfg.Index;
 import com.baosight.xinsight.ots.client.metacfg.Table;
 import com.baosight.xinsight.ots.client.util.HBaseConnectionUtil;
 import com.baosight.xinsight.ots.constants.TableConstants;
@@ -33,7 +32,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author liyuhui
@@ -217,6 +215,27 @@ public class OtsAdmin {
 
 
     /**
+     * 获取表，过滤掉无权限的。
+     * @param tenantId
+     * @return
+     */
+    public List<String> getTableNameListWithPermission(Long tenantId) throws ConfigException {
+        List<String> tableNameList;
+
+        Configurator configurator = new Configurator();
+        try {
+            tableNameList = configurator.queryPermissionTableNames(tenantId);
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            configurator.release();
+        }
+
+        return tableNameList;
+    }
+
+    /**
      * 根据表名在RDB中查询表
      * @param tenantId
      * @param tableName
@@ -279,8 +298,8 @@ public class OtsAdmin {
     public List<OtsTable> getAllOtsTablesWithPermission(Long tenantId,
                                                         long limit,
                                                         long offset,
-                                                        List<Long> noGetPermissionList) throws ConfigException {
-       return getAllOtsTablesWithPermission(tenantId,null,limit,offset,true,noGetPermissionList);
+                                                        List<Long> permittedIds) throws ConfigException {
+       return getAllOtsTablesWithPermission(tenantId,null,limit,offset,true,permittedIds);
     }
 
 
@@ -289,12 +308,12 @@ public class OtsAdmin {
                                           long limit,
                                           long offset,
                                           Boolean fuzzy,
-                                          List<Long> noGetPermissionList) throws ConfigException {
+                                          List<Long> permittedIds) throws ConfigException {
         List<OtsTable> otsTableList = new ArrayList<>();
         Configurator configurator = new Configurator();
 
         try {
-            List<Table> lstTables = configurator.queryAllTablesWithPermission(tenantId,tableName,limit,offset,fuzzy,noGetPermissionList);
+            List<Table> lstTables = configurator.queryAllTablesWithPermission(tenantId,tableName,limit,offset,fuzzy,permittedIds);
             for (Table table: lstTables) {
                 otsTableList.add(new OtsTable(table, tenantId, this.conf));
             }
@@ -509,7 +528,7 @@ public class OtsAdmin {
                     String.format("tenant(tenantId:%d) already owned table(tableName:%s)!", tenantId, tableName));
         }
 
-        //插入表
+        //表的其他信息
         table.setUserId(userId);
         table.setTenantId(tenantId);
         table.setTableName(tableName);
@@ -517,6 +536,8 @@ public class OtsAdmin {
         table.setModifier(userId);
         table.setCreateTime(new Date());
         table.setModifyTime(table.getCreateTime());
+        table.setPermission(true);
+        table.setEnable(true);
 
         long tableId;
         try {
@@ -682,6 +703,7 @@ public class OtsAdmin {
         return otsTableList;
     }
 
+
     /**
      * 获取表，过滤掉无权限的。
      * @param tenantId
@@ -709,7 +731,7 @@ public class OtsAdmin {
      * @return
      */
     public List<Long> getPermissionTableIds(Long tenantId) throws ConfigException {
-        List<Long> IdList = new ArrayList<>();
+        List<Long> IdList;
 
         Configurator configurator = new Configurator();
         try {

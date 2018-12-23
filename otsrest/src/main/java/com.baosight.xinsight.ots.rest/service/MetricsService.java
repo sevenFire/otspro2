@@ -8,6 +8,7 @@ import com.baosight.xinsight.ots.rest.model.metrics.response.MetricsInfoBody;
 import com.baosight.xinsight.ots.rest.model.metrics.response.MetricsInfoListBody;
 import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.log4j.Logger;
 
@@ -51,7 +52,10 @@ public class MetricsService {
         //todo lyh 这里是否有权限要求，能获取所有的表吗
         List<String> tableNameList;
         try {
-            tableNameList = ConfigUtil.getInstance().getOtsAdmin().getTableNameList(tenantId);
+            tableNameList = ConfigUtil.getInstance().getOtsAdmin().getTableNameListWithPermission(tenantId);
+            if (CollectionUtils.isEmpty(tableNameList)){
+                throw new OtsException(RestErrorCode.EC_OTS_REST_METRICS_NAMESPACE, String.format("there is no permitted table in the namespace (tenantId = '%d')", tenantId));
+            }
         } catch (ConfigException e) {
             e.printStackTrace();
             throw new OtsException(RestErrorCode.EC_OTS_REST_METRICS_NAMESPACE, String.format("Get namespace %d metrics info error!", tenantId));
