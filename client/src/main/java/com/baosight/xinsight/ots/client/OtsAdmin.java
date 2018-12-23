@@ -13,6 +13,7 @@ import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.exception.PermissionSqlException;
 import com.baosight.xinsight.ots.client.exception.TableException;
 import com.baosight.xinsight.ots.client.metacfg.Configurator;
+import com.baosight.xinsight.ots.client.metacfg.Index;
 import com.baosight.xinsight.ots.client.metacfg.Table;
 import com.baosight.xinsight.ots.client.util.HBaseConnectionUtil;
 import com.baosight.xinsight.ots.constants.TableConstants;
@@ -217,12 +218,38 @@ public class OtsAdmin {
      * @param tableName
      * @return
      */
+    public OtsTable getOtsTable(Long tenantId, String tableName) throws ConfigException {
+        Configurator configurator = new Configurator();
+
+        try {
+            Table table = configurator.queryTable(tenantId, tableName);
+            if (table != null) {
+                return new OtsTable(table,this.conf);
+            }
+            return null;
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        }finally {
+            configurator.release();
+        }
+    }
+
+    /**
+     * 根据表名在RDB中查询表
+     * @param tenantId
+     * @param tableName
+     * @return
+     */
     public Table getTableInfo(Long tenantId, String tableName) throws ConfigException {
         Configurator configurator = new Configurator();
 
         try {
             Table table = configurator.queryTable(tenantId, tableName);
-            return table;
+            if (table != null) {
+                return table;
+            }
+            return null;
         } catch (ConfigException e) {
             e.printStackTrace();
             throw e;
@@ -699,4 +726,8 @@ public class OtsAdmin {
     private String generateHBaseTableName(Long tenantId) {
         return (TableConstants.HBASE_TABLE_PREFIX + String.valueOf(tenantId));
     }
+
+
+    //============================================index===========================================
+
 }

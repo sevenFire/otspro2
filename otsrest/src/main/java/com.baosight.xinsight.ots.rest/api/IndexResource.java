@@ -1,6 +1,15 @@
 package com.baosight.xinsight.ots.rest.api;
 
+import com.alibaba.fastjson.JSONObject;
+import com.baosight.xinsight.model.PermissionCheckUserInfo;
+import com.baosight.xinsight.ots.exception.OtsException;
+import com.baosight.xinsight.ots.rest.constant.ErrorMode;
+import com.baosight.xinsight.ots.rest.service.IndexService;
+import com.baosight.xinsight.ots.rest.util.PermissionUtil;
+
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -26,7 +35,7 @@ import javax.ws.rs.core.UriInfo;
  *
  */
 @Path("/index")
-public class IndexResource {
+public class IndexResource extends RestBase{
     private static final Logger LOG = Logger.getLogger(IndexResource.class);
 
     @Context
@@ -35,14 +44,49 @@ public class IndexResource {
     HttpServletRequest request;
 
 
-
+    /**
+     * 创建索引，目前只处理HBase索引。
+     * @param tableName
+     * @param indexName
+     * @return
+     */
     @POST
-    @Path("/{tttttttt}")
+    @Path("/{tablename}/{indexname}")
     @Consumes({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response post(@PathParam("tttttttt") String tableName, String body) {
-        //todo
+    public Response post(@PathParam("tablename") String tableName,
+                         @PathParam("indexname") String indexName) {
+
+        //todo lyh 校验表名
+        //todo lyh 校验索引名
+
+        //get userInfo
+        PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
+        userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
+
+        //get body
+        JSONObject postBody;
+        try {
+            postBody = readJsonToMap();
+        } catch (OtsException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
+        }
+
+        //create index
+        try {
+            return Response.status(Response.Status.CREATED).type(MediaType.APPLICATION_JSON)
+                        .entity(IndexService.createIndex(userInfo, tableName, indexName, postBody)).build();
+        } catch (OtsException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         return null;
+
     }
 
 }

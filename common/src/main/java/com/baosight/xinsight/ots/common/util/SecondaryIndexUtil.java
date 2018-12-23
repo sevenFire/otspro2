@@ -53,9 +53,9 @@ public class SecondaryIndexUtil {
 				BytesUtil.toBytes(OtsConstants.OTS_INDEX_TABLE_SUFFIX));
 	}
 
-	public static boolean cotainIndex(List<SecondaryIndexInfo> indexes, String indexName) {
+	public static boolean containsIndex(List<SecondaryIndexInfo> indexes, String indexName) {
 		for (SecondaryIndexInfo index : indexes) {
-			if (index.getName().equals(indexName))
+			if (index.getIndexName().equals(indexName))
 				return true;
 		}
 		return false;
@@ -122,7 +122,7 @@ public class SecondaryIndexUtil {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < indexes.size(); ++i) {
 			SecondaryIndexInfo index = indexes.get(i);
-			sb.append(index.getName());
+			sb.append(index.getIndexName());
 			sb.append("=>");
 			List<SecondaryIndexColumn> columns = index.getColumns();
 			Iterator<SecondaryIndexColumn> iter = columns.iterator();

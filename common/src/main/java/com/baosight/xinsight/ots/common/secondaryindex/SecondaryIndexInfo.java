@@ -12,7 +12,7 @@ import com.baosight.xinsight.ots.common.secondaryindex.SecondaryIndexColumn.Valu
 import com.baosight.xinsight.ots.exception.OtsException;
 
 public class SecondaryIndexInfo {
-	private String name;
+	private String indexName;
 
 	private List<SecondaryIndexColumn> columns = new ArrayList<SecondaryIndexColumn>();
 	
@@ -24,7 +24,7 @@ public class SecondaryIndexInfo {
 	}
 	
 	public SecondaryIndexInfo(String indexName)	{
-		name = indexName;
+		this.indexName = indexName;
 	}
 	
 	public void addColumn(String colName) throws OtsException {
@@ -49,12 +49,12 @@ public class SecondaryIndexInfo {
 		columns.add(new SecondaryIndexColumn(colName, type, maxLen));
 	}
 	
-	public String getName() {
-		return name;
+	public String getIndexName() {
+		return indexName;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setIndexName(String indexName) {
+		this.indexName = indexName;
 	}
 
 	public List<SecondaryIndexColumn> getColumns() {
@@ -120,4 +120,5 @@ public class SecondaryIndexInfo {
 		
 		return !(realColumnsMap.size() == listOrig.size());
 	}
+
 }

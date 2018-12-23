@@ -18,6 +18,13 @@ public class TableConstants {
     public static final String CREATOR = "creator";
     public static final String MODIFIER = "modifier";
     public static final String ENABLE = "enable";
+    public static final String PERMISSION = "permission";
+
+    public static final String INDEX_NAME = "index_name";
+    public static final String INDEX_TYPE = "index_type";
+    public static final String SHARD = "shard";
+    public static final String REPLICATION = "replication";
+    public static final String INDEX_KEY = "index_key";
 
 
     public static final String T_OTS_USER_TABLE = "ots_user_table";  //表名
@@ -34,4 +41,6 @@ public class TableConstants {
 
     //HBase中ots的cell名 //todo lyh
     public static final String HBASE_TABLE_CELL = "all";
+
+    public static final String OTS_INDEX_TYPE_HBASE_STRING = "HBase";
 }

@@ -22,11 +22,11 @@ public class SecondaryIndexColumn implements Serializable {
 	/**
 	 * xml/json元素名称同变量名
 	 */
-	@JsonProperty(value = "name")
+	@JsonProperty(value = "col_name")
 	private String name;
-	@JsonProperty(value = "type")
+	@JsonProperty(value = "col_type")
 	private ValueType type;
-	@JsonProperty(value = "maxLen")
+	@JsonProperty(value = "col_maxLen")
 	private Integer maxLen = 0;
 
 	public String getName() {
@@ -49,8 +49,9 @@ public class SecondaryIndexColumn implements Serializable {
 		this.maxLen = maxLen;
 	}
 
-	public enum ValueType {
-		int32, int64, float32, float64, string, binary
+
+	public enum ValueType {//todo lyh 加了几种类型，也去掉了几种类型
+		int8, int16, int32, int64, bool, double32, float32, float64, string, binary, blob
 	};
 
 	public SecondaryIndexColumn() {
@@ -101,10 +102,14 @@ public class SecondaryIndexColumn implements Serializable {
 		}
 	}
 
+
 	public String toString() {
 		if (type == ValueType.string || type == ValueType.binary)
 			return name + "->" + type + "&" + this.maxLen;
 		else
 			return name + "->" + type;
 	}
+
+
+
 }

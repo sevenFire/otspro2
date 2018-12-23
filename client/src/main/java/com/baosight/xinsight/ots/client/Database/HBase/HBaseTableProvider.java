@@ -79,4 +79,28 @@ public class HBaseTableProvider {
     }
 
 
+    /**
+     * set table enable status
+     * @param admin
+     * @param tableName
+     * @param bEnable
+     */
+    public static void setTableEnableStatus(Admin admin, TableName tableName, Boolean bEnable) throws IOException, TableException {
+        //check exist
+        if (!isHBaseTableExist(admin, tableName)) {
+            throw new TableException(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST, "table:" + tableName + " is not exist!");
+        }
+
+        //set table enable
+        if (bEnable != null) {
+            boolean ret = admin.isTableEnabled(tableName);
+            if (bEnable.booleanValue() != ret) {//need change enable status
+                if (bEnable.booleanValue()) {
+                    admin.enableTable(tableName);
+                }  else {
+                    admin.disableTable(tableName);
+                }
+            }
+        }
+    }
 }

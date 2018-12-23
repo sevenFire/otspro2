@@ -316,8 +316,12 @@ public class Configurator {
         table.setCreator(rs.getLong(TableConstants.CREATOR));
         table.setModifier(rs.getLong(TableConstants.MODIFIER));
 
+        table.setPermission(rs.getBoolean(TableConstants.PERMISSION));
+        table.setEnable(rs.getBoolean(TableConstants.ENABLE));
+
         return table;
     }
+
 
     /**
      * 判定表权限
@@ -429,6 +433,115 @@ public class Configurator {
         return queryTableNameList(tenantId,null,null,null,null);
     }
 
+    //=================索引===========================
+
+    /**
+     * 查询索引详细信息
+     * @param tenantId
+     * @param tableName
+     * @param indexName
+     * @return
+     */
+    public Index queryIndex(long tenantId, String tableName, String indexName) throws ConfigException {
+        Index index = null;
+
+        try {
+            connect();
+
+            Statement st = conn.createStatement();
+            String sql = String.format(" select index_id, table_id, user_id, tenant_id, index_type, index_name, table_name, index_key, " +
+                            " shard, replication, create_time, modify_time, creator, modifier from ots_table_index " +
+                            " where table_name = '%s' and index_name = '%s' and tenant_id = '%d'; ",
+                    tableName, indexName, tenantId);
+            LOG.debug(sql);
+
+            ResultSet rs = st.executeQuery(sql);
+            if(rs.next()) {
+                index = resultSetToIndex(rs);
+            }
+            st.close();
+        } catch (SQLException e) {
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_INDEX, "Failed to query index, tableName ="
+                    + tableName + " indexName=" + indexName +"!\n" + e.getMessage());
+        }
+
+        return index;
+    }
+
+    /**
+     * 新增index
+     * @param index
+     * @return
+     */
+    public long addIndex(Index index) throws ConfigException {
+        long indexId = 0;
+
+        try {
+            connect();
+            conn.setAutoCommit(false);
+
+            String sql = String.format(" insert into ots_table_index " +
+                            " (\"table_id\", \"user_id\", \"tenant_id\",\"index_type\",\"index_name\", \"table_name\", \"index_key\", \"shard\", \"replication\", \"create_time\", \"modify_time\", \"creator\",\"modifier\") " +
+                            " values ('%d', '%d','%d', '%s', '%s','%s','%s','%d','%d', ?, ?, ?, ?) returning index_id; ",
+                    index.getTableId(), index.getUserId(), index.getTenantId(), index.getIndexType(), index.getIndexName(), index.getTableName(),
+                    index.getIndexKey(),index.getShard(),index.getReplication());
+
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setTimestamp(1, new Timestamp(index.getCreateTime().getTime()));
+            pstmt.setTimestamp(2, new Timestamp(index.getModifyTime().getTime()));
+            pstmt.setLong(3, index.getCreator());
+            pstmt.setLong(4, index.getModifier());
+
+            LOG.debug(pstmt.toString());
+
+            pstmt.execute();
+            ResultSet rs = pstmt.getResultSet();
+            if(rs.next()){
+                indexId = rs.getLong("index_id");
+            }
+            conn.commit();
+            conn.setAutoCommit(true);
+            pstmt.close();
+        } catch (SQLException e) {
+            try {
+                conn.rollback();
+            } catch (SQLException e1) {
+                throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_ADD_INDEX, "Failed to add index " + index.getIndexName() + " and rollback!\n" + e.getMessage() + e1.getMessage());
+            }
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_ADD_INDEX, "Failed to add index " + index.getIndexName() + "!\n" + e.getMessage());
+        }
+
+        return indexId;
+
+    }
+
+
+    /**
+     * 将查询的结果存入index对象中
+     * @param rs
+     * @return
+     */
+    private Index resultSetToIndex(ResultSet rs) throws SQLException {
+        Index index = new Index();
+        index.setUserId(rs.getLong(TableConstants.USER_ID));
+        index.setTableId(rs.getLong(TableConstants.TABLE_ID));
+        index.setTenantId(rs.getLong(TableConstants.TENANT_ID));
+
+        index.setIndexType(rs.getString(TableConstants.INDEX_TYPE));
+        index.setTableName(rs.getString(TableConstants.TABLE_NAME));
+        index.setIndexName(rs.getString(TableConstants.INDEX_NAME));
+        index.setIndexKey(rs.getString(TableConstants.INDEX_KEY));
+
+        index.setShard(rs.getInt(TableConstants.SHARD));
+        index.setReplication(rs.getInt(TableConstants.REPLICATION));
+
+        index.setCreateTime(rs.getTimestamp(TableConstants.CREATE_TIME));
+        index.setModifyTime(rs.getTimestamp(TableConstants.MODIFY_TIME));
+        index.setCreator(rs.getLong(TableConstants.CREATOR));
+        index.setModifier(rs.getLong(TableConstants.MODIFIER));
+
+        return index;
+    }
 
 
 }
