@@ -1,8 +1,10 @@
 package com.baosight.xinsight.ots.rest.util;
 
+import com.alibaba.fastjson.JSON;
 import com.baosight.xinsight.common.CommonConstants;
 import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
+import com.baosight.xinsight.ots.rest.model.table.operate.TableColumnsBody;
 import com.baosight.xinsight.ots.rest.model.table.response.TableInfoBody;
 
 import java.util.HashMap;
@@ -93,8 +95,8 @@ public class TableConfigUtil {
 
             TableInfoBody info = new TableInfoBody(tableName);
             info.setTableId(otsTable.getTableId());
-            info.setPrimaryKey(otsTable.getPrimaryKey());
-            info.setTableColumns(otsTable.getTableColumns());
+            info.setPrimaryKey(JSON.parseArray(otsTable.getPrimaryKey(),String.class));
+            info.setTableColumns(JSON.parseArray(otsTable.getTableColumns(),TableColumnsBody.class));
 
             addTableConfig(userId, tenantId, info);
         } catch (ConfigException e) {

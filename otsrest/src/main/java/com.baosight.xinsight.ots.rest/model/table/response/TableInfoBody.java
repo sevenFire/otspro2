@@ -40,10 +40,10 @@ public class TableInfoBody implements Serializable {
 
     //table_columns是一个数组，且每个元素又有多个属性
     @JsonProperty(value="table_columns")
-    private String tableColumns;
+    private List<TableColumnsBody> tableColumns = new ArrayList<>();
 
     @JsonProperty(value="primary_key")
-    private String primaryKey;
+    private List<String> primaryKey;
 
     @JsonProperty(value="create_time")
     private String createTime;
@@ -67,8 +67,8 @@ public class TableInfoBody implements Serializable {
     public TableInfoBody(Long tableId,
                          String tableName,
                          String tableDesc,
-                         String tableColumns,
-                         String primaryKey,
+                         List<TableColumnsBody> tableColumns,
+                         List<String> primaryKey,
                          String createTime,
                          String modifyTime,
                          Long creator,
@@ -104,19 +104,19 @@ public class TableInfoBody implements Serializable {
         this.tableDesc = tableDesc;
     }
 
-    public String getTableColumns() {
+    public List<TableColumnsBody> getTableColumns() {
         return tableColumns;
     }
 
-    public void setTableColumns(String tableColumns) {
+    public void setTableColumns(List<TableColumnsBody> tableColumns) {
         this.tableColumns = tableColumns;
     }
 
-    public String getPrimaryKey() {
+    public List<String> getPrimaryKey() {
         return primaryKey;
     }
 
-    public void setPrimaryKey(String primaryKey) {
+    public void setPrimaryKey(List<String> primaryKey) {
         this.primaryKey = primaryKey;
     }
 
@@ -171,8 +171,8 @@ public class TableInfoBody implements Serializable {
         this.tableId = table.getTableId();
         this.tableName = table.getTableName();
         this.tableDesc = table.getTableDesc();
-        this.tableColumns = table.getTableColumns();
-        this.primaryKey = table.getPrimaryKey();
+        this.tableColumns = JSON.parseArray(table.getTableColumns(),TableColumnsBody.class);
+        this.primaryKey = JSON.parseArray(table.getPrimaryKey(),String.class);
 
         SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // 时间格式化的格式
         this.createTime = sDateFormat.format(table.getCreateTime());
