@@ -241,13 +241,30 @@ public class OtsAdmin {
      * @param tableName
      * @return
      */
-    public OtsTable getOtsTable(Long tenantId, String tableName) throws ConfigException {
+    public OtsTable getOtsTableByUniqueKey(Long tenantId, String tableName) throws ConfigException {
         Configurator configurator = new Configurator();
 
         try {
             Table table = configurator.queryTable(tenantId, tableName);
             if (table != null) {
                 return new OtsTable(table,this.conf);
+            }
+            return null;
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        }finally {
+            configurator.release();
+        }
+    }
+
+    private Table getRDBTableByTableId(Long tableId) throws ConfigException {
+        Configurator configurator = new Configurator();
+
+        try {
+            Table table = configurator.queryTableById(tableId);
+            if (table != null) {
+                return table;
             }
             return null;
         } catch (ConfigException e) {
@@ -407,7 +424,8 @@ public class OtsAdmin {
         try {
             admin = HBaseConnectionUtil.getInstance().getAdmin();
             String tableName = new StringBuilder().append(TableConstants.HBASE_TABLE_PREFIX).append(tenantId).toString();
-            HBaseRecordProvider.deleteAllRecordByTableId(admin, TableName.valueOf(tableName),tableId);
+            org.apache.hadoop.hbase.client.Table table = HBaseConnectionUtil.getInstance().getTable(tableName);
+            HBaseRecordProvider.deleteAllRecordByTableId(table,tableId);
         } catch (OtsException ex) {
             HBaseFailed2DelPost = true;
         } catch (Exception e) {
@@ -425,16 +443,13 @@ public class OtsAdmin {
     }
 
     /**
-     * 清空小表
+     * 清空小表对应的记录
      * @param
      */
     public void truncate(Long tenantId, Long tableId) throws OtsException {
-        //删除小表
-        delRDBTableByTableId(tableId);
-
-        //删除HBase中对应的记录
         deleteAllRecordByTableId(tenantId,tableId);
     }
+
 
 
     /**

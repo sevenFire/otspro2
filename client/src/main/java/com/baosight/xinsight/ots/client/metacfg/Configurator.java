@@ -284,10 +284,56 @@ public class Configurator {
         return table;
     }
 
-    public List<String> queryTableNameWithPermission(Long tenantId) {
+//    public List<String> queryTableNameWithPermission(Long tenantId) {
+//        return queryTableNameWithPermission(tenantId,null);
+//
+//    }
 
 
-        return null;
+    /**
+     * 通过Id查找表
+     * @param tableId
+     * @return
+     */
+    public Table queryTableByIdWithPermission(Long tableId,
+                                              List<Long> noGetPermissionList) throws ConfigException {
+        Table table = null;
+
+        try {
+            connect();
+            Statement st = conn.createStatement();
+
+            String sql;
+            if (noGetPermissionList == null) {
+                sql = String.format("select * from ots_user_table where table_id = '%d' ; ",tableId);
+            }else {
+                String list2String = StringUtils.join(noGetPermissionList.toArray(), ",");
+                StringBuilder permittedIdString = new StringBuilder().append("(").append(list2String).append(")");
+                sql = String.format("select * from ots_user_table where table_id = '%d' and table_id in %s ;",
+                        tableId, permittedIdString);
+            }
+            LOG.debug(sql);
+
+            ResultSet rs = st.executeQuery(sql);
+            if(rs.next()) {
+                table = resultSetToTable(rs);
+            }
+            st.close();
+        } catch (SQLException e) {
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query table " + tableId + "!\n" + e.getMessage());
+        }
+
+        return table;
+    }
+
+    /**
+     * 通过表id查询表，不带权限参数
+     * @param tableId
+     * @return
+     * @throws ConfigException
+     */
+    public Table queryTableById(Long tableId) throws ConfigException {
+        return queryTableByIdWithPermission(tableId,null);
     }
 
 

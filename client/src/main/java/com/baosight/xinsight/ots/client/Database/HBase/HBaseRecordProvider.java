@@ -4,6 +4,7 @@ import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.client.exception.TableException;
 import com.baosight.xinsight.ots.client.util.HBaseConnectionUtil;
+import com.baosight.xinsight.ots.common.util.PrimaryKeyUtil;
 import com.baosight.xinsight.ots.exception.OtsException;
 
 import org.apache.commons.codec.DecoderException;
@@ -15,19 +16,20 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.RegionTooBusyException;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.filter.PrefixFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author liyuhui
@@ -38,13 +40,88 @@ public class HBaseRecordProvider {
 
     /**
      * 根据表名删除所有属于该小表的记录
-     * @param admin
-     * @param tableName 存于HBase的大表的名称
+     * @param table 存于HBase的大表
      * @param tableId 小表的Id
      */
-    public static void deleteAllRecordByTableId(Admin admin, TableName tableName, Long tableId) throws OtsException {
-        //todo lyh HBase批量删除数据
+    public static void deleteAllRecordByTableId(Table table, Long tableId) throws OtsException, IOException {
 
+        byte[] rowKeyPrefix = PrimaryKeyUtil.generateRowKeyPrefixOnlyWithTableId(tableId);
+        Filter rowFilter = new PrefixFilter(rowKeyPrefix);
+
+        Scan scan = new Scan();
+        scan.addFamily(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME));
+        scan.setFilter(rowFilter);
+
+        deleteRecords(table, scan);
+    }
+
+    /**
+     * 删除记录
+     * @param table
+     * @param scan
+     * @throws TableException
+     * @throws IOException
+     */
+    private static void deleteRecords(Table table, Scan scan) throws TableException, IOException {
+        int bufferSize = OtsConstants.DEFAULT_META_SCANNER_CACHING; //avoid running out of memory
+
+        ResultScanner rs = null;
+        List<Delete> deletes = new ArrayList<>();
+        int counter = 0;
+        int realDelCount = 0;
+
+        try {
+            rs = table.getScanner(scan);
+
+            Result rec = rs.next();
+            while (rec != null) {
+
+                deletes.add(new Delete(rec.getRow()));
+                if (counter < bufferSize) {
+                    counter++;
+                } else {
+                    table.delete(deletes);
+                    deletes.clear();
+                    counter = 0;
+                }
+
+                realDelCount++;
+                rec = rs.next();
+            }
+
+            if (deletes.size() > 0) {
+                table.delete(deletes);
+                deletes.clear();
+            }
+
+            //all successful
+
+        } catch (IOException e) {
+            e.printStackTrace();
+
+            if ( !(e instanceof DoNotRetryIOException)) {
+
+                if (e.getCause() instanceof NotServingRegionException) {
+                    throw new TableException(OtsErrorCode.EC_OTS_STORAGE_OPERATE_RECORD_NOSERVINGREGINON,
+                            "no serving region exception, you may retry the operation!");
+                } else if (e.getCause() instanceof RegionTooBusyException) {
+                    throw new TableException(OtsErrorCode.EC_OTS_STORAGE_OPERATE_RECORD_REGINONTOOBUSY,
+                            "region too busy exception, you may retry the operation!");
+                }
+            }
+            throw new TableException(OtsErrorCode.EC_OTS_STORAGE_RECORD_DELETE, "delete Record error!");
+
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            table.close();
+
+            // no match record
+            if (realDelCount == 0) {
+                throw new TableException(OtsErrorCode.EC_OTS_STORAGE_DELETE_RECORD_NOMATCH, "delete Record error, no match record!");
+            }
+        }
     }
 
     /**

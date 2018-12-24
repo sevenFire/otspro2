@@ -12,7 +12,6 @@ import com.baosight.xinsight.ots.common.secondaryindex.SecondaryIndexInfo;
 import com.baosight.xinsight.ots.exception.OtsException;
 import com.cloudera.org.codehaus.jackson.map.ObjectMapper;
 
-import org.apache.hadoop.fs.viewfs.ConfigUtil;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
@@ -84,10 +83,6 @@ public class OtsTable {
                 configurator.release();
             }
         }
-    }
-
-    public long getId() throws IOException, ConfigException {
-        return getInfo().getTableId();
     }
 
     /**
