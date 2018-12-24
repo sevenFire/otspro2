@@ -1,6 +1,5 @@
 package com.baosight.xinsight.ots.client;
 
-import com.alibaba.fastjson.JSON;
 import com.baosight.xinsight.ots.OtsConfiguration;
 import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
@@ -18,6 +17,8 @@ import com.baosight.xinsight.ots.common.util.SecondaryIndexUtil;
 import com.baosight.xinsight.ots.constants.TableConstants;
 import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.yarn.YarnAppUtil;
+import com.cloudera.org.codehaus.jackson.map.ObjectMapper;
+import com.cloudera.org.codehaus.jackson.type.TypeReference;
 
 import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.hadoop.hbase.HColumnDescriptor;
@@ -48,6 +49,9 @@ public class OtsTable {
     private Table info = null;
     private OtsConfiguration conf = null;
 
+    public OtsTable() {
+    }
+
     public OtsTable(Table info, Long tenantId, OtsConfiguration conf) {
         this.info = info;
         this.tenantId = tenantId;
@@ -57,6 +61,8 @@ public class OtsTable {
             this.tableName = info.getTableName();
         }
     }
+
+
 
     public OtsTable(Table info, OtsConfiguration conf) {
         this.info = info;
@@ -293,8 +299,10 @@ public class OtsTable {
         index.setCreator(getUserId());
         index.setModifier(getUserId());
 
-        index.setIndexKey(JSON.toJSON(secondaryIndexInfo.getColumns()).toString());
+//        index.setIndexKey(JSON.toJSON(secondaryIndexInfo.getColumns()).toString());
 
+        ObjectMapper objectMapper = new ObjectMapper();
+        index.setIndexKey( objectMapper.writeValueAsString(secondaryIndexInfo.getColumns()));
         return index;
     }
 

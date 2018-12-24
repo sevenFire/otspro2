@@ -126,7 +126,7 @@ public class TableResource {
                 }
 
                 return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-                        .entity(TableService.getTableInfo(userInfo,tableName)).build();
+                        .entity(TableService.getTableInfo(userInfo,tableName).toString()).build();
 
             }
         }catch (OtsException e) {

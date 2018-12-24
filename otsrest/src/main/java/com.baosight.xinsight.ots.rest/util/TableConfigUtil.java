@@ -1,13 +1,16 @@
 package com.baosight.xinsight.ots.rest.util;
 
-import com.alibaba.fastjson.JSON;
 import com.baosight.xinsight.common.CommonConstants;
 import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableColumnsBody;
 import com.baosight.xinsight.ots.rest.model.table.response.TableInfoBody;
+import com.cloudera.org.codehaus.jackson.map.ObjectMapper;
+import com.cloudera.org.codehaus.jackson.type.TypeReference;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -95,8 +98,17 @@ public class TableConfigUtil {
 
             TableInfoBody info = new TableInfoBody(tableName);
             info.setTableId(otsTable.getTableId());
-            info.setPrimaryKey(JSON.parseArray(otsTable.getPrimaryKey(),String.class));
-            info.setTableColumns(JSON.parseArray(otsTable.getTableColumns(),TableColumnsBody.class));
+//            info.setPrimaryKey(JSON.parseArray(otsTable.getPrimaryKey(),String.class));
+//            info.setTableColumns(JSON.parseArray(otsTable.getTableColumns(),TableColumnsBody.class));
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                List<TableColumnsBody> tableColumns = objectMapper.readValue(otsTable.getTableColumns(),new TypeReference<List<TableColumnsBody>>() {});
+                List<String> primaryKey =  objectMapper.readValue(otsTable.getPrimaryKey(),new TypeReference<List<String>>() {});
+                info.setPrimaryKey(primaryKey);
+                info.setTableColumns(tableColumns);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
             addTableConfig(userId, tenantId, info);
         } catch (ConfigException e) {

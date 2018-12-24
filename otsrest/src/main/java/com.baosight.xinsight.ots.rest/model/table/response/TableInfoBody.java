@@ -1,12 +1,14 @@
 package com.baosight.xinsight.ots.rest.model.table.response;
 
-import com.alibaba.fastjson.JSON;
 import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.metacfg.Table;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableColumnsBody;
 import com.baosight.xinsight.utils.JsonUtil;
 
+import com.cloudera.org.codehaus.jackson.map.DeserializationConfig;
+import com.cloudera.org.codehaus.jackson.map.ObjectMapper;
+import com.cloudera.org.codehaus.jackson.type.TypeReference;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
@@ -15,9 +17,6 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-
-//import com.fasterxml.jackson.annotation.JsonIgnore;
-//import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 /**
@@ -158,28 +157,37 @@ public class TableInfoBody implements Serializable {
         return JsonUtil.toJsonString(this);
     }
 
-    public void fromTable(OtsTable otsTable) {
-        Table table = null;
-        try {
-            table = otsTable.getInfo();
-        } catch (ConfigException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        this.tableId = table.getTableId();
-        this.tableName = table.getTableName();
-        this.tableDesc = table.getTableDesc();
-        this.tableColumns = JSON.parseArray(table.getTableColumns(),TableColumnsBody.class);
-        this.primaryKey = JSON.parseArray(table.getPrimaryKey(),String.class);
-
-        SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // 时间格式化的格式
-        this.createTime = sDateFormat.format(table.getCreateTime());
-        this.modifyTime = sDateFormat.format(table.getModifyTime());
-        this.creator = table.getCreator();
-        this.modifier = table.getModifier();
-    }
+//    public void fromTable(OtsTable otsTable) throws ConfigException {
+//        Table table = null;
+//        try {
+//            table = otsTable.getInfo();
+//        } catch (ConfigException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//        setTableId(table.getTableId());
+//        this.tableName = table.getTableName();
+//        this.tableDesc = table.getTableDesc();
+//
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        objectMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+//        try {
+//            this.tableColumns = objectMapper.readValue(table.getTableColumns(),new TypeReference<List<TableColumnsBody>>() {});
+//            this.primaryKey =  objectMapper.readValue(table.getPrimaryKey(),new TypeReference<List<String>>() {});
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+////        this.tableColumns = JSONArray.parseArray(table.getTableColumns(),TableColumnsBody.class);
+////        this.primaryKey = JSONArray.parseArray(table.getPrimaryKey(),String.class);
+//
+//        SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // 时间格式化的格式
+//        this.createTime = sDateFormat.format(table.getCreateTime());
+//        this.modifyTime = sDateFormat.format(table.getModifyTime());
+//        this.creator = table.getCreator();
+//        this.modifier = table.getModifier();
+//    }
 
     public Long getTableId() {
         return tableId;
@@ -188,4 +196,40 @@ public class TableInfoBody implements Serializable {
     public void setTableId(Long tableId) {
         this.tableId = tableId;
     }
+
+
+//    public static void main(String[] args) {
+////        TableInfoBody tableInfoBody = new TableInfoBody();
+////        tableInfoBody.setTableName("lyhtest");
+//
+//        Table table = new Table();
+//        table.setTableName("name");
+//        OtsTable otsTable = new OtsTable(table,null);
+//
+//        TableInfoBody tableInfoBody = null;
+//        try {
+//            tableInfoBody = fromTableTest(otsTable);
+//        } catch (ConfigException e) {
+//            e.printStackTrace();
+//        }
+//
+//
+//        System.out.println(tableInfoBody);
+//    }
+//
+//    public static TableInfoBody fromTableTest(OtsTable otsTable) throws ConfigException {
+//        TableInfoBody tableInfoBody = new TableInfoBody();
+//        Table table = null;
+//        try {
+//            table = otsTable.getInfo();
+//        } catch (ConfigException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//        tableInfoBody.setTableId(table.getTableId());
+//        return tableInfoBody;
+//    }
+
 }

@@ -7,8 +7,10 @@ import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.exception.TableException;
+import com.baosight.xinsight.ots.client.metacfg.Table;
 import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.ots.rest.constant.RestConstants;
+import com.baosight.xinsight.ots.rest.model.table.operate.TableColumnsBody;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableCreateBody;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableUpdateBody;
 import com.baosight.xinsight.ots.rest.model.table.response.TableInfoBody;
@@ -20,6 +22,9 @@ import com.baosight.xinsight.ots.rest.util.MessageBuilder;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 import com.baosight.xinsight.ots.rest.util.TableConfigUtil;
 import com.baosight.xinsight.utils.AasPermissionUtil;
+import com.cloudera.org.codehaus.jackson.map.DeserializationConfig;
+import com.cloudera.org.codehaus.jackson.map.ObjectMapper;
+import com.cloudera.org.codehaus.jackson.type.TypeReference;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -27,6 +32,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,8 +69,7 @@ public class TableService {
             OtsTable otsTable = ConfigUtil.getInstance().getOtsAdmin().createTable(userInfo.getUserId(), userInfo.getTenantId(), tableName,tableCreateBody.toTable());
 
             //添加到缓存中
-            TableInfoBody info = new TableInfoBody();
-            info.fromTable(otsTable);
+            TableInfoBody info = fromTableToBody(otsTable);
             TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), info);
 
             //将表信息并发送到kafka
@@ -79,6 +84,42 @@ public class TableService {
             throw e;
         }
     }
+
+    private static TableInfoBody fromTableToBody(OtsTable otsTable) {
+        TableInfoBody tableInfoBody = new TableInfoBody();
+        Table table = null;
+        try {
+            table = otsTable.getInfo();
+        } catch (ConfigException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        tableInfoBody.setTableId(table.getTableId());
+        tableInfoBody.setTableName(table.getTableName());
+        tableInfoBody.setTableDesc(table.getTableDesc());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            List<TableColumnsBody> tableColumnsBodies = objectMapper.readValue(table.getTableColumns(),new TypeReference<List<TableColumnsBody>>() {});
+            tableInfoBody.setTableColumns(tableColumnsBodies);
+            List<String> primaryKeyBodies = objectMapper.readValue(table.getPrimaryKey(),new TypeReference<List<String>>() {});
+            tableInfoBody.setPrimaryKey(primaryKeyBodies);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // 时间格式化的格式
+        tableInfoBody.setCreateTime(sDateFormat.format(table.getCreateTime()));
+        tableInfoBody.setModifyTime(sDateFormat.format(table.getModifyTime()));
+        tableInfoBody.setCreator(table.getCreator());
+        tableInfoBody.setModifier(table.getModifier());
+
+        return tableInfoBody;
+    }
+
 
     /**
      * 修改表
@@ -102,8 +143,7 @@ public class TableService {
 
             //更新缓存
             //添加到缓存中
-            TableInfoBody info = new TableInfoBody();
-            info.fromTable(otsTable);
+            TableInfoBody info = fromTableToBody(otsTable);
             TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), info);
 
             //将表信息并发送到kafka
@@ -189,7 +229,7 @@ public class TableService {
             }
 
             //更新缓存
-            tableInfoBody.fromTable(otsTable);
+            tableInfoBody = fromTableToBody(otsTable);
             TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableInfoBody);
 
         } catch (ConfigException e) {
@@ -225,8 +265,7 @@ public class TableService {
             List<OtsTable> otsTableList = ConfigUtil.getInstance().getOtsAdmin()
                     .getAllOtsTablesWithPermission(userInfo.getTenantId(),limit, offset,permittedIds);
             for (OtsTable otsTable : otsTableList) {
-                TableInfoBody tableInfoBody = new TableInfoBody();
-                tableInfoBody.fromTable(otsTable);
+                TableInfoBody tableInfoBody = fromTableToBody(otsTable);
                 tableInfoListBody.addTable(tableInfoBody);
                 //update cache
                 TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableInfoBody);
@@ -285,8 +324,7 @@ public class TableService {
             }
 
             for (OtsTable otsTable :otsTableList){
-                TableInfoBody tableInfoBody = new TableInfoBody();
-                tableInfoBody.fromTable(otsTable);
+                TableInfoBody tableInfoBody = fromTableToBody(otsTable);
                 tableNameListBody.addTableName(otsTable.getTableName());
 
                 TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableInfoBody);
