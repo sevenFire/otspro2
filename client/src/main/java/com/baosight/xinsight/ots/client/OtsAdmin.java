@@ -292,7 +292,7 @@ public class OtsAdmin {
     /**
      * 获取所有的表，包含权限筛选。
      * @param tenantId
-     * @param noGetPermissionList
+     * @param permittedIds
      * @return
      */
     public List<OtsTable> getAllOtsTablesWithPermission(Long tenantId,
@@ -422,6 +422,18 @@ public class OtsAdmin {
             }
             return HBaseFailed2DelPost;
         }
+    }
+
+    /**
+     * 清空小表
+     * @param
+     */
+    public void truncate(Long tenantId, Long tableId) throws OtsException {
+        //删除小表
+        delRDBTableByTableId(tableId);
+
+        //删除HBase中对应的记录
+        deleteAllRecordByTableId(tenantId,tableId);
     }
 
 

@@ -111,4 +111,8 @@ public class OtsIndex {
     public void setTableId(Long tableId) {
         this.tableId = tableId;
     }
+
+    public String getIndexType(){
+        return getInfo().getIndexType();
+    }
 }

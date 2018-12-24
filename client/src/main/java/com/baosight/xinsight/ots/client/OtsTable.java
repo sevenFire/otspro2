@@ -1,37 +1,25 @@
 package com.baosight.xinsight.ots.client;
 
 import com.baosight.xinsight.ots.OtsConfiguration;
-import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
-import com.baosight.xinsight.ots.client.Database.HBase.HBaseTableProvider;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.client.exception.SecondaryIndexException;
 import com.baosight.xinsight.ots.client.metacfg.Configurator;
 import com.baosight.xinsight.ots.client.metacfg.Index;
 import com.baosight.xinsight.ots.client.metacfg.Table;
-import com.baosight.xinsight.ots.client.util.HBaseConnectionUtil;
 import com.baosight.xinsight.ots.client.util.TableNameUtil;
-import com.baosight.xinsight.ots.common.secondaryindex.SecondaryIndexColumnListConvert;
 import com.baosight.xinsight.ots.common.secondaryindex.SecondaryIndexInfo;
-import com.baosight.xinsight.ots.common.util.SecondaryIndexUtil;
-import com.baosight.xinsight.ots.constants.TableConstants;
 import com.baosight.xinsight.ots.exception.OtsException;
-import com.baosight.xinsight.yarn.YarnAppUtil;
 import com.cloudera.org.codehaus.jackson.map.ObjectMapper;
-import com.cloudera.org.codehaus.jackson.type.TypeReference;
 
-import org.apache.curator.framework.recipes.cache.NodeCache;
-import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.fs.viewfs.ConfigUtil;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.List;
 
 import static com.baosight.xinsight.ots.constants.TableConstants.OTS_INDEX_TYPE_HBASE_STRING;
 
@@ -355,5 +343,6 @@ public class OtsTable {
     public String getTableColumns() throws ConfigException, IOException {
         return getInfo().getTableColumns();
     }
+
 
 }

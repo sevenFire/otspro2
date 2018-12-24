@@ -5,7 +5,6 @@ import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.client.exception.TableException;
 import com.baosight.xinsight.ots.client.util.HBaseConnectionUtil;
 import com.baosight.xinsight.ots.exception.OtsException;
-import com.mchange.lang.ByteUtils;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
@@ -40,8 +39,8 @@ public class HBaseRecordProvider {
     /**
      * 根据表名删除所有属于该小表的记录
      * @param admin
-     * @param tableName
-     * @param tableId
+     * @param tableName 存于HBase的大表的名称
+     * @param tableId 小表的Id
      */
     public static void deleteAllRecordByTableId(Admin admin, TableName tableName, Long tableId) throws OtsException {
         //todo lyh HBase批量删除数据
