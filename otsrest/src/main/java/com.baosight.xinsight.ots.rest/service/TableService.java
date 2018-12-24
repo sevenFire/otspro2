@@ -235,7 +235,7 @@ public class TableService {
             throw e;
         }
         tableInfoListBody.setErrcode(0L);
-        tableInfoListBody.setCount(tableInfoListBody.getTableInfoList().size());
+        tableInfoListBody.setTotalCount(tableInfoListBody.getTableInfoList().size());
 
         LOG.debug("RETURN:" + tableInfoListBody.toString());
         return tableInfoListBody;
