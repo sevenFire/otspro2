@@ -10,12 +10,11 @@ import com.baosight.xinsight.ots.client.OtsIndex;
 import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.common.secondaryindex.SecondaryIndexColumn;
 import com.baosight.xinsight.ots.common.secondaryindex.SecondaryIndexInfo;
+import com.baosight.xinsight.ots.constants.ParamConstant;
+import com.baosight.xinsight.ots.constants.ParamErrorCode;
 import com.baosight.xinsight.ots.constants.TableConstants;
 import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.ots.rest.constant.ErrorMode;
-import com.baosight.xinsight.ots.rest.constant.ParamConstant;
-import com.baosight.xinsight.ots.rest.constant.ParamErrorCode;
-import com.baosight.xinsight.ots.rest.constant.RestConstants;
 import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 
@@ -57,7 +56,7 @@ public class IndexService {
         JSONArray indexKey = (JSONArray) getRestParam(postBody, ParamConstant.KEY_INDEX_KEY, true);
 
         //get table, otsTable中含有conf的信息
-        OtsTable otsTable = ConfigUtil.getInstance().getOtsAdmin().getOtsTable(userInfo.getTenantId(), tableName);
+        OtsTable otsTable = ConfigUtil.getInstance().getOtsAdmin().getOtsTableByUniqueKey(userInfo.getTenantId(), tableName);
 
         //set in permission
         if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {

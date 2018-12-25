@@ -230,7 +230,11 @@ public class TableResource {
     @Path("/{tablename}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteTable(@PathParam("tablename") String tablename) {
-        //todo lyh 校验表名
+        if (tablename.equals(RestConstants.Query_all_tables)) {
+            LOG.error(Response.Status.FORBIDDEN.name() + ":" + tablename + " is not a valid table object.");
+            return Response.status(Response.Status.FORBIDDEN).type(MediaType.APPLICATION_JSON).entity(
+                    new ErrorMode(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST, Response.Status.FORBIDDEN.name() + ":" + tablename + " is not a valid table object.")).build();
+        }
 
         PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
         userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
@@ -238,6 +242,11 @@ public class TableResource {
 
 
         try{
+            if (!RegexUtil.isValidTableName(tablename)) {
+                LOG.error(Response.Status.FORBIDDEN.name() + ": tablename '" + tablename + "' contains illegal char.");
+                throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST, Response.Status.FORBIDDEN.name() + ": tablename '" + tablename + "' contains illegal char.");
+            }
+
             TableService.deleteTable(userInfo,tablename);
         } catch (OtsException e) {
             e.printStackTrace();

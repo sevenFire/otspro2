@@ -1,7 +1,11 @@
 package com.baosight.xinsight.ots.client.Database.HBase;
 
-import org.apache.hadoop.hbase.filter.Filter;
+import com.baosight.xinsight.common.CommonConstants;
 
+import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.util.Bytes;
+
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -107,6 +111,17 @@ public class RecordQueryOption {
 	
 	public List<String>  getReturnColumns() {
 		return returnColumns;
+	}
+
+	public List<byte[]> getReturnColumnsAsByteList() {
+		List<byte[]> list = new ArrayList<>();
+		if (returnColumns != null) {
+			for (String col : returnColumns) {
+				list.add(Bytes.toBytes(col));
+			}
+		}
+
+		return list;
 	}
 
 	public void setReturnColumns(List<String>  returnColumns) {

@@ -75,7 +75,7 @@ public class OtsTable {
             Configurator configurator = new Configurator();
 
             try {
-                return configurator.queryTable(getTableId(), getTableName());
+                return configurator.queryTable(getTenantId(), getTableName());
             } catch (ConfigException e) {
                 e.printStackTrace();
                 throw e;

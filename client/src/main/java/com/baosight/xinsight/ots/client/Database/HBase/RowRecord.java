@@ -15,7 +15,7 @@ public class RowRecord implements Serializable {
 	
 	private byte[] rowkey = null;
 	
-	private List<RowCell> cellList = new ArrayList<RowCell>();
+	private List<RowCell> cellList = new ArrayList<>();
 	
 	/**
 	 * Default constructor

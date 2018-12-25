@@ -741,6 +741,9 @@ public class OtsAdmin {
         Configurator configurator = new Configurator();
         try {
             Table table = configurator.queryPermissionTable(tenantId,tableName);
+            if (table == null){
+                return null;
+            }
             return new OtsTable(table,this.conf);
         } catch (ConfigException e) {
             e.printStackTrace();
@@ -808,6 +811,38 @@ public class OtsAdmin {
             e.printStackTrace();
             LOG.error(e.getMessage());
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_RECORD_QUERY, "Failed to query records!\n" + e.getMessage());
+        }
+
+    }
+
+
+    /**
+     * 根据rowKeys批量查询记录
+     * @param rowKeyBatch
+     * @param query
+     */
+    public RecordResult getRecordsBatch(Long tenantId, List<byte[]> rowKeyBatch, RecordQueryOption query) throws OtsException {
+        try {
+            org.apache.hadoop.hbase.client.Table hTable =
+                    HBaseConnectionUtil.getInstance().getTable(generateHBaseTableName(tenantId));
+
+            return HBaseRecordProvider.getRecordsByKeys(hTable, rowKeyBatch, query);
+        } catch (MasterNotRunningException e) {
+            e.printStackTrace();
+            LOG.error("Failed to query records because hbase master no running!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_NO_RUNNING_HBASE_MASTER, "Failed to query records because hbase master no running!\n" + e.getMessage());
+        } catch (ZooKeeperConnectionException e) {
+            e.printStackTrace();
+            LOG.error("Failed to query because can not connecto to zookeeper!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_FAILED_CONN_ZK,	"Failed to query because can not connecto to zookeeper!\n" + e.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error("Failed to query records!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_RECORD_QUERY, "Failed to query records!\n" + e.getMessage());
+        } catch (TableException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
+            throw e;
         }
 
     }

@@ -121,6 +121,21 @@ public class TableService {
     }
 
 
+    public static void main(String[] args) {
+        String columns = "[{\"col_name\":\"col1\"}]";
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            List<TableColumnsBody> tableColumnsBodies = objectMapper.readValue(columns, new TypeReference<List<TableColumnsBody>>() {
+            });
+            System.out.println(tableColumnsBodies);
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+
     /**
      * 修改表
      * @param userInfo

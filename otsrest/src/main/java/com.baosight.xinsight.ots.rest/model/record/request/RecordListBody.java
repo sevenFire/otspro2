@@ -21,7 +21,7 @@ import java.util.Map;
  * @date 2018/12/25
  * @description
  */
-public class RecordListCreateBody implements Serializable {
+public class RecordListBody implements Serializable {
 
     @JsonIgnore
     private static final long serialVersionUID = 1L;
@@ -50,14 +50,14 @@ public class RecordListCreateBody implements Serializable {
 
 
     @JsonIgnore
-    public static RecordListCreateBody toClass(String in) throws OtsException {
+    public static RecordListBody toClass(String in) throws OtsException {
 
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(in.getBytes(OtsConstants.DEFAULT_ENCODING));
-            return JsonUtil.readJsonFromStream(bais, RecordListCreateBody.class);
+            return JsonUtil.readJsonFromStream(bais, RecordListBody.class);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_JSON2OBJECT, "convert json input to RecordListCreateBody failed.");
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_JSON2OBJECT, "convert json input to RecordListBody failed.");
         }
     }
 }

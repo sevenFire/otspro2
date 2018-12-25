@@ -1,11 +1,11 @@
-package com.baosight.xinsight.ots.rest.constant;
+package com.baosight.xinsight.ots.constants;
 
 /**
  * @author liyuhui
  * @date {DATE}
  * @description
  */
-public class ParamErrorCode extends RestErrorCode {
+public class ParamErrorCode {
     public static final long EC_OTS_REST_PARAM_BASE_NO = 173100;
 
     public static final long PARAM_RECORDS_IS_NULL = EC_OTS_REST_PARAM_BASE_NO + 1;

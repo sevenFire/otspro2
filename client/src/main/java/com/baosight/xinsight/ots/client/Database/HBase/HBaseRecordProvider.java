@@ -17,6 +17,7 @@ import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.RegionTooBusyException;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Delete;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
@@ -29,6 +30,8 @@ import org.apache.hadoop.hbase.util.Bytes;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -188,6 +191,112 @@ public class HBaseRecordProvider {
         insertRecords(tableName,records);
     }
 
+
+    /**
+     * 按主键批量查询表
+     * @param table
+     * @param rowKeyBatch
+     * @param query
+     */
+    public static RecordResult getRecordsByKeys(Table table,
+                                        List<byte[]> rowKeyBatch,
+                                        RecordQueryOption query) throws TableException, IOException{
+        class ByteCompare{//用于升序或降序
+            public int compare(byte[] left, byte[] right){
+                if (left == right)
+                    return 0;
+                for (int i = 0,j = 0; i < left.length && j < right.length; i++,j++){
+                    int nLeft = (left[i]&0xff);
+                    int nRight = (right[j]&0xff);
+                    if (nLeft != nRight)
+                        return nLeft - nRight;
+                }
+                return left.length - right.length;
+            }
+        }
+
+        if (rowKeyBatch == null) {
+            throw new TableException(OtsErrorCode.EC_OTS_STORAGE_INVALID_RECQUERY_KEY, "Error RecordKeysQuery param!");
+        }
+
+        List<RowRecord> recordList = new ArrayList<>();
+        long matchCounter = 0;
+        boolean onlyRowKey = query.onlyGetRowKey();//默认是false
+
+        if (rowKeyBatch.size() > 0) {	//has valid key
+            if (query.getIsSort()) {  //if sort, check whether desc or asc
+                if (query.isDescending()) {
+                    Collections.sort(rowKeyBatch,new Comparator<byte[]>(){
+                        public int compare(byte[] arg0, byte[] arg1) {
+                            return new ByteCompare().compare(arg1, arg0);
+                        }
+                    });
+                } else {
+                    Collections.sort(rowKeyBatch,new Comparator<byte[]>(){
+                        public int compare(byte[] arg0, byte[] arg1) {
+                            return new ByteCompare().compare(arg0, arg1);
+                        }
+                    });
+                }
+            }
+
+            List<Get> listGets = new ArrayList<>();
+            for (byte[] row : rowKeyBatch) {
+                Get get = new Get(row);
+                get.addFamily(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME));
+
+                //add hbase attribute option, 2015-11-17
+//                if (query.getHbase_attributes() != null) {
+//                    for (String attribute : query.getHbase_attributes().keySet()) {
+//                        get.setAttribute(attribute, query.getHbase_attributes().get(attribute));
+//                    }
+//                }
+
+                // todo lyh 这里要全部取出，然后对取出的数据进行解析。所以查询条件不需要加returnColumns。
+//                if (query.hasReturnColumns()) {
+//                    List<byte[]> columns = query.getReturnColumnsAsByteList();
+//                    if (!onlyRowKey) {
+//                        for (byte[] col : columns) {
+//                            get.addColumn(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME), col);
+//                        }
+//                    }
+//                }
+
+                listGets.add(get);
+            }
+
+            try {
+                Result[] results = table.get(listGets);
+                for (Result result : results) {
+                    if (result != null && !result.isEmpty()) {
+                        matchCounter++;
+                        RowRecord recModel = readRow(onlyRowKey, result);
+                        recordList.add(recModel);
+                    }
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+
+                if ( !(e instanceof DoNotRetryIOException)) {
+
+                    if (e.getCause() instanceof NotServingRegionException) {
+                        throw new TableException(OtsErrorCode.EC_OTS_STORAGE_OPERATE_RECORD_NOSERVINGREGINON, "no serving region exception, you may retry the operation!");
+                    } else if (e.getCause() instanceof RegionTooBusyException) {
+                        throw new TableException(OtsErrorCode.EC_OTS_STORAGE_OPERATE_RECORD_REGINONTOOBUSY, "region too busy exception, you may retry the operation!");
+                    }
+                }
+                throw new TableException(OtsErrorCode.EC_OTS_STORAGE_RECORD_QUERY, "query Record error (by keys)!");
+
+            } finally {
+                table.close();
+            }
+        }
+
+        return new RecordResult(matchCounter, recordList);
+    }
+
+
     /**
      * 按范围查询表
      * @param query
@@ -196,9 +305,9 @@ public class HBaseRecordProvider {
      * @return
      */
     public static RecordResult getRecordsByRange(Table table,
-                                                              RecordQueryOption query,
-                                                              byte[] startKey,
-                                                              byte[] endKey) throws DecoderException, IOException, TableException {
+                                                  RecordQueryOption query,
+                                                  byte[] startKey,
+                                                  byte[] endKey) throws DecoderException, IOException, TableException {
         Scan scan = new Scan();
         scan.addFamily(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME));
 
@@ -358,4 +467,5 @@ public class HBaseRecordProvider {
 
         return recModel;
     }
+
 }

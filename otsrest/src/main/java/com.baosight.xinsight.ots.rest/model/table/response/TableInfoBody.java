@@ -1,20 +1,12 @@
 package com.baosight.xinsight.ots.rest.model.table.response;
 
-import com.baosight.xinsight.ots.client.OtsTable;
-import com.baosight.xinsight.ots.client.exception.ConfigException;
-import com.baosight.xinsight.ots.client.metacfg.Table;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableColumnsBody;
 import com.baosight.xinsight.utils.JsonUtil;
 
-import com.cloudera.org.codehaus.jackson.map.DeserializationConfig;
-import com.cloudera.org.codehaus.jackson.map.ObjectMapper;
-import com.cloudera.org.codehaus.jackson.type.TypeReference;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 

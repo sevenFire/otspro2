@@ -1,8 +1,8 @@
-package com.baosight.xinsight.ots.rest.model.table.operate;
+package com.lyh.sample.rest.model;
 
 
 
-import com.baosight.xinsight.ots.rest.util.JsonUtil;
+import com.lyh.sample.rest.util.JsonUtil;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;

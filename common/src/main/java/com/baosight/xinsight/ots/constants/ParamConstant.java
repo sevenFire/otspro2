@@ -1,4 +1,4 @@
-package com.baosight.xinsight.ots.rest.constant;
+package com.baosight.xinsight.ots.constants;
 
 /**
  * @author liyuhui
@@ -33,4 +33,8 @@ public class ParamConstant {
     public static final Object HAS_START_END = "has_start_end";
     public static final String KEY_START_ROWKRY = "key_start_rowkey";
     public static final String KEY_END_ROWKRY = "key_end_rowkey";
+
+
+    public static final String RECORD_START = "recordStart";
+    public static final String RECORD_END = "recordEnd";
 }

@@ -1,17 +1,18 @@
-package com.baosight.xinsight.ots.rest.util;
+package com.baosight.xinsight.ots.common.util;
 
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baosight.xinsight.ots.constants.ParamConstant;
+import com.baosight.xinsight.ots.constants.ParamErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
-import com.baosight.xinsight.ots.rest.constant.ParamConstant;
-import com.baosight.xinsight.ots.rest.constant.ParamErrorCode;
-import com.baosight.xinsight.utils.BytesUtil;
+import com.baosight.xinsight.ots.rest.util.BytesUtil;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Blob;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,28 @@ public class PrimaryKeyUtil {
     final static int BYTES_LENGTH_LONG_LENGTH = 8;
 
     /**
+     * 批量生成rowKey
+     * @param tableId
+     * @param schema_primaryKey
+     * @param schema_tableColumns
+     * @param primaryKeyInputList
+     * @return
+     */
+    public static List<byte[]> generateRowKeyBatch(Long tableId,
+                                                   JSONArray schema_primaryKey,
+                                                   JSONArray schema_tableColumns,
+                                                   List<JSONObject> primaryKeyInputList) throws OtsException, SQLException {
+        List<byte[]> rowKeys = new ArrayList<>();
+        for (int i = 0; i < primaryKeyInputList.size(); i++) {
+            JSONObject record = primaryKeyInputList.get(i);
+            byte[] rowKey = generateRowKey(tableId,schema_primaryKey,schema_tableColumns,record,false);
+            rowKeys.add(rowKey);
+        }
+
+        return rowKeys;
+    }
+
+    /**
      * 生成rowKey
      * @param tableId 表id
      * @param schema_primaryKey 被选择为主键的所有列
@@ -50,9 +73,9 @@ public class PrimaryKeyUtil {
                                         JSONArray schema_primaryKey,
                                         JSONArray schema_tableColumns,
                                         JSONObject record,
-                                        Boolean prefix) throws OtsException {
+                                        Boolean prefix) throws OtsException, SQLException {
         
-        Map<String,String> tableColumnsMap = dealWithTableColumns(schema_tableColumns);
+        Map<String,String> tableColumnsMap = ColumnsUtil.dealWithTableColumns(schema_tableColumns);
 
         //存有primaryKey的每列值的数组
         List<byte[]> primaryKeyValueAndLength = new ArrayList<>();
@@ -73,17 +96,30 @@ public class PrimaryKeyUtil {
             byte[] valueByte = null;
             byte[] lenByte = null;
             //get value in byte[]
-            if (type.equalsIgnoreCase("string")){
-                String value = (String) record.get(primaryKey_colName);
-                valueByte = BytesUtil.toBytes(value);
-                lenByte = BytesUtil.toBytes(value.length());
+            if (type.equalsIgnoreCase("string") || type.equalsIgnoreCase("blob")){
+
+                if (type.equalsIgnoreCase("string")) {
+                    String value = (String) record.get(primaryKey_colName);
+                    valueByte = BytesUtil.toBytes(value);
+                    lenByte = BytesUtil.toBytes(value.length());
+                }else{
+                    Blob value = (Blob) record.get(primaryKey_colName);
+                    valueByte = BytesUtil.toBytes(value);
+                    lenByte = BytesUtil.toBytes(value.length());
+                }
+
+                primaryKeyValueAndLength.add(valueByte);
+                primaryKeyValueAndLength.add(lenByte);
+                lenTotal += valueByte.length + lenByte.length;
+
             }else{
-                //todo 其他类型
+                valueByte = ColumnsUtil.getValueByte(type,primaryKey_colName,record);
+
+                primaryKeyValueAndLength.add(valueByte);
+                lenTotal += valueByte.length;
+
             }
 
-            primaryKeyValueAndLength.add(valueByte);
-            primaryKeyValueAndLength.add(lenByte);
-            lenTotal += valueByte.length + lenByte.length;
         }
 
         if (prefix){//前缀查询的时候，要删除后面的Len
@@ -92,6 +128,24 @@ public class PrimaryKeyUtil {
             lenTotal -= lastLen.length;
         }
         return generateRowKey(tableId,lenTotal,primaryKeyValueAndLength);
+    }
+
+    /**
+     * 只有tableId的rowkey前缀
+     * @param tableId
+     * @return
+     */
+    public static byte[] generateRowKeyPrefixOnlyWithTableId(Long tableId) {
+        //tableId加密后的byte数组
+        byte[] digest = md5(tableId);
+        //tableId的byte数组
+        byte[] byteTableId = BytesUtil.toBytes(tableId);
+
+        byte[] primaryKey = new byte[BYTES_LENGTH_LONG_LENGTH + BYTES_BYTES_MD5_LENGTH];
+        BytesUtil.putBytes(primaryKey, 0, digest, 0, BYTES_BYTES_MD5_LENGTH);
+        BytesUtil.putBytes(primaryKey, BYTES_BYTES_MD5_LENGTH, byteTableId, 0, BYTES_LENGTH_LONG_LENGTH);
+
+        return primaryKey;
     }
 
     /**
@@ -125,22 +179,6 @@ public class PrimaryKeyUtil {
     }
 
 
-
-    /**
-     * 处理table_columns，抽取col_name和col_type的对应关系。
-     * @param schema_tableColumns
-     * @return
-     */
-    private static Map<String, String> dealWithTableColumns(JSONArray schema_tableColumns) {
-        Map<String,String> tableColumnsMap = new HashMap<>();
-        for (int i = 0; i < schema_tableColumns.size(); i++) {
-            JSONObject column = (JSONObject) schema_tableColumns.get(i);
-            //(age:int)
-            tableColumnsMap.put(column.getString(ParamConstant.KEY_COL_NAME),column.getString(ParamConstant.KEY_COL_TYPE));
-        }
-        return tableColumnsMap;
-    }
-
     /**
      * 得到rowkey的取值范围
      * @param tableId
@@ -153,102 +191,26 @@ public class PrimaryKeyUtil {
     public static List<byte[]> generateRowKeyRange(long tableId,
                                                 JSONArray schema_primaryKey,
                                                 JSONArray schema_tableColumns,
-                                                JSONArray primaryKeyInput) throws OtsException {
-        if (primaryKeyInput==null || primaryKeyInput.size()==0){
-            throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
-        }
+                                                Map<String,JSONObject> primaryKeyInput) throws OtsException, SQLException {
         List<byte[]> rowKeys = new ArrayList<>();
 
-        JSONObject recordStart = new JSONObject();
-        JSONObject recordEnd = new JSONObject();
-
-        for (int i = primaryKeyInput.size()-1 ; i >= 0; i--) {
-            JSONObject colOne = (JSONObject) primaryKeyInput.get(i);
-
-            //先获取最后一位，只有这一位有两种可能
-            if (i == primaryKeyInput.size() - 1) {
-                if (colOne.containsKey(ParamConstant.KEY_COL_VALUE)) {
-                    Object colValue = colOne.get(ParamConstant.KEY_COL_VALUE);
-                    String colName = colOne.getString(ParamConstant.KEY_COL_NAME);
-
-                    recordStart.put(colName, colValue);
-
-                } else if (colOne.containsKey(ParamConstant.KEY_COL_START)
-                        && colOne.containsKey(ParamConstant.KEY_COL_END)) {
-                    Object colStart = colOne.get(ParamConstant.KEY_COL_START);
-                    Object colEnd = colOne.get(ParamConstant.KEY_COL_END);
-                    String colName = colOne.getString(ParamConstant.KEY_COL_NAME);
-
-                    recordStart.put(colName, colStart);
-                    recordEnd.put(colName, colEnd);
-
-                } else {
-                    throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
-                }
-            } else {
-                if (!colOne.containsKey(ParamConstant.KEY_COL_VALUE)) {
-                    throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
-                }
-                Object colValue = colOne.get(ParamConstant.KEY_COL_VALUE);
-                String colName = colOne.getString(ParamConstant.KEY_COL_NAME);
-                recordStart.put(colName, colValue);
-                recordEnd.put(colName, colValue);
-            }
+        if (primaryKeyInput==null || primaryKeyInput.size()==0 || primaryKeyInput.size() > 2){
+            throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
         }
 
+        JSONObject recordStart = primaryKeyInput.containsKey(ParamConstant.RECORD_START) ? primaryKeyInput.get(ParamConstant.RECORD_START): null;
+        JSONObject recordEnd = primaryKeyInput.containsKey(ParamConstant.RECORD_END) ? primaryKeyInput.get(ParamConstant.RECORD_END): null;
+
+        if (recordEnd == null){
+            throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
+        }
         rowKeys.add(generateRowKey(tableId, schema_primaryKey, schema_tableColumns, recordStart, true));
-        if (recordEnd.size() == recordStart.size()) {
+        if (recordEnd != null) {
             rowKeys.add(generateRowKey(tableId, schema_primaryKey, schema_tableColumns, recordEnd, true));
         }
+
         return rowKeys;
     }
-
-
-    /**
-     * 生成rowkey
-     * @param tableId
-     * @param primaryKeyValue 按顺序存好的主键值
-     * @param colRange 有范围的主键值
-     *
-     */
-    public static byte[] generateRowKeyPrefix(long tableId, JSONArray primaryKeyValue, Object colRange) {
-        //tableId加密后的前四位
-        byte[] digest = Arrays.copyOfRange(md5(tableId),0,3);
-
-        //tableId的byte数组
-        byte[] byteTableId = BytesUtil.toBytes(tableId);
-
-        JSONArray byteLenArray = new JSONArray();
-        Integer primaryKeyByteLenTotal = 0;
-        for (int i = 0; i < primaryKeyValue.size()-1; i++) {
-
-            Object colOne = primaryKeyValue.get(i);
-//            getLen(byteLenArray,colOne);
-//            primaryKeyByteLenTotal+=byteLenArray.get(i);
-
-        }
-
-//        byte[] primaryKey = new byte[MD5_BYTES_LENGTH_SHORT + byteTableId.length + hashKey.length];
-        return null;
-
-    }
-
-//    /**
-//     * 获取字节长度
-//     * @param byteLenArray
-//     * @param col
-//     */
-//    private static int getLen(Object col) {
-//        if (col instanceof String){
-//            return BytesUtil.toBytes(((String) col).length());
-//        }else if(col instanceof Integer){
-//            return BytesUtil.toBytes(4);
-//        }else if(col instanceof Long){
-//            return BytesUtil.toBytes(8);
-//        }else{
-//            //todo lyh other situation
-//            return null;
-//    }
 
     /**
      * 加密
@@ -281,11 +243,11 @@ public class PrimaryKeyUtil {
         JSONArray schema_tableColumns = new JSONArray();
         JSONObject one = new JSONObject();
         one.put("col_name","col1");
-        one.put("col_type","string");
+        one.put("col_type","int32");
         schema_tableColumns.add(one);
         JSONObject two = new JSONObject();
         two.put("col_name","col2");
-        two.put("col_type","string");
+        two.put("col_type","int32");
         schema_tableColumns.add(two);
         JSONObject three = new JSONObject();
         three.put("col_name","col3");
@@ -293,15 +255,20 @@ public class PrimaryKeyUtil {
         schema_tableColumns.add(three);
 
         JSONObject record = new JSONObject();
-        record.put("col1","value0");
-        record.put("col2","value0");
-        record.put("col3","value5");
+        record.put("col1",1);
+        record.put("col2",2);
+        record.put("col3","value0");
         record.put("col4","value0");
         record.put("col5","value0");
 
-        byte[] rowKey = generateRowKey(tableId, schema_primaryKey, schema_tableColumns, record,false);
+        byte[] rowKey = new byte[0];
+        try {
+            rowKey = generateRowKey(tableId, schema_primaryKey, schema_tableColumns, record,false);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         for (int i = 0; i < rowKey.length; i++) {
-            System.out.println(rowKey[i]);
+            System.out.print(rowKey[i]+" ");
         }
 
 //        int a = 0;
