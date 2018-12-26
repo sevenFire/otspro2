@@ -152,7 +152,7 @@ public class RecordService {
      * @param getBody
      * @return
      */
-    public static Object getRecordsByPrimaryKeys(PermissionCheckUserInfo userInfo,
+    public static RecordListBody getRecordsByPrimaryKeys(PermissionCheckUserInfo userInfo,
                                                  String tableName,
                                                  RecordQueryListBody getBody) throws OtsException, IOException, SQLException {
         TableInfoBody info = TableConfigUtil.getTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableName);
@@ -188,10 +188,10 @@ public class RecordService {
 
         //HBase批量查询
         RecordResult recordResult = ConfigUtil.getInstance().getOtsAdmin().getRecordsBatch(table.getTenantId(), rowKeyBatch, query);
-        //todo lyh returnColumns用以解析数据
 
         RecordListBody recordListBody = new RecordListBody();
 
+        //对结果进行解析
         for (int i = 0; i < recordResult.size(); i++) {
             List<RowCell> rowCellList = recordResult.getRecordList().get(i).getCellList();
             if (rowCellList.size() != 1){
@@ -352,8 +352,9 @@ public class RecordService {
             rowRecord.setRowkey(rowKey);
 
             //set cell
-            String cellkey = TableConstants.HBASE_TABLE_CELL; //todo lyh key应该是什么？
-            byte[] cellvalue = ColumnsUtil.generateCellValue(schema_tableColumns, record);
+            String cellkey = TableConstants.HBASE_TABLE_CELL; //todo lyh cell key应该是什么？
+            //cellValue里不存主键
+            byte[] cellvalue = ColumnsUtil.generateCellValue(schema_primaryKey, schema_tableColumns, record);
             RowCell rowCell = new RowCell(Bytes.toBytes(cellkey), cellvalue);
             rowRecord.addCell(rowCell);
 

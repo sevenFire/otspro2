@@ -51,6 +51,12 @@ public class RecordResource extends RestBase{
     HttpServletRequest request;
 
 
+    /**
+     * 新增记录
+     * @param tableName
+     * @param body
+     * @return
+     */
     @POST
     @Path("/{tablename}")
     @Consumes({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
@@ -95,6 +101,12 @@ public class RecordResource extends RestBase{
     }
 
 
+    /**
+     * 修改记录
+     * @param tableName
+     * @param body
+     * @return
+     */
     @PUT
     @Path("/{tablename}")
     @Consumes({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
@@ -133,6 +145,12 @@ public class RecordResource extends RestBase{
         }
     }
 
+    /**
+     * 查询记录
+     * @param tableName
+     * @param body
+     * @return
+     */
     @POST
     @Path("/{tablename}/query")
     @Produces(MediaType.APPLICATION_JSON)
@@ -169,6 +187,12 @@ public class RecordResource extends RestBase{
 
     }
 
+    /**
+     * 查询记录
+     * @param tableName
+     * @param body
+     * @return
+     */
     @POST
     @Path("/{tablename}/keys")
     @Produces(MediaType.APPLICATION_JSON)
@@ -182,18 +206,6 @@ public class RecordResource extends RestBase{
         //get userInfo
         PermissionCheckUserInfo userInfo = new PermissionCheckUserInfo();
         userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
-
-//        //get body
-//        JSONObject getBody;
-//        try {
-//            getBody = readJsonToMap();
-//        } catch (OtsException e) {
-//            e.printStackTrace();
-//            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-//                    .type(MediaType.APPLICATION_JSON)
-//                    .entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
-//
-//        }
 
         //get records
         try {
@@ -218,6 +230,11 @@ public class RecordResource extends RestBase{
 
     }
 
+    /**
+     * 清空记录
+     * @param tableName
+     * @return
+     */
     @DELETE
     @Path("/{tablename}/truncate")
     @Produces(MediaType.APPLICATION_JSON)

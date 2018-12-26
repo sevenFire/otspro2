@@ -28,29 +28,35 @@ public class ColumnsUtil {
     public static final String CELL_LEN_TOTAL = "lenTotal";
     /**
      * 生成要插入HBase的cell中的值
-     * 这里暂时存了所有列的值，后续还要处理存的格式。//todo lyh
-     * @param tableColumns
+     * 注意，cellValue里不存主键。
+     * @param schema_tableColumns
      * @param record
      * @return
      */
-    public static byte[] generateCellValue(JSONArray tableColumns, JSONObject record) throws SQLException, OtsException {
+    public static byte[] generateCellValue(JSONArray schema_primaryKey,
+                                           JSONArray schema_tableColumns,
+                                           JSONObject record) throws SQLException, OtsException {
         Map<String,Object> cellMap = new HashMap<>();
 
         //用来存储列值和列长度(string和blob需要)
         List<byte[]> columnsValueAndLenArray = new ArrayList<>();
         //用来表示每一列的值存在性
-        byte[] exist = new byte[tableColumns.size()];
-        //用来存储total len
+        byte[] exist = new byte[schema_tableColumns.size() - schema_primaryKey.size()];
+        //用来存储total len，初始值为exist数组的长度
         Integer lenTotal = exist.length;
 
-        for (int i = 0; i<tableColumns.size(); i++){
+        for (int i = 0,j=0; i<schema_tableColumns.size() && j<exist.length; i++){
 
-            JSONObject tableColumn = (JSONObject) tableColumns.get(i);
+            JSONObject tableColumn = (JSONObject) schema_tableColumns.get(i);
             String colName = (String) tableColumn.get("col_name");
             String colType = (String) tableColumn.get("col_type");
 
+            if(schema_primaryKey.contains(colName)){//跳过主键
+                continue;
+            }
+
             if (record.containsKey(colName)){
-                exist[i] = 1;
+                exist[j] = 1;
 
                 byte[] valueByte;
                 byte[] lenByte;
@@ -77,8 +83,9 @@ public class ColumnsUtil {
                     lenTotal += valueByte.length;
                 }
             }else{
-                exist[i] = 0;
+                exist[j] = 0;
             }
+            j++;
         }
 
         cellMap.put(EXIST_BYTE_ARRAY,exist);
@@ -207,15 +214,20 @@ public class ColumnsUtil {
         three.put("col_name","col3");
         three.put("col_type","string");
         schema_tableColumns.add(three);
+        JSONObject four = new JSONObject();
+        four.put("col_name","col4");
+        four.put("col_type","int32");
+        schema_tableColumns.add(four);
 
         JSONObject record = new JSONObject();
         record.put("col1",1);
         record.put("col2",2);
         record.put("col3","value0");
+        record.put("col4",4);
 
         byte[] cellValue = new byte[0];
         try {
-            cellValue = generateCellValue(schema_tableColumns, record);
+            cellValue = generateCellValue(schema_primaryKey,schema_tableColumns, record);
         } catch (SQLException e) {
             e.printStackTrace();
         }
