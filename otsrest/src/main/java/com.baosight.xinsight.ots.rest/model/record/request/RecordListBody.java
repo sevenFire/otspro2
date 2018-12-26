@@ -13,8 +13,6 @@ import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
 
 /**
  * @author liyuhui
@@ -28,6 +26,14 @@ public class RecordListBody implements Serializable {
 
     @JsonProperty(value="records")
     private List<JSONObject> recordList = new ArrayList<>();
+
+    @JsonProperty(value="total_count")
+    private int totalCount;
+
+    @JsonProperty(value="errcode")
+    private long errCode;
+
+    //todo lyh cursor mark
 
     public List<JSONObject> getRecordList() {
         return recordList;
@@ -59,5 +65,21 @@ public class RecordListBody implements Serializable {
             e.printStackTrace();
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_JSON2OBJECT, "convert json input to RecordListBody failed.");
         }
+    }
+
+    public int getTotalCount() {
+        return totalCount;
+    }
+
+    public void setTotalCount(int totalCount) {
+        this.totalCount = totalCount;
+    }
+
+    public long getErrCode() {
+        return errCode;
+    }
+
+    public void setErrCode(long errCode) {
+        this.errCode = errCode;
     }
 }

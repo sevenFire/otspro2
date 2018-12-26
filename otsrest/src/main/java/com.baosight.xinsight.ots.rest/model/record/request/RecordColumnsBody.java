@@ -1,6 +1,5 @@
 package com.baosight.xinsight.ots.rest.model.record.request;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
@@ -12,8 +11,6 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 import java.io.ByteArrayInputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author liyuhui

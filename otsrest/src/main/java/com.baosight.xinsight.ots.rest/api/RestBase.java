@@ -1,12 +1,13 @@
 package com.baosight.xinsight.ots.rest.api;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
 
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -84,7 +85,9 @@ public class RestBase {
 
         try {
             return JSON.parseObject(data);
-        } catch (JSONException ex) {
+//        	ObjectMapper mapper = new ObjectMapper();
+//        	return mapper.readTree(data);
+        } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             throw new OtsException(OtsErrorCode.PARSE_JSONSTRING_ERROR, ex);
         }

@@ -34,6 +34,7 @@ import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.JsonNode;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -193,6 +194,8 @@ public class RecordService {
 
         //对结果进行解析
         for (int i = 0; i < recordResult.size(); i++) {
+            byte[] rowKey = recordResult.getRecordList().get(i).getRowkey();
+
             List<RowCell> rowCellList = recordResult.getRecordList().get(i).getCellList();
             if (rowCellList.size() != 1){
                 throw new TableException(OtsErrorCode.EC_OTS_STORAGE_RECORD_QUERY,"查询的结果有误，列数不对。");
@@ -201,16 +204,19 @@ public class RecordService {
             byte[] cellValue = rowCellList.get(0).getValue();
 
             //将每个列的值解析出来
-            JSONObject record = ColumnsUtil.generateColumnValue(schema_tableColumns,getBody.getReturnColumns(),cellValue);
+            JSONObject record = ColumnsUtil.generateColumnValue(schema_primaryKey,schema_tableColumns,getBody.getReturnColumns(),cellValue,rowKey);
             recordListBody.addRecord(record);
         }
+
+        recordListBody.setErrCode(0L);
+        recordListBody.setTotalCount(recordListBody.getRecordList().size());
 
         return recordListBody;
     }
 
 
     /**
-     * 通过主键查询记录
+     * 通过主键（包含范围）查询记录
      * @param userInfo
      * @param tableName
      * @param getBody
@@ -352,10 +358,10 @@ public class RecordService {
             rowRecord.setRowkey(rowKey);
 
             //set cell
-            String cellkey = TableConstants.HBASE_TABLE_CELL; //todo lyh cell key应该是什么？
+            String cellKey = TableConstants.HBASE_TABLE_CELL; //todo lyh cell key应该是什么？
             //cellValue里不存主键
-            byte[] cellvalue = ColumnsUtil.generateCellValue(schema_primaryKey, schema_tableColumns, record);
-            RowCell rowCell = new RowCell(Bytes.toBytes(cellkey), cellvalue);
+            byte[] cellValue = ColumnsUtil.generateCellValue(schema_primaryKey, schema_tableColumns, record);
+            RowCell rowCell = new RowCell(Bytes.toBytes(cellKey), cellValue);
             rowRecord.addCell(rowCell);
 
             //add to the list

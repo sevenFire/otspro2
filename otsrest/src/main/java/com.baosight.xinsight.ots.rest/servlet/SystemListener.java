@@ -17,7 +17,6 @@ import org.apache.log4j.Logger;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
-//import com.baosight.xinsight.ots.rest.message.handler.ConfigMessageHandlerImpl;
 
 public class SystemListener implements ServletContextListener {
 	private final static Logger LOG = Logger.getLogger(SystemListener.class);

@@ -10,9 +10,7 @@
 
   <servlet>
     <servlet-name>OTS RESTful API</servlet-name>
-    <servlet-class>
-      com.sun.jersey.spi.container.servlet.ServletContainer
-    </servlet-class>
+    <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
     <init-param>
       <param-name>com.sun.jersey.config.property.packages</param-name>
       <param-value>com.baosight.xinsight.ots.rest.api</param-value>
@@ -37,4 +35,7 @@
   </servlet-mapping>
 
 
+	<listener>
+		<listener-class>com.baosight.xinsight.ots.rest.servlet.SystemListener</listener-class>
+	</listener>
 </web-app>

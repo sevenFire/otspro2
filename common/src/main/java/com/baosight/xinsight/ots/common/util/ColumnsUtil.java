@@ -2,10 +2,10 @@ package com.baosight.xinsight.ots.common.util;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baosight.xinsight.ots.constants.ByteConstant;
 import com.baosight.xinsight.ots.constants.ParamConstant;
 import com.baosight.xinsight.ots.constants.ParamErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
-
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -20,12 +20,16 @@ import java.util.Map;
  * @description
  */
 public class ColumnsUtil {
-    final static int BYTES_BYTES_MD5_LENGTH = 4;
-    final static int BYTES_LENGTH_LONG_LENGTH = 4;
 
     public static final String EXIST_BYTE_ARRAY = "exist";
     public static final String CELL_VALUE_AND_LEN_ARRAY = "cell";
     public static final String CELL_LEN_TOTAL = "lenTotal";
+    private static final String NORMAL_COLUMNS = "normal_columns";
+    private static final String PRIMARY_COLUMNS = "primary_columns";
+    private static final String COL_NAME = "col_name";
+    private static final String COL_TYPE = "col_type";
+
+    //=========================正向===========================================
     /**
      * 生成要插入HBase的cell中的值
      * 注意，cellValue里不存主键。
@@ -95,6 +99,11 @@ public class ColumnsUtil {
         return generateCellValueByCellMap(cellMap);
     }
 
+    /**
+     * 生成真正存储于HBase的cellValue
+     * @param cellMap
+     * @return
+     */
     private static byte[] generateCellValueByCellMap(Map<String, Object> cellMap) {
         int lenTotal = (int) cellMap.get(CELL_LEN_TOTAL);
         List<byte[]> columnsValueAndLenArray = (List<byte[]>) cellMap.get(CELL_VALUE_AND_LEN_ARRAY);
@@ -114,6 +123,14 @@ public class ColumnsUtil {
         return cellValue;
     }
 
+    /**
+     * 根据数据类型将colValue转换为byte[]
+     * @param colType
+     * @param colName
+     * @param record
+     * @return
+     * @throws OtsException
+     */
     public static byte[] getValueByte(String colType, String colName, JSONObject record) throws OtsException {
         byte[] valueByte;
 
@@ -148,42 +165,35 @@ public class ColumnsUtil {
     }
 
     /**
-     * 将存储于HBase的打包cell值解析出真正的列值
-     * @param returnColumns
-     * @param cellValue
+     * 根据数据的类型，获取其所占的byte[]长度
+     * @param colType
      * @return
      */
-    public static JSONObject generateColumnValue(JSONArray schema_tableColumns,
-                                                 List<String> returnColumns,
-                                                 byte[] cellValue) {
-        JSONObject record = new JSONObject();
-
-        Map<String,String> tableColumnsMap = dealWithTableColumns(schema_tableColumns);
-
-
-        //列总数
-        int colSize = schema_tableColumns.size();
-        int totalLen = cellValue.length;
-        //copyOfRange方法中from是inclusive，to是exclusive。
-        byte[] valueAndLength = Arrays.copyOfRange(cellValue, BYTES_BYTES_MD5_LENGTH + BYTES_LENGTH_LONG_LENGTH, totalLen-colSize);
-        byte[] exist = Arrays.copyOfRange(cellValue, totalLen-colSize, totalLen);
-
-        int targetOffset = 4;
-        for (int i=exist.length-1; i>=0; i--){
-            int existFlag = exist[i];
-            if (existFlag == 1){
-
-//                record.put()
-            }
+    private static int getValueByteLen(String colType) throws OtsException {
+        if (colType.equalsIgnoreCase("int8")){
+            return ByteConstant.BYTES_LENGTH_INT8_LENGTH;
+        }else if (colType.equalsIgnoreCase("int16")){
+            return ByteConstant.BYTES_LENGTH_INT16_LENGTH;
+        }else if (colType.equalsIgnoreCase("int32")){
+            return ByteConstant.BYTES_LENGTH_INT32_LENGTH;
+        }else if (colType.equalsIgnoreCase("int64")){
+            return ByteConstant.BYTES_LENGTH_INT64_LENGTH;
+        }else if (colType.equalsIgnoreCase("bool")){
+            return ByteConstant.BYTES_LENGTH_BOOL_LENGTH;
+        }else if (colType.equalsIgnoreCase("float32")){
+            return ByteConstant.BYTES_LENGTH_FLOAT32_LENGTH;
+        }else if (colType.equalsIgnoreCase("float64")){
+            return ByteConstant.BYTES_LENGTH_FLOAT64_LENGTH;
+        }else{
+            throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID,"不支持的字段类型");
         }
 
-        return null;
     }
 
     /**
      * 处理table_columns，抽取col_name和col_type的对应关系。
      * @param schema_tableColumns
-     * @return
+     * @return 所有列的名字和类型对应关系
      */
     public static Map<String, String> dealWithTableColumns(JSONArray schema_tableColumns) {
         Map<String,String> tableColumnsMap = new HashMap<>();
@@ -194,6 +204,240 @@ public class ColumnsUtil {
         }
         return tableColumnsMap;
     }
+
+
+    //==========================反向=================================================
+    /**
+     * 将存储于HBase的打包cell值解析出真正的列值
+     * 注意，打包cell中不存储主键值，所以主键值需要从rowKey中解析出来
+     * @param schema_primaryKey
+     * @param schema_tableColumns
+     * @param returnColumns
+     * @param cellValue 这里的cellValue是数据表的cell，构成为普通列的value1+(len1)+...+标记位
+     * @param rowKey 这里的行键是数据表的行键，构成为md5+tableId+value1+(len1)+...
+     * @return
+     */
+    public static JSONObject generateColumnValue(JSONArray schema_primaryKey,
+                                               JSONArray schema_tableColumns,
+                                               List<String> returnColumns,
+                                               byte[] cellValue,
+                                               byte[] rowKey) throws OtsException {
+
+        //处理列信息
+        Map<String,JSONArray> tableColumnValueMap = dealWithTableColumns(schema_primaryKey,schema_tableColumns);
+        JSONArray primaryKeyNameAndType = tableColumnValueMap.get(PRIMARY_COLUMNS);
+        JSONArray normalColumnsNameAndType = tableColumnValueMap.get(NORMAL_COLUMNS);
+
+        //解析列信息
+        JSONObject primaryColumns = getPrimaryColumnsColValue(rowKey,primaryKeyNameAndType);
+        JSONObject normalColumns = getNormalColumnsColValue(cellValue,normalColumnsNameAndType);
+
+        //处理returnColumns
+        JSONObject record = dealWithReturnColumns(primaryColumns,normalColumns,returnColumns);
+
+        return record;
+    }
+
+    /**
+     * 处理返回的列
+     * @param primaryColumnsValue
+     * @param normalColumnsValue
+     * @param returnColumns
+     * @return
+     */
+    private static JSONObject dealWithReturnColumns(JSONObject primaryColumnsValue,
+                                                  JSONObject normalColumnsValue,
+                                                  List<String> returnColumns) {
+        JSONObject record = new JSONObject();
+        for (int i = 0; i < returnColumns.size(); i++) {
+            String returnColName = returnColumns.get(i);
+            if(normalColumnsValue.containsKey(returnColName)){
+                record.put(returnColName,normalColumnsValue.get(returnColName));
+            }else if(primaryColumnsValue.containsKey(returnColName)){
+                record.put(returnColName,primaryColumnsValue.get(returnColName));
+            }else{
+                continue;
+            }
+        }
+        return record;
+    }
+
+    /**
+     * 从cellValue中解析出primary key的值。
+     * 注意exist判定。
+     * 注意getNormalColumnsColValue()方法和getPrimaryColumnsColValue()很相似，但这里不写到一起，因为
+     * 后续也许会改变cellValue和rowKey的组成方式。二者不一定是保持一致的。
+     * @param cellValue
+     * @param normalColumnsColValue 普通列的列名和列类型对
+     */
+    private static JSONObject getNormalColumnsColValue(byte[] cellValue, JSONArray normalColumnsColValue) throws OtsException {
+        //总长度
+        int totalLen = cellValue.length;
+        //标记位的长度
+        int existSize = normalColumnsColValue.size();
+
+        byte[] exist = Arrays.copyOfRange(cellValue,totalLen-existSize,totalLen);
+        JSONObject record = new JSONObject();
+
+
+        int srcOffset = cellValue.length - existSize;
+        int tarOffset = cellValue.length - existSize;
+        for (int i = normalColumnsColValue.size()-1; i >= 0 && srcOffset>=0 && tarOffset>=0; i--) {
+            if (exist[i] == 0){
+                continue;
+            }
+            JSONObject one = (JSONObject) normalColumnsColValue.get(i);
+            String colName = one.getString(COL_NAME);
+            String colType = one.getString(COL_TYPE);
+
+
+            if (colType.equalsIgnoreCase("string") || colType.equalsIgnoreCase("blob")){
+                //取长度的字节数组
+                srcOffset -= ByteConstant.BYTES_LENGTH_INT_LENGTH;
+                byte[] lenByte = Arrays.copyOfRange(cellValue,srcOffset,tarOffset);
+                int len = BytesUtil.byteArrayToInt(lenByte);
+
+                //取value的字节数组
+                tarOffset = srcOffset;
+                srcOffset -= len;
+                byte[] valueByte =  Arrays.copyOfRange(cellValue,srcOffset,tarOffset);
+
+                if (colType.equalsIgnoreCase("string")) {
+                    String colValue = BytesUtil.byteArrayToString(valueByte);
+                    record.put(colName,colValue);
+                }else{
+                    Blob colValue = BytesUtil.byteArrayToBlob(valueByte);
+                    record.put(colName,colValue);
+                }
+            }else{
+                //取value的字节数组
+                int valueByteLen = getValueByteLen(colType);
+                srcOffset -= valueByteLen;
+                byte[] valueByte = Arrays.copyOfRange(cellValue,srcOffset,tarOffset);
+                Object colValue = getColValueByType(colType,valueByte);
+                record.put(colName,colValue);
+            }
+            tarOffset = srcOffset;
+        }
+        return record;
+    }
+
+
+    /**
+     * 从rowKey中解析出primary key的值。
+     * @param rowKey
+     * @param primaryKeyNameAndType 主键列的列名和列类型对
+     */
+    private static JSONObject getPrimaryColumnsColValue(byte[] rowKey,
+                                                    JSONArray primaryKeyNameAndType) throws OtsException {
+        JSONObject record = new JSONObject();
+
+        int srcOffset = rowKey.length;
+        int tarOffset = rowKey.length;
+
+        int prefixLen = ByteConstant.BYTES_BYTES_MD5_LENGTH + ByteConstant.BYTES_LENGTH_LONG_LENGTH;
+        for (int i = primaryKeyNameAndType.size()-1; i >= 0 && srcOffset>=prefixLen && tarOffset>=prefixLen; i--) {
+            JSONObject one = (JSONObject) primaryKeyNameAndType.get(i);
+            String colName = one.getString(COL_NAME);
+            String colType = one.getString(COL_TYPE);
+
+            if (colType.equalsIgnoreCase("string") || colType.equalsIgnoreCase("blob")){
+                //取长度的字节数组
+                srcOffset -= ByteConstant.BYTES_LENGTH_INT_LENGTH;
+                byte[] lenByte = Arrays.copyOfRange(rowKey,srcOffset,tarOffset);
+                int len = BytesUtil.byteArrayToInt(lenByte);
+
+                //取value的字节数组
+                tarOffset = srcOffset;
+                srcOffset -= len;
+                byte[] valueByte =  Arrays.copyOfRange(rowKey,srcOffset,tarOffset);
+
+                if (colType.equalsIgnoreCase("string")) {
+                    String colValue = BytesUtil.byteArrayToString(valueByte);
+                    record.put(colName,colValue);
+                }else{
+                    Blob colValue = BytesUtil.byteArrayToBlob(valueByte);
+                    record.put(colName,colValue);
+                }
+            }else{
+                //取value的字节数组
+                int valueByteLen = getValueByteLen(colType);
+                srcOffset -= valueByteLen;
+                byte[] valueByte = Arrays.copyOfRange(rowKey,srcOffset,tarOffset);
+                Object colValue = getColValueByType(colType,valueByte);
+                record.put(colName,colValue);
+            }
+            tarOffset = srcOffset;
+        }
+        return record;
+    }
+
+
+
+    /**
+     * 处理table_columns，抽取col_name和col_type的对应关系。
+     * 并将其primaryKey和普通列区分开。
+     * 注意，列要保持顺序
+     * @param schema_primaryKey
+     * @param schema_tableColumns
+     * @return 主键和普通列分别的列名和列类型对应关系
+     */
+    private static Map<String, JSONArray> dealWithTableColumns(JSONArray schema_primaryKey,
+                                                               JSONArray schema_tableColumns) {
+
+        Map<String,JSONArray> tableColumnsMap = new HashMap<>();
+        JSONArray normalColumns = new JSONArray();
+        JSONArray primaryColumns = new JSONArray();
+        tableColumnsMap.put(NORMAL_COLUMNS,normalColumns);
+        tableColumnsMap.put(PRIMARY_COLUMNS,primaryColumns);
+
+        for (int i = 0; i < schema_tableColumns.size(); i++) {
+            JSONObject column = (JSONObject) schema_tableColumns.get(i);
+            String colName = column.getString(ParamConstant.KEY_COL_NAME);
+            String colType = column.getString(ParamConstant.KEY_COL_TYPE);
+            JSONObject one = new JSONObject();
+            one.put(COL_NAME,colName);
+            one.put(COL_TYPE,colType);
+            //比如(age:int)
+            if (schema_primaryKey.contains(colName)){
+                primaryColumns.add(one);
+            }else{
+                normalColumns.add(one);
+            }
+
+        }
+        return tableColumnsMap;
+    }
+
+
+    /**
+     * 根据数据类型将byte[]解析出原本的colValue
+     * @param colType
+     * @param valueByte
+     * @return
+     */
+    private static Object getColValueByType(String colType, byte[] valueByte) throws OtsException {
+        if(colType.equalsIgnoreCase("int8")) {
+            return BytesUtil.byteArrayToByte(valueByte);
+        }else if(colType.equalsIgnoreCase("int16")) {
+            return BytesUtil.byteArrayToShort(valueByte);
+        }else if(colType.equalsIgnoreCase("int32")) {
+            return BytesUtil.byteArrayToInteger(valueByte);
+        }else if(colType.equalsIgnoreCase("int64")) {
+            return BytesUtil.byteArrayToLong(valueByte);
+        }else if(colType.equalsIgnoreCase("float32")) {
+            return BytesUtil.byteArrayToDouble(valueByte);
+        }else if(colType.equalsIgnoreCase("float64")) {
+            return BytesUtil.byteArrayToFloat(valueByte);
+        }else if(colType.equalsIgnoreCase("bool")) {
+            return BytesUtil.byteArrayToBoolean(valueByte);
+        }else{
+            //不支持的字段类型
+            throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID,"不支持的字段类型");
+        }
+
+    }
+
 
     public static void main(String[] args) throws OtsException {
         JSONArray schema_primaryKey = new JSONArray();

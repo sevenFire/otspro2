@@ -3,6 +3,7 @@ package com.baosight.xinsight.ots.common.util;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baosight.xinsight.ots.constants.ByteConstant;
 import com.baosight.xinsight.ots.constants.ParamConstant;
 import com.baosight.xinsight.ots.constants.ParamErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
@@ -30,13 +31,6 @@ import java.util.Map;
  *      len就用int表示。
  */
 public class PrimaryKeyUtil {
-    //截取的加密长度
-    final static int BYTES_BYTES_MD5_LENGTH = 4;
-    //用来存长度信息的长度
-    final static int BYTES_LENGTH_LENGTH = 4;
-    //int
-    final static int BYTES_LENGTH_INT_LENGTH = 4;
-    final static int BYTES_LENGTH_LONG_LENGTH = 8;
 
     /**
      * 批量生成rowKey
@@ -140,9 +134,9 @@ public class PrimaryKeyUtil {
         //tableId的byte数组
         byte[] byteTableId = BytesUtil.toBytes(tableId);
 
-        byte[] primaryKey = new byte[BYTES_LENGTH_LONG_LENGTH + BYTES_BYTES_MD5_LENGTH];
-        BytesUtil.putBytes(primaryKey, 0, digest, 0, BYTES_BYTES_MD5_LENGTH);
-        BytesUtil.putBytes(primaryKey, BYTES_BYTES_MD5_LENGTH, byteTableId, 0, BYTES_LENGTH_LONG_LENGTH);
+        byte[] primaryKey = new byte[ByteConstant.BYTES_LENGTH_LONG_LENGTH + ByteConstant.BYTES_BYTES_MD5_LENGTH];
+        BytesUtil.putBytes(primaryKey, 0, digest, 0, ByteConstant.BYTES_BYTES_MD5_LENGTH);
+        BytesUtil.putBytes(primaryKey, ByteConstant.BYTES_BYTES_MD5_LENGTH, byteTableId, 0, ByteConstant.BYTES_LENGTH_LONG_LENGTH);
 
         return primaryKey;
     }
@@ -163,11 +157,11 @@ public class PrimaryKeyUtil {
         //tableId的byte数组
         byte[] byteTableId = BytesUtil.toBytes(tableId);
 
-        byte[] primaryKey = new byte[lenTotal + BYTES_LENGTH_LONG_LENGTH + BYTES_BYTES_MD5_LENGTH];
-        BytesUtil.putBytes(primaryKey, 0, digest, 0, BYTES_BYTES_MD5_LENGTH);
-        BytesUtil.putBytes(primaryKey, BYTES_BYTES_MD5_LENGTH, byteTableId, 0, BYTES_LENGTH_LONG_LENGTH);
+        byte[] primaryKey = new byte[lenTotal + ByteConstant.BYTES_LENGTH_LONG_LENGTH + ByteConstant.BYTES_BYTES_MD5_LENGTH];
+        BytesUtil.putBytes(primaryKey, 0, digest, 0, ByteConstant.BYTES_BYTES_MD5_LENGTH);
+        BytesUtil.putBytes(primaryKey, ByteConstant.BYTES_BYTES_MD5_LENGTH, byteTableId, 0, ByteConstant.BYTES_LENGTH_LONG_LENGTH);
 
-        int targetOffset = BYTES_BYTES_MD5_LENGTH + BYTES_LENGTH_LONG_LENGTH;
+        int targetOffset = ByteConstant.BYTES_BYTES_MD5_LENGTH + ByteConstant.BYTES_LENGTH_LONG_LENGTH;
         for (int i=0; i<primaryKeyValueAndLength.size(); i++) {
             byte[] one = primaryKeyValueAndLength.get(i);
             BytesUtil.putBytes(primaryKey,targetOffset,one,0,one.length);

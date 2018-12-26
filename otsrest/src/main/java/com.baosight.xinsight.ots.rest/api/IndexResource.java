@@ -35,7 +35,7 @@ import javax.ws.rs.core.UriInfo;
  *
  */
 @Path("/index")
-public class IndexResource extends RestBase{
+public class IndexResource extends RestBase {
     private static final Logger LOG = Logger.getLogger(IndexResource.class);
 
     @Context
