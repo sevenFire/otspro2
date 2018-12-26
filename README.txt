@@ -1,3 +1,7 @@
+2018.12/26
+现已经全部改为maven项目，下面的不需要再用了。
+
+2018/12/01
 文件说明：
 ${env.VOBBASE_Home}\xInsight\Source\ots\otspro\build_otspro.xml           ant文件
 ${env.VOBBASE_Home}\xInsight\Source\ots\otspro\otspro_version.properties  版本定义文件

@@ -6,14 +6,13 @@ import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.ots.constants.ParamConstant;
 import com.baosight.xinsight.ots.constants.ParamErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
-import com.baosight.xinsight.ots.rest.util.BytesUtil;
+
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

@@ -5,7 +5,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.ots.constants.ParamConstant;
 import com.baosight.xinsight.ots.constants.ParamErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
-import com.baosight.xinsight.ots.rest.util.BytesUtil;
 
 import java.sql.Blob;
 import java.sql.SQLException;
@@ -167,7 +166,7 @@ public class ColumnsUtil {
             int existFlag = exist[i];
             if (existFlag == 1){
 
-                record.put()
+//                record.put()
             }
         }
 
@@ -179,7 +178,7 @@ public class ColumnsUtil {
      * @param schema_tableColumns
      * @return
      */
-    private static Map<String, String> dealWithTableColumns(JSONArray schema_tableColumns) {
+    public static Map<String, String> dealWithTableColumns(JSONArray schema_tableColumns) {
         Map<String,String> tableColumnsMap = new HashMap<>();
         for (int i = 0; i < schema_tableColumns.size(); i++) {
             JSONObject column = (JSONObject) schema_tableColumns.get(i);

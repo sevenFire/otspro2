@@ -1,4 +1,4 @@
-package com.baosight.xinsight.ots.rest.util;
+package com.baosight.xinsight.ots.common.util;
 
 import java.sql.Blob;
 import java.sql.SQLException;
