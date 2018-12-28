@@ -3,6 +3,7 @@ package com.baosight.xinsight.ots.rest.model.record.request;
 import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
+import com.baosight.xinsight.ots.rest.model.record.same.RecordColumnsBody;
 import com.baosight.xinsight.utils.JsonUtil;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
@@ -16,7 +17,7 @@ import java.util.List;
 /**
  * @author liyuhui
  * @date 2018/12/25
- * @description
+ * @description  满足主键条件查询的请求体
  */
 public class RecordQueryBody implements Serializable{
     @JsonIgnore

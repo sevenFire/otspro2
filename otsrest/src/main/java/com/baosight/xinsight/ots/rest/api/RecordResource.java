@@ -5,9 +5,10 @@ import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.ots.rest.constant.ErrorMode;
 import com.baosight.xinsight.ots.rest.constant.RestConstants;
-import com.baosight.xinsight.ots.rest.model.record.request.RecordListBody;
+import com.baosight.xinsight.ots.rest.model.record.request.RecordInfoListRequestBody;
 import com.baosight.xinsight.ots.rest.model.record.request.RecordQueryBody;
 import com.baosight.xinsight.ots.rest.model.record.request.RecordQueryListBody;
+import com.baosight.xinsight.ots.rest.model.record.response.RecordInfoListResponseBody;
 import com.baosight.xinsight.ots.rest.service.RecordService;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 import com.baosight.xinsight.ots.rest.util.RegexUtil;
@@ -84,11 +85,11 @@ public class RecordResource extends RestBase{
             } else {
                 LOG.debug("Post:" + tableName + "\nContent:\n" + body);
             }
-            RecordListBody recordListBody = RecordListBody.toClass(body);
+            RecordInfoListRequestBody recordInfoListRequestBody = RecordInfoListRequestBody.toClass(body);
 
             return Response.status(Response.Status.CREATED)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(RecordService.insertRecords(userInfo, tableName, recordListBody)).build();
+                    .entity(RecordService.insertRecords(userInfo, tableName, recordInfoListRequestBody)).build();
         }catch (OtsException e) {
             e.printStackTrace();
             return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
@@ -129,12 +130,12 @@ public class RecordResource extends RestBase{
             } else {
                 LOG.debug("Post:" + tableName + "\nContent:\n" + body);
             }
-            RecordListBody recordListBody = RecordListBody.toClass(body);
+            RecordInfoListRequestBody recordInfoListRequestBody = RecordInfoListRequestBody.toClass(body);
 
 
             return Response.status(Response.Status.CREATED)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(RecordService.updateRecords(userInfo, tableName, recordListBody)).build();
+                    .entity(RecordService.updateRecords(userInfo, tableName, recordInfoListRequestBody)).build();
         }catch (OtsException e) {
             e.printStackTrace();
             return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
@@ -172,9 +173,11 @@ public class RecordResource extends RestBase{
             }
 
             RecordQueryBody recordQueryBody = RecordQueryBody.toClass(body);
+            RecordInfoListResponseBody recordInfoListResponseBody = RecordService.getRecordsByPrimaryKey(userInfo, tableName, recordQueryBody);
+
             return Response.status(Response.Status.CREATED)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(RecordService.getRecordsByPrimaryKey(userInfo, tableName, recordQueryBody)).build();
+                    .entity(recordInfoListResponseBody).build();
         }catch (OtsException e) {
             e.printStackTrace();
             return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST)
@@ -214,10 +217,11 @@ public class RecordResource extends RestBase{
             }
 
             RecordQueryListBody recordQueryListBody = RecordQueryListBody.toClass(body);
+            RecordInfoListResponseBody recordInfoListResponseBody = RecordService.getRecordsByPrimaryKeys(userInfo, tableName, recordQueryListBody);
 
             return Response.status(Response.Status.CREATED)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(RecordService.getRecordsByPrimaryKeys(userInfo, tableName, recordQueryListBody)).build();
+                    .entity(recordInfoListResponseBody).build();
         }catch (OtsException e) {
             e.printStackTrace();
             return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();

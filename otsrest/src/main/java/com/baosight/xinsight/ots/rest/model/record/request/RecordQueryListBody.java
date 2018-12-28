@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * @author liyuhui
  * @date 2018/12/25
- * @description
+ * @description 多键查询的请求体
  */
 public class RecordQueryListBody implements Serializable {
     @JsonIgnore
