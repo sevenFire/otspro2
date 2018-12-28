@@ -1,21 +1,23 @@
 package com.baosight.xinsight.ots.common.util;
 
-
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.baosight.xinsight.ots.constants.ByteConstant;
 import com.baosight.xinsight.ots.constants.ParamConstant;
 import com.baosight.xinsight.ots.constants.ParamErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
-
+import com.baosight.xinsight.utils.BytesUtil;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.JsonNodeFactory;
+import org.codehaus.jackson.node.ObjectNode;
 
 
 /**
@@ -31,6 +33,13 @@ import java.util.Map;
  *      len就用int表示。
  */
 public class PrimaryKeyUtil {
+    //截取的加密长度
+    final static int BYTES_BYTES_MD5_LENGTH = 4;
+    //用来存长度信息的长度
+    final static int BYTES_LENGTH_LENGTH = 4;
+    //int
+    final static int BYTES_LENGTH_INT_LENGTH = 4;
+    final static int BYTES_LENGTH_LONG_LENGTH = 8;
 
     /**
      * 批量生成rowKey
@@ -39,15 +48,16 @@ public class PrimaryKeyUtil {
      * @param schema_tableColumns
      * @param primaryKeyInputList
      * @return
+     * @throws DecoderException 
      */
     public static List<byte[]> generateRowKeyBatch(Long tableId,
-                                                   JSONArray schema_primaryKey,
-                                                   JSONArray schema_tableColumns,
-                                                   List<JSONObject> primaryKeyInputList) throws OtsException, SQLException {
+    		ArrayNode schema_primaryKey,
+    		ArrayNode schema_tableColumns,
+    		List<JsonNode> primaryKeyInputList) throws OtsException, SQLException, DecoderException {
         List<byte[]> rowKeys = new ArrayList<>();
         for (int i = 0; i < primaryKeyInputList.size(); i++) {
-            JSONObject record = primaryKeyInputList.get(i);
-            byte[] rowKey = generateRowKey(tableId,schema_primaryKey,schema_tableColumns,record,false);
+        	JsonNode record = primaryKeyInputList.get(i);
+            byte[] rowKey = generateRowKey(tableId, schema_primaryKey, schema_tableColumns, record, false);
             rowKeys.add(rowKey);
         }
 
@@ -61,12 +71,13 @@ public class PrimaryKeyUtil {
      * @param schema_tableColumns  列的类型和名字
      * @param record
      * @return
+     * @throws DecoderException 
      */
     public static byte[] generateRowKey(long tableId,
-                                        JSONArray schema_primaryKey,
-                                        JSONArray schema_tableColumns,
-                                        JSONObject record,
-                                        Boolean prefix) throws OtsException, SQLException {
+    		ArrayNode schema_primaryKey,
+    		ArrayNode schema_tableColumns,
+    		JsonNode record,
+    		Boolean prefix) throws OtsException, SQLException, DecoderException {
         
         Map<String,String> tableColumnsMap = ColumnsUtil.dealWithTableColumns(schema_tableColumns);
 
@@ -74,7 +85,7 @@ public class PrimaryKeyUtil {
         List<byte[]> primaryKeyValueAndLength = new ArrayList<>();
         int lenTotal = 0;
         for (int i=0; i<schema_primaryKey.size(); i++){
-            if (!record.containsKey(schema_primaryKey.get(i))){
+            if (!record.has(schema_primaryKey.get(i).asText())){
                 if (!prefix){//要计算全部primaryKey的
                     throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
                 }else{//只需要计算到这里
@@ -82,7 +93,7 @@ public class PrimaryKeyUtil {
                 }
             }
             //get col_name
-            String primaryKey_colName = (String) schema_primaryKey.get(i);
+            String primaryKey_colName = schema_primaryKey.get(i).asText();
             //get col_type
             String type = tableColumnsMap.get(primaryKey_colName);
 
@@ -92,13 +103,13 @@ public class PrimaryKeyUtil {
             if (type.equalsIgnoreCase("string") || type.equalsIgnoreCase("blob")){
 
                 if (type.equalsIgnoreCase("string")) {
-                    String value = (String) record.get(primaryKey_colName);
+                    String value = record.get(primaryKey_colName).asText();
                     valueByte = BytesUtil.toBytes(value);
                     lenByte = BytesUtil.toBytes(value.length());
-                }else{
-                    Blob value = (Blob) record.get(primaryKey_colName);
-                    valueByte = BytesUtil.toBytes(value);
-                    lenByte = BytesUtil.toBytes(value.length());
+                }else{                    
+                	String value = record.get(primaryKey_colName).asText();
+                	valueByte = Hex.decodeHex(value.toCharArray());
+                    lenByte = BytesUtil.toBytes(valueByte.length);
                 }
 
                 primaryKeyValueAndLength.add(valueByte);
@@ -134,9 +145,9 @@ public class PrimaryKeyUtil {
         //tableId的byte数组
         byte[] byteTableId = BytesUtil.toBytes(tableId);
 
-        byte[] primaryKey = new byte[ByteConstant.BYTES_LENGTH_LONG_LENGTH + ByteConstant.BYTES_BYTES_MD5_LENGTH];
-        BytesUtil.putBytes(primaryKey, 0, digest, 0, ByteConstant.BYTES_BYTES_MD5_LENGTH);
-        BytesUtil.putBytes(primaryKey, ByteConstant.BYTES_BYTES_MD5_LENGTH, byteTableId, 0, ByteConstant.BYTES_LENGTH_LONG_LENGTH);
+        byte[] primaryKey = new byte[BYTES_LENGTH_LONG_LENGTH + BYTES_BYTES_MD5_LENGTH];
+        BytesUtil.putBytes(primaryKey, 0, digest, 0, BYTES_BYTES_MD5_LENGTH);
+        BytesUtil.putBytes(primaryKey, BYTES_BYTES_MD5_LENGTH, byteTableId, 0, BYTES_LENGTH_LONG_LENGTH);
 
         return primaryKey;
     }
@@ -157,11 +168,11 @@ public class PrimaryKeyUtil {
         //tableId的byte数组
         byte[] byteTableId = BytesUtil.toBytes(tableId);
 
-        byte[] primaryKey = new byte[lenTotal + ByteConstant.BYTES_LENGTH_LONG_LENGTH + ByteConstant.BYTES_BYTES_MD5_LENGTH];
-        BytesUtil.putBytes(primaryKey, 0, digest, 0, ByteConstant.BYTES_BYTES_MD5_LENGTH);
-        BytesUtil.putBytes(primaryKey, ByteConstant.BYTES_BYTES_MD5_LENGTH, byteTableId, 0, ByteConstant.BYTES_LENGTH_LONG_LENGTH);
+        byte[] primaryKey = new byte[lenTotal + BYTES_LENGTH_LONG_LENGTH + BYTES_BYTES_MD5_LENGTH];
+        BytesUtil.putBytes(primaryKey, 0, digest, 0, BYTES_BYTES_MD5_LENGTH);
+        BytesUtil.putBytes(primaryKey, BYTES_BYTES_MD5_LENGTH, byteTableId, 0, BYTES_LENGTH_LONG_LENGTH);
 
-        int targetOffset = ByteConstant.BYTES_BYTES_MD5_LENGTH + ByteConstant.BYTES_LENGTH_LONG_LENGTH;
+        int targetOffset = BYTES_BYTES_MD5_LENGTH + BYTES_LENGTH_LONG_LENGTH;
         for (int i=0; i<primaryKeyValueAndLength.size(); i++) {
             byte[] one = primaryKeyValueAndLength.get(i);
             BytesUtil.putBytes(primaryKey,targetOffset,one,0,one.length);
@@ -178,21 +189,22 @@ public class PrimaryKeyUtil {
      * @param schema_primaryKey
      * @param schema_tableColumns
      * @param primaryKeyInput 实际输入的主键值
+     * @throws DecoderException 
      *
      *
      */
     public static List<byte[]> generateRowKeyRange(long tableId,
-                                                JSONArray schema_primaryKey,
-                                                JSONArray schema_tableColumns,
-                                                Map<String,JSONObject> primaryKeyInput) throws OtsException, SQLException {
+    		ArrayNode schema_primaryKey,
+    		ArrayNode schema_tableColumns,
+    		Map<String, JsonNode> primaryKeyInput) throws OtsException, SQLException, DecoderException {
         List<byte[]> rowKeys = new ArrayList<>();
 
         if (primaryKeyInput==null || primaryKeyInput.size()==0 || primaryKeyInput.size() > 2){
             throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
         }
 
-        JSONObject recordStart = primaryKeyInput.containsKey(ParamConstant.RECORD_START) ? primaryKeyInput.get(ParamConstant.RECORD_START): null;
-        JSONObject recordEnd = primaryKeyInput.containsKey(ParamConstant.RECORD_END) ? primaryKeyInput.get(ParamConstant.RECORD_END): null;
+        JsonNode recordStart = primaryKeyInput.containsKey(ParamConstant.RECORD_START) ? primaryKeyInput.get(ParamConstant.RECORD_START): null;
+        JsonNode recordEnd = primaryKeyInput.containsKey(ParamConstant.RECORD_END) ? primaryKeyInput.get(ParamConstant.RECORD_END): null;
 
         if (recordEnd == null){
             throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID);
@@ -226,28 +238,27 @@ public class PrimaryKeyUtil {
 
 
 
-    public static void main(String[] args) throws OtsException {
+    public static void main(String[] args) throws OtsException, DecoderException {
         long tableId = 1;
-        JSONArray schema_primaryKey = new JSONArray();
+        ArrayNode schema_primaryKey = JsonNodeFactory.instance.arrayNode();
         schema_primaryKey.add("col1");
         schema_primaryKey.add("col2");
         schema_primaryKey.add("col3");
 
-        JSONArray schema_tableColumns = new JSONArray();
-        JSONObject one = new JSONObject();
+        ArrayNode schema_tableColumns = JsonNodeFactory.instance.arrayNode();
+        ObjectNode one = schema_tableColumns.addObject();
         one.put("col_name","col1");
         one.put("col_type","int32");
-        schema_tableColumns.add(one);
-        JSONObject two = new JSONObject();
+
+        ObjectNode two = schema_tableColumns.addObject();
         two.put("col_name","col2");
         two.put("col_type","int32");
-        schema_tableColumns.add(two);
-        JSONObject three = new JSONObject();
+
+        ObjectNode three = schema_tableColumns.addObject();
         three.put("col_name","col3");
         three.put("col_type","string");
-        schema_tableColumns.add(three);
 
-        JSONObject record = new JSONObject();
+        ObjectNode record = JsonNodeFactory.instance.objectNode();
         record.put("col1",1);
         record.put("col2",2);
         record.put("col3","value0");

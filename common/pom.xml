@@ -2,18 +2,14 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>xinsight-ots-common</artifactId>
-	<groupId>com.baosight.xinsight</groupId>
 	<packaging>jar</packaging>
 	<version>${ots.version}</version>
-
-
 	<parent>
 		<groupId>com.baosight.xinsight</groupId>
 		<artifactId>xinsight-ots</artifactId>
 		<version>2.1.0</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-
 	<dependencies>
 		<dependency>
 			<groupId>jdk.tools</groupId>
@@ -49,12 +45,5 @@
 			<artifactId>xinsight-common</artifactId>
 			<version>${ots.version}</version>
 		</dependency>
-
-		<dependency>
-			<groupId>com.alibaba</groupId>
-			<artifactId>fastjson</artifactId>
-			<version>1.2.47</version>
-		</dependency>
-
 	</dependencies>
 </project>

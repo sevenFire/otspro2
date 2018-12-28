@@ -1,6 +1,5 @@
 package com.baosight.xinsight.ots.common.util;
 
-import java.io.UnsupportedEncodingException;
 import java.sql.Blob;
 import java.sql.SQLException;
 
@@ -44,64 +43,4 @@ public class BytesUtil extends com.baosight.xinsight.utils.BytesUtil{
         return value;
     }
 
-    /**
-     * byte数组转为string
-     * @param bytes
-     * @return
-     */
-    public static String byteArrayToString(byte[] bytes){
-        String value = null;
-        try {
-            value = new String(bytes,"UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        return value;
-    }
-
-    /**
-     * byte数组转为blob
-     * @param valueByte
-     * @return
-     */
-    public static Blob byteArrayToBlob(byte[] valueByte) {
-       //todo lyh
-        return null;
-
-    }
-
-    public static Byte byteArrayToByte(byte[] valueByte) {
-        Byte value = Byte.valueOf(valueByte[valueByte.length-1]);
-        return value;
-    }
-
-    public static Short byteArrayToShort(byte[] valueByte) {
-        Short value = Short.valueOf(valueByte[valueByte.length-1]);
-        return value;
-    }
-
-    public static Integer byteArrayToInteger(byte[] valueByte) {
-        Integer value = Integer.valueOf(valueByte[valueByte.length-1]);
-        return value;
-    }
-
-    public static Long byteArrayToLong(byte[] valueByte) {
-        Long value = Long.valueOf(valueByte[valueByte.length-1]);
-        return value;
-    }
-
-    public static Double byteArrayToDouble(byte[] valueByte) {
-        return null;
-        //todo lyh
-    }
-
-    public static Float byteArrayToFloat(byte[] valueByte) {
-        return null;
-        //todo lyh
-    }
-
-    public static Boolean byteArrayToBoolean(byte[] valueByte) {
-        return null;
-        //todo lyh
-    }
 }
