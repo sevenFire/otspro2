@@ -1,11 +1,11 @@
 package com.baosight.xinsight.ots.rest.model.record.request;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.utils.JsonUtil;
 
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
@@ -13,6 +13,7 @@ import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
 
 /**
  * @author liyuhui
@@ -25,26 +26,18 @@ public class RecordListBody implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @JsonProperty(value="records")
-    private List<JSONObject> recordList = new ArrayList<>();
+    private List<JsonNode> recordList = new ArrayList<>();
 
-    @JsonProperty(value="total_count")
-    private int totalCount;
-
-    @JsonProperty(value="errcode")
-    private long errCode;
-
-    //todo lyh cursor mark
-
-    public List<JSONObject> getRecordList() {
+    public List<JsonNode> getRecordList() {
         return recordList;
     }
 
-    public void setRecordList(List<JSONObject> recordList) {
+    public void setRecordList(List<JsonNode> recordList) {
         this.recordList = recordList;
     }
 
     @JsonIgnore
-    public void addRecord(JSONObject record) {
+    public void addRecord(JsonNode record) {
         recordList.add(record);
     }
 
@@ -65,21 +58,5 @@ public class RecordListBody implements Serializable {
             e.printStackTrace();
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_JSON2OBJECT, "convert json input to RecordListBody failed.");
         }
-    }
-
-    public int getTotalCount() {
-        return totalCount;
-    }
-
-    public void setTotalCount(int totalCount) {
-        this.totalCount = totalCount;
-    }
-
-    public long getErrCode() {
-        return errCode;
-    }
-
-    public void setErrCode(long errCode) {
-        this.errCode = errCode;
     }
 }

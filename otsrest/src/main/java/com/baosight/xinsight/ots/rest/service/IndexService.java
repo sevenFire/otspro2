@@ -1,8 +1,5 @@
 package com.baosight.xinsight.ots.rest.service;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.model.PermissionCheckUserInfo;
 import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
@@ -19,11 +16,11 @@ import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
 
 import java.io.IOException;
-import java.util.List;
-
-import scala.Int;
 
 /**
  * @author liyuhui
@@ -45,15 +42,15 @@ public class IndexService {
     public static ErrorMode createIndex(PermissionCheckUserInfo userInfo,
                                         String tableName,
                                         String indexName,
-                                        JSONObject postBody) throws OtsException, IOException {
+                                        JsonNode postBody) throws OtsException, IOException {
 
         LOG.info("Create index " + tableName + "." + indexName);
         long errorCode = 0;
         ErrorMode rMode = new ErrorMode(errorCode);
 
         //todo lyh 校验postBody的格式
-        String indexType = (String) getRestParam(postBody, ParamConstant.KEY_INDEX_TYPE, true);
-        JSONArray indexKey = (JSONArray) getRestParam(postBody, ParamConstant.KEY_INDEX_KEY, true);
+        String indexType = getRestParam(postBody, ParamConstant.KEY_INDEX_TYPE, true).asText();
+        ArrayNode indexKey = (ArrayNode)getRestParam(postBody, ParamConstant.KEY_INDEX_KEY, true);
 
         //get table, otsTable中含有conf的信息
         OtsTable otsTable = ConfigUtil.getInstance().getOtsAdmin().getOtsTableByUniqueKey(userInfo.getTenantId(), tableName);
@@ -82,17 +79,18 @@ public class IndexService {
 
         if (TableConstants.OTS_INDEX_TYPE_HBASE_STRING.equalsIgnoreCase(indexType)) {//HBase索引
             //todo lyh 存储于数据库内的数据格式为：(col1:type1)
-            JSONObject schema_tableColumns = JSON.parseObject(otsTable.getInfo().getTableColumns());
+        	ObjectMapper mapper = new ObjectMapper();
+            ArrayNode schema_tableColumns = (ArrayNode)mapper.readTree(otsTable.getInfo().getTableColumns()); 
 
             SecondaryIndexInfo secIndexInfo = new SecondaryIndexInfo(indexName);
             for (int i = 0; i < indexKey.size(); i++) {
-                JSONObject columnJSONObject = (JSONObject) indexKey.get(i);
+                JsonNode columnJSONObject = indexKey.get(i);
 
-                String colName = (String) getRestParam(columnJSONObject, ParamConstant.KEY_COL_NAME, true);
+                String colName = getRestParam(columnJSONObject, ParamConstant.KEY_COL_NAME, true).asText();
                 //有些类别必须写明maxLen，有些类型可以没有，采用默认值。
-                Integer colMaxLen = (Integer) getRestParam(columnJSONObject, ParamConstant.KEY_COL_MAXLEN, false);
+                Integer colMaxLen = getRestParam(columnJSONObject, ParamConstant.KEY_COL_MAXLEN, false).asInt();
                 //列类型要从表schema中拿
-                String colType = schema_tableColumns.getString(colName).toLowerCase();
+                String colType = schema_tableColumns.get(colName).asText().toLowerCase();
                 Integer realColMaxLen = dealWithColMaxLen(colType,colMaxLen);
 
                 //构建SecondaryIndexInfo
@@ -145,8 +143,8 @@ public class IndexService {
      * @param must 是否必填
      * @return
      */
-    private static Object getRestParam(JSONObject body, String propName, boolean must) throws OtsException {
-        if (!body.containsKey(propName)){
+    private static JsonNode getRestParam(JsonNode body, String propName, boolean must) throws OtsException {
+        if (!body.has(propName)){
             if(must){
                 throw new OtsException(ParamErrorCode.EC_OTS_REST_PARAM_INVALID,propName);
             }else{

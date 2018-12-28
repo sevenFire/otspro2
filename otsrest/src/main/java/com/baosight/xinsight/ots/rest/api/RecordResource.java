@@ -1,6 +1,5 @@
 package com.baosight.xinsight.ots.rest.api;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.model.PermissionCheckUserInfo;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;

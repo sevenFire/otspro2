@@ -1,7 +1,5 @@
 package com.baosight.xinsight.ots.rest.api;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
 
@@ -39,7 +37,7 @@ public class RestBase {
      * @return the applicationContext
      */
 
-    protected JSONObject readJsonToMap() throws OtsException {
+    protected JsonNode readJsonToMap() throws OtsException {
         try {
             request.setCharacterEncoding("utf-8");
         } catch (UnsupportedEncodingException e) {
@@ -84,9 +82,8 @@ public class RestBase {
 
 
         try {
-            return JSON.parseObject(data);
-//        	ObjectMapper mapper = new ObjectMapper();
-//        	return mapper.readTree(data);
+        	ObjectMapper mapper = new ObjectMapper();
+        	return mapper.readTree(data); 
         } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             throw new OtsException(OtsErrorCode.PARSE_JSONSTRING_ERROR, ex);

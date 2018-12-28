@@ -1,11 +1,11 @@
 package com.baosight.xinsight.ots.rest.model.record.request;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.utils.JsonUtil;
 
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
@@ -24,7 +24,7 @@ public class RecordQueryListBody implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @JsonProperty(value="primary_key_list")
-    private List<JSONObject> primaryKeyList = new ArrayList<>();
+    private List<JsonNode> primaryKeyList = new ArrayList<>();
 
     @JsonProperty(value="return_columns")
     private List<String> returnColumns = new ArrayList<>();
@@ -53,11 +53,11 @@ public class RecordQueryListBody implements Serializable {
         }
     }
 
-    public List<JSONObject> getPrimaryKeyList() {
+    public List<JsonNode> getPrimaryKeyList() {
         return primaryKeyList;
     }
 
-    public void setPrimaryKeyList(List<JSONObject> primaryKeyList) {
+    public void setPrimaryKeyList(List<JsonNode> primaryKeyList) {
         this.primaryKeyList = primaryKeyList;
     }
 

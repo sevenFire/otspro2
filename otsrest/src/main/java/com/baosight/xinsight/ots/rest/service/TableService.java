@@ -21,16 +21,13 @@ import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 import com.baosight.xinsight.ots.rest.util.MessageBuilder;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 import com.baosight.xinsight.ots.rest.util.TableConfigUtil;
-import com.baosight.xinsight.utils.AasPermissionUtil;
-import com.cloudera.org.codehaus.jackson.map.DeserializationConfig;
-import com.cloudera.org.codehaus.jackson.map.ObjectMapper;
-import com.cloudera.org.codehaus.jackson.type.TypeReference;
+import org.codehaus.jackson.map.DeserializationConfig;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -102,10 +99,11 @@ public class TableService {
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        try {
-            List<TableColumnsBody> tableColumnsBodies = objectMapper.readValue(table.getTableColumns(),new TypeReference<List<TableColumnsBody>>() {});
+        try {            
+            List<TableColumnsBody> tableColumnsBodies = objectMapper.readValue(table.getTableColumns(), new TypeReference<List<TableColumnsBody>>() {});
             tableInfoBody.setTableColumns(tableColumnsBodies);
-            List<String> primaryKeyBodies = objectMapper.readValue(table.getPrimaryKey(),new TypeReference<List<String>>() {});
+            
+            List<String> primaryKeyBodies = objectMapper.readValue(table.getPrimaryKey(), new TypeReference<List<String>>() {});
             tableInfoBody.setPrimaryKey(primaryKeyBodies);
         } catch (IOException e) {
             e.printStackTrace();

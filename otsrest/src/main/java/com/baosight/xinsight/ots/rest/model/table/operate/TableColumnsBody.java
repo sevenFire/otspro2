@@ -1,12 +1,10 @@
 package com.baosight.xinsight.ots.rest.model.table.operate;
 
-
-
-import com.baosight.xinsight.ots.rest.util.JsonUtil;
-
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+
+import com.baosight.xinsight.utils.JsonUtil;
 
 import java.io.Serializable;
 

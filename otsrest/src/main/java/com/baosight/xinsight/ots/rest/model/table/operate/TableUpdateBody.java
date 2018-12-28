@@ -18,8 +18,9 @@ import java.io.Serializable;
  * @description 修改时的请求参数
  */
 public class TableUpdateBody implements Serializable {
+	private static final long serialVersionUID = 1L;
 
-    @JsonProperty(value="table_name")
+	@JsonProperty(value="table_name")
     private String tableName;
 
     @JsonProperty(value="table_desc")

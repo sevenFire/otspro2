@@ -48,12 +48,9 @@ public class TableInfoBody implements Serializable {
     @JsonProperty(value="modifier")
     private Long modifier;
 
-
-
     public TableInfoBody() {
+    	
     }
-
-
 
     public TableInfoBody(Long tableId,
                          String tableName,

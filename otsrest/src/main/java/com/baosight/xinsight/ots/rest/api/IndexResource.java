@@ -1,6 +1,5 @@
 package com.baosight.xinsight.ots.rest.api;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.model.PermissionCheckUserInfo;
 import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.ots.rest.constant.ErrorMode;
@@ -8,6 +7,7 @@ import com.baosight.xinsight.ots.rest.service.IndexService;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.JsonNode;
 
 import java.io.IOException;
 
@@ -65,7 +65,7 @@ public class IndexResource extends RestBase {
         userInfo = PermissionUtil.getUserInfoModel(userInfo, request);
 
         //get body
-        JSONObject postBody;
+        JsonNode postBody;
         try {
             postBody = readJsonToMap();
         } catch (OtsException e) {

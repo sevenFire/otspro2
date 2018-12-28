@@ -1,15 +1,11 @@
 package com.baosight.xinsight.ots.rest.service;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.baosight.xinsight.model.PermissionCheckUserInfo;
-import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.client.Database.HBase.RecordQueryOption;
 import com.baosight.xinsight.ots.client.Database.HBase.RecordResult;
 import com.baosight.xinsight.ots.client.Database.HBase.RowCell;
 import com.baosight.xinsight.ots.client.Database.HBase.RowRecord;
-import com.baosight.xinsight.ots.client.OtsIndex;
 import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.client.exception.TableException;
 import com.baosight.xinsight.ots.client.metacfg.Table;
@@ -30,11 +26,14 @@ import com.baosight.xinsight.ots.rest.model.table.response.TableInfoBody;
 import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 import com.baosight.xinsight.ots.rest.util.TableConfigUtil;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 
-import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.commons.codec.DecoderException;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.JsonNodeFactory;
+import org.codehaus.jackson.node.ObjectNode;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -107,10 +106,11 @@ public class RecordService {
      * @param recordListBody
      * @return
      * @throws OtsException
+     * @throws DecoderException 
      */
     public static ErrorMode insertRecords(PermissionCheckUserInfo userInfo,
                                           String tableName,
-                                          RecordListBody recordListBody) throws OtsException, IOException, SQLException {
+                                          RecordListBody recordListBody) throws OtsException, IOException, SQLException, DecoderException {
         ErrorMode rMode = new ErrorMode(0L);
 
         //read from cache
@@ -139,10 +139,11 @@ public class RecordService {
      * @param tableName
      * @param recordListBody
      * @return
+     * @throws DecoderException 
      */
     public static ErrorMode updateRecords(PermissionCheckUserInfo userInfo,
                                           String tableName,
-                                          RecordListBody recordListBody) throws OtsException, IOException, SQLException {
+                                          RecordListBody recordListBody) throws OtsException, IOException, SQLException, DecoderException {
         return insertRecords(userInfo,tableName,recordListBody);
     }
 
@@ -152,10 +153,11 @@ public class RecordService {
      * @param tableName
      * @param getBody
      * @return
+     * @throws DecoderException 
      */
     public static RecordListBody getRecordsByPrimaryKeys(PermissionCheckUserInfo userInfo,
                                                  String tableName,
-                                                 RecordQueryListBody getBody) throws OtsException, IOException, SQLException {
+                                                 RecordQueryListBody getBody) throws OtsException, IOException, SQLException, DecoderException {
         TableInfoBody info = TableConfigUtil.getTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableName);
         if (userInfo.getTenantId() != null && userInfo.getUserId() != null && info!=null) {
             PermissionUtil.GetInstance().otsPermissionHandler(userInfo, info.getTableId(), PermissionUtil.PermissionOpesration.READ);
@@ -168,11 +170,12 @@ public class RecordService {
         }
         Table table = otsTable.getInfo();
         //查询创建表时的表结构：主键信息和列信息（列名和列类型）
-        JSONArray schema_primaryKey = JSONArray.parseArray(table.getPrimaryKey());
-        JSONArray schema_tableColumns = JSONArray.parseArray(table.getTableColumns());
+    	ObjectMapper mapper = new ObjectMapper();
+        ArrayNode schema_primaryKey = (ArrayNode)mapper.readTree(table.getPrimaryKey());       
+        ArrayNode schema_tableColumns =  (ArrayNode)mapper.readTree(table.getTableColumns());
 
         //body中的主键参数
-        List<JSONObject> primaryKeyInputList = getBody.getPrimaryKeyList();
+        List<JsonNode> primaryKeyInputList = getBody.getPrimaryKeyList();
 
         //body中的其他查询条件
         RecordQueryOption query = new RecordQueryOption(getBody.getReturnColumns(),
@@ -194,8 +197,6 @@ public class RecordService {
 
         //对结果进行解析
         for (int i = 0; i < recordResult.size(); i++) {
-            byte[] rowKey = recordResult.getRecordList().get(i).getRowkey();
-
             List<RowCell> rowCellList = recordResult.getRecordList().get(i).getCellList();
             if (rowCellList.size() != 1){
                 throw new TableException(OtsErrorCode.EC_OTS_STORAGE_RECORD_QUERY,"查询的结果有误，列数不对。");
@@ -204,27 +205,25 @@ public class RecordService {
             byte[] cellValue = rowCellList.get(0).getValue();
 
             //将每个列的值解析出来
-            JSONObject record = ColumnsUtil.generateColumnValue(schema_primaryKey,schema_tableColumns,getBody.getReturnColumns(),cellValue,rowKey);
+            JsonNode record = ColumnsUtil.generateColumnValue(schema_tableColumns,getBody.getReturnColumns(),cellValue);
             recordListBody.addRecord(record);
         }
-
-        recordListBody.setErrCode(0L);
-        recordListBody.setTotalCount(recordListBody.getRecordList().size());
 
         return recordListBody;
     }
 
 
     /**
-     * 通过主键（包含范围）查询记录
+     * 通过主键查询记录
      * @param userInfo
      * @param tableName
      * @param getBody
      * @return
+     * @throws DecoderException 
      */
     public static RecordInfoListRequestBody getRecordsByPrimaryKey(PermissionCheckUserInfo userInfo,
                                                                    String tableName,
-                                                                   RecordQueryBody getBody) throws OtsException, IOException, SQLException {
+                                                                   RecordQueryBody getBody) throws OtsException, IOException, SQLException, DecoderException {
 
         TableInfoBody info = TableConfigUtil.getTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableName);
         if (userInfo.getTenantId() != null && userInfo.getUserId() != null && info!=null) {
@@ -237,13 +236,14 @@ public class RecordService {
                     String.format("table(table_name %s) in tenant(tenant_id:%d) is not exist!\n", tableName, userInfo.getTenantId()));
         }
         Table table = otsTable.getInfo();
-        //查询创建表时的表结构：主键信息和列信息（列名和列类型）
-        JSONArray schema_primaryKey = JSONArray.parseArray(table.getPrimaryKey());
-        JSONArray schema_tableColumns = JSONArray.parseArray(table.getTableColumns());
+        //查询创建表时的表结构：主键信息和列信息（列名和列类型）       
+    	ObjectMapper mapper = new ObjectMapper();
+        ArrayNode schema_primaryKey = (ArrayNode)mapper.readTree(table.getPrimaryKey());       
+        ArrayNode schema_tableColumns =  (ArrayNode)mapper.readTree(table.getTableColumns());
 
         //body中的主键参数
         List<RecordColumnsBody> primaryKeyInputBody = getBody.getPrimaryKey();
-        Map<String,JSONObject> primaryKeyInput = dealWithPrimaryKeyPrefix(primaryKeyInputBody);
+        Map<String, JsonNode> primaryKeyInput = dealWithPrimaryKeyPrefix(primaryKeyInputBody);
 
         //body中的其他查询条件
         RecordQueryOption query = new RecordQueryOption(getBody.getReturnColumns(),
@@ -285,10 +285,10 @@ public class RecordService {
      * @param primaryKeyInputBody
      * @return
      */
-    private static Map<String, JSONObject> dealWithPrimaryKeyPrefix(List<RecordColumnsBody> primaryKeyInputBody) throws OtsException {
-        Map<String,JSONObject> primaryKeyInput = new HashMap<>();
-        JSONObject recordStart = new JSONObject();
-        JSONObject recordEnd = new JSONObject();
+    private static Map<String, JsonNode> dealWithPrimaryKeyPrefix(List<RecordColumnsBody> primaryKeyInputBody) throws OtsException {
+        Map<String, JsonNode> primaryKeyInput = new HashMap<>();
+        ObjectNode recordStart = JsonNodeFactory.instance.objectNode();
+        ObjectNode recordEnd = JsonNodeFactory.instance.objectNode();
 
         //判断是否是范围查询
         Boolean rangePrefix = false;
@@ -327,11 +327,12 @@ public class RecordService {
      * @param tableName
      * @param body
      * @return
+     * @throws DecoderException 
      */
     private static List<RowRecord> generateRowRecords(long tenantId,
                                                       String tableName,
-                                                      RecordListBody body) throws OtsException, IOException, SQLException {
-        List<JSONObject> recordList = body.getRecordList();
+                                                      RecordListBody body) throws OtsException, IOException, SQLException, DecoderException {
+        List<JsonNode> recordList = body.getRecordList();
         if(recordList == null || recordList.size() == 0){//必填项
             throw new OtsException(ParamErrorCode.PARAM_RECORDS_IS_NULL);
         }
@@ -343,26 +344,27 @@ public class RecordService {
                     String.format("table(table_name %s) in tenant(tenant_id:%d) is not exist!\n", tableName, tenantId));
         }
         Table table = otsTable.getInfo();
-        JSONArray schema_primaryKey = JSONArray.parseArray(table.getPrimaryKey());
-        JSONArray schema_tableColumns = JSONArray.parseArray(table.getTableColumns());
-
+    	ObjectMapper mapper = new ObjectMapper();
+        ArrayNode schema_primaryKey = (ArrayNode)mapper.readTree(table.getPrimaryKey());       
+        ArrayNode schema_tableColumns =  (ArrayNode)mapper.readTree(table.getTableColumns());
+        
         List<RowRecord> records = new ArrayList<>();
         for (int i = 0; i < recordList.size(); i++) {
             //one real row
             RowRecord rowRecord = new RowRecord();
             //one input data
-            JSONObject record = recordList.get(i);
+            JsonNode record = recordList.get(i);
 
             //set rowKey
             byte[] rowKey = PrimaryKeyUtil.generateRowKey(table.getTableId(), schema_primaryKey, schema_tableColumns, record,false);
             rowRecord.setRowkey(rowKey);
 
             //set cell
-            String cellKey = TableConstants.HBASE_TABLE_CELL; //todo lyh cell key应该是什么？
+            String cellkey = TableConstants.HBASE_TABLE_CELL; //todo lyh cell key应该是什么？
             //cellValue里不存主键
-            byte[] cellValue = ColumnsUtil.generateCellValue(schema_primaryKey, schema_tableColumns, record);
-            RowCell rowCell = new RowCell(Bytes.toBytes(cellKey), cellValue);
-            rowRecord.addCell(rowCell);
+            //byte[] cellvalue = ColumnsUtil.generateCellValue(schema_primaryKey, schema_tableColumns, record);
+            //RowCell rowCell = new RowCell(Bytes.toBytes(cellkey), cellvalue);
+            //rowRecord.addCell(rowCell);
 
             //add to the list
             records.add(rowRecord);
