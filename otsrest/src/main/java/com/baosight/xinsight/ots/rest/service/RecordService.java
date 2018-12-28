@@ -28,6 +28,7 @@ import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 import com.baosight.xinsight.ots.rest.util.TableConfigUtil;
 
 import org.apache.commons.codec.DecoderException;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -362,9 +363,9 @@ public class RecordService {
             //set cell
             String cellkey = TableConstants.HBASE_TABLE_CELL; //todo lyh cell key应该是什么？
             //cellValue里不存主键
-            //byte[] cellvalue = ColumnsUtil.generateCellValue(schema_primaryKey, schema_tableColumns, record);
-            //RowCell rowCell = new RowCell(Bytes.toBytes(cellkey), cellvalue);
-            //rowRecord.addCell(rowCell);
+            byte[] cellValue = ColumnsUtil.generateCellValue(schema_primaryKey, schema_tableColumns, record);
+            RowCell rowCell = new RowCell(Bytes.toBytes(cellkey), cellValue);
+            rowRecord.addCell(rowCell);
 
             //add to the list
             records.add(rowRecord);
