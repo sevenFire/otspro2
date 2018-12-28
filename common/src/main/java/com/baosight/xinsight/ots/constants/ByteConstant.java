@@ -22,7 +22,7 @@ public class ByteConstant {
     public static final int BYTES_LENGTH_INT32_LENGTH = 4;
     public static final int BYTES_LENGTH_INT64_LENGTH = 8;
 
-    //todo lyh
+    //todo lyh 他们的长度是多少
     public static final int BYTES_LENGTH_BOOL_LENGTH = 1;
     public static final int BYTES_LENGTH_FLOAT32_LENGTH = 1;
     public static final int BYTES_LENGTH_FLOAT64_LENGTH = 1;

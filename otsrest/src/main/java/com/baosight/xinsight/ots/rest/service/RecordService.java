@@ -241,7 +241,6 @@ public class RecordService {
         //body中的其他查询条件
         RecordQueryOption query = new RecordQueryOption(return_columns,getBody.getLimit(),getBody.getCursorMark(),ParamConstant.DEFAULT_DESCENING);
 
-
         //拼接rowKey的前缀
         List<byte[]> rowKeyRange = PrimaryKeyUtil.generateRowKeyRange(table.getTableId(),schema_primaryKey,schema_tableColumns,primaryKeyInput);
 

@@ -24,7 +24,7 @@ public class RecordInfoListResponseBody implements Serializable {
     @JsonIgnore
     private static final long serialVersionUID = 1L;
 
-    @JsonProperty(value="err_code")
+    @JsonProperty(value="errcode")
     @JsonSerialize(include=JsonSerialize.Inclusion.NON_NULL) //if null, will not show in the results
     private Long errcode = 0L;
 
