@@ -10,15 +10,20 @@ import com.baosight.xinsight.ots.client.metacfg.Table;
 import com.baosight.xinsight.ots.client.util.TableNameUtil;
 import com.baosight.xinsight.ots.common.secondaryindex.SecondaryIndexInfo;
 import com.baosight.xinsight.ots.exception.OtsException;
+import com.baosight.xinsight.utils.JsonUtil;
 import com.cloudera.org.codehaus.jackson.map.ObjectMapper;
 
+import org.apache.curator.framework.recipes.cache.NodeCache;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.log4j.Logger;
+import org.noggit.JSONUtil;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static com.baosight.xinsight.ots.constants.TableConstants.OTS_INDEX_TYPE_HBASE_STRING;
 
@@ -86,16 +91,16 @@ public class OtsTable {
     }
 
     /**
-     * 查询表是否拥有该索引
+     * 查询表的某索引的详情
      * @param indexName
      * @return
      */
-    public OtsIndex getOtsIndex(String indexName) throws ConfigException {
+    public OtsIndex getOtsIndex(String indexName) throws ConfigException, IOException {
         Configurator configurator = new Configurator();
 
         try {
             //唯一键为(tenantId,tableName,indexName)
-            Index index = configurator.queryIndex(getTenantId(), getTableName(), indexName);
+            Index index = configurator.queryIndex(getTableId(), indexName);
             if (index != null) {
                 return new OtsIndex(index, this.conf);
             }
@@ -109,115 +114,128 @@ public class OtsTable {
         }
     }
 
-
     /**
-     * 创建二级索引
-     * @param secondaryIndexInfo
-     * @returns
+     * 查询该表拥有的所有索引
+     * @return
      */
-    public OtsSecondaryIndex createSecondaryIndex(SecondaryIndexInfo secondaryIndexInfo) throws OtsException {
-        Admin admin = null;
-
-        //校验索引列
-        if(secondaryIndexInfo.getColumns().size() <= 0) {
-            throw new SecondaryIndexException(OtsErrorCode.EC_OTS_INDEX_INVALID_COLUMN_NUM, "Failed to create index, because lack index column def!");
-        }
-        if (secondaryIndexInfo.checkColumnsDuplicateAndEmpty()) {
-            LOG.warn("create index + '" + secondaryIndexInfo.getIndexName() + "' in table '"+ getTableName() + "' failed for duplicate column or empty column name!");
-            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_INDEX_DUPLICATE_COLUMN,
-                    "create index + '" + secondaryIndexInfo.getIndexName() + "' in table '"+ getTableName() + "' failed for duplicate column or empty column name!");
-        }
-
-        //表名为 1:ots_1
-        String tableFullName = TableNameUtil.generateHBaseTableName(tenantId);
-        //index对应的索引表名
-        TableName indexTableName = TableNameUtil.generateHBaseIndexTableName(tableFullName,secondaryIndexInfo.getIndexName());
+    public List<OtsIndex> getAllIndexInfo() throws ConfigException, IOException {
+        List<OtsIndex> lstIndex = new ArrayList<>();
 
         Configurator configurator = new Configurator();
-        long indexId = 0;
+        try {
+            List<Index> indexList = configurator.queryRDBIndexByTableId(getTableId());
+            for (Index index: indexList) {
+                lstIndex.add(new OtsIndex(index, this.conf));
+            }
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            configurator.release();
+        }
 
-//        try {
-//            // add to rdb
-//            Index index = fromSecondaryIndexInfoToIndex(secondaryIndexInfo);
-//            indexId = configurator.addIndex(index);
-//
-//            //add to HBase
-//            admin = HBaseConnectionUtil.getInstance().getAdmin();
-//            TableName userTableName = TableName.valueOf(tableFullName);
-//            HTableDescriptor userTableDescriptor = admin.getTableDescriptor(userTableName);
-//            HColumnDescriptor userTableColumnDescriptor = userTableDescriptor.getFamily(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME));
-//
-//            //注册协处理器
-//            if (0 == userTableDescriptor.getCoprocessors().size()) {
-//                HBaseTableProvider.setTableEnableStatus(admin, userTableName, false);
-//                addCorProcessors(userTableDescriptor);
-//                HBaseTableProvider.setTableEnableStatus(admin, userTableName, true);
-//            }
-//
-//            //check index exist
-//            List<SecondaryIndexInfo> indexes = SecondaryIndexUtil.parseIndexes(userTableDescriptor.getValue(OtsConstants.OTS_INDEXES));
-//            if (indexes.size() > 0 && SecondaryIndexUtil.containsIndex(indexes, secondaryIndexInfo.getIndexName())) {
-//                throw new SecondaryIndexException(OtsErrorCode.EC_OTS_SEC_INDEX_ALREADY_EXIST, "Index already exist!");
-//            }
-//
-//            if (hasSecondaryIndexBuilding()) {
-//                throw new SecondaryIndexException(OtsErrorCode.EC_OTS_SEC_INDEX_INDEX_IS_BUILDING,
-//                        "Failed to delete secondary index, because some secondary index of table is building, please try again!");
-//            }
-//
-//            indexes.add(secIndex);
-//
-//            //after rdb success, add hbase info; if hbase operate error, clean rdb info
-//            String newOtsIndexes = SecondaryIndexUtil.indexesToString(indexes);
-//            SecondaryIndexUtil.parseIndexes(newOtsIndexes);
-//            userTableDescriptor.setValue(OtsConstants.OTS_INDEXES, newOtsIndexes);
-//
-//            //modifies the existing table's descriptor.
-//            admin.modifyTable(userTable, userTableDescriptor);
-//
-//            HTableDescriptor indexTableDesc = new HTableDescriptor(indexTableName);
-//            HColumnDescriptor columnDescriptor = new HColumnDescriptor(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME));
-//
-//            columnDescriptor.setScope(OtsConstants.DEFAULT_REPLICATED_SCOPE);
-//            columnDescriptor.setCompressionType(userTableColumnDescriptor.getCompressionType());
-//            columnDescriptor.setMaxVersions(1);
-//            //columnDescriptor.setMobEnabled(userTableColumnDescriptor.isMobEnabled());
-//            //columnDescriptor.setMobThreshold(userTableColumnDescriptor.getMobThreshold());
-//
-//            indexTableDesc.addFamily(columnDescriptor);
-//            indexTableDesc.setMaxFileSize(Long.MAX_VALUE);
-//            indexTableDesc.setValue(HTableDescriptor.SPLIT_POLICY, "org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy");
-//
-//            admin.createTable(indexTableDesc);
-//
-//            return new OtsSecondaryIndex(getId(), idxid, tableFullName, secIndex, this.conf);
-//
-//        } catch (IOException e) {
-//            try {
-//                admin.getTableDescriptor(indexTableName);
-//            } catch (TableNotFoundException tnfe) {
-//                configurator.delIndex(idxid);
-//            }
-//            throw new SecondaryIndexException(OtsErrorCode.EC_OTS_SEC_INDEX_CREATE_INDEX_TABLE_FAILED, e.getMessage());
-//
-//        } finally {
-//            TableProvider.setTableEnableStatus(admin, userTable, true);
-//
-//            try {
-//                if (admin != null) {
-//                    admin.close();
-//                }
-//            } catch (Exception ex) {
-//                ex.printStackTrace();
-//            }
-//
-//            if(null != configurator) {
-//                configurator.release();
-//            }
-//        }
-            return null;
-            //todo lyh
+        return lstIndex;
 
+    }
+
+
+    /**
+     * 创建HBase二级索引
+     * @param index
+     * @returns
+     */
+    public OtsIndex createIndexHBase(Index index) throws OtsException, IOException {
+        boolean hBaseFailed2DelPost;
+
+        try {
+            //在pg中创建索引记录，如果存在则报异常。
+            createRDBIndexIfNotExist(getTableId(),index);
+            //在HBase中创建索引表及索引
+            hBaseFailed2DelPost = createHBaseIndexIfNotExist(index.getIndexName());
+
+            //HBase创建失败，需要回滚RDB中数据
+            if (hBaseFailed2DelPost){
+                delRDBIndexByIndexId(index.getIndexId());
+            }
+            return new OtsIndex(index, this.conf);
+
+        }  catch (OtsException e) {
+            e.printStackTrace();
+            throw e;
+        }
+
+    }
+
+    /**
+     * 删除RDB中的索引记录
+     * @param indexId
+     */
+    private void delRDBIndexByIndexId(long indexId) throws OtsException {
+        Configurator configurator = new Configurator();
+        try {
+            configurator.delIndexByIndexId(indexId);
+        } catch (ConfigException e) {//插入失败，则抛出异常给上层。
+            e.printStackTrace();
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
+                    String.format("user(userId:%d) in tenant(tenantId:%d) add index(indexId:%d) failed!", userId, tenantId, indexId));
+        }finally {
+            configurator.release();
+        }
+
+
+    }
+
+    /**
+     * 没有问题返回false
+     * @param indexName
+     * @return
+     */
+    private boolean createHBaseIndexIfNotExist(String indexName) {
+        String tableFullName = TableNameUtil.generateHBaseTableName(tenantId);
+        //index对应的索引表名
+        TableName indexTableName = TableNameUtil.generateHBaseIndexTableName(tableFullName,indexName);
+
+
+        //todo lyh
+        return false;
+
+    }
+
+    /**
+     * 在RDB中创建索引
+     * @param index
+     */
+    private void createRDBIndexIfNotExist(Long tableId, Index index) throws OtsException {
+        Configurator configurator = new Configurator();
+
+        //查询索引是否存在
+        if (configurator.ifExistIndex(tableId, index.getIndexName())) {//已存在，则抛出异常给上层方法，因为有联动。
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_INDEX_EXIST,
+                    String.format("table(tableId:%d) already owned index(indexName:%s)!", tableId, index.getIndexName()));
+        }
+
+        //索引的其他信息
+        index.setUserId(userId);
+        index.setTableName(tableName);
+        index.setTableId(tableId);
+        index.setCreator(userId);
+        index.setModifier(userId);
+        index.setCreateTime(new Date());
+        index.setModifyTime(index.getCreateTime());
+
+        //插入索引
+        long indexId;
+        try {
+            indexId = configurator.addIndex(index);
+        } catch (ConfigException e) {//插入失败，则抛出异常给上层。
+            e.printStackTrace();
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
+                    String.format("user(userId:%d) in tenant(tenantId:%d) add index(indexName:%s) failed!",
+                            userId, tenantId, index.getIndexName()));
+        }finally {
+            configurator.release();
+        }
+        index.setIndexId(indexId);
     }
 
     /**
@@ -257,38 +275,6 @@ public class OtsTable {
     private void addCorProcessors(HTableDescriptor htd) throws IOException {
         htd.addCoprocessor("com.baosight.xinsight.ots.coprocessor.IndexRegionObserver");
     }
-
-
-    /**
-     * 填充参数到实体Index中
-     * @param secondaryIndexInfo
-     * @return
-     */
-    private Index fromSecondaryIndexInfoToIndex(SecondaryIndexInfo secondaryIndexInfo) throws IOException, ConfigException {
-        Index index = new Index();
-        index.setTableId(getTableId());
-        index.setUserId(getUserId());
-        index.setTenantId(getTenantId());
-
-        index.setIndexType(OTS_INDEX_TYPE_HBASE_STRING);
-        index.setIndexName(secondaryIndexInfo.getIndexName());
-        index.setTableName(getTableName());
-
-        index.setShard(0);
-        index.setReplication(0);
-
-        index.setCreateTime(new Date());
-        index.setModifyTime(new Date());
-        index.setCreator(getUserId());
-        index.setModifier(getUserId());
-
-//        index.setIndexKey(JSON.toJSON(secondaryIndexInfo.getColumns()).toString());
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        index.setIndexKey( objectMapper.writeValueAsString(secondaryIndexInfo.getColumns()));
-        return index;
-    }
-
 
 
     public Long getUserId() {

@@ -151,6 +151,8 @@ public class OtsErrorCode {
 	public static final long INCORRECT_ENCODING = EC_OTS_STORAGE_BASE_NO + 33;
 	public static final long PARSE_JSONSTRING_ERROR = EC_OTS_STORAGE_BASE_NO + 34;
 	public static final long EC_OTS_TABLE_INVALID_PARAM = EC_OTS_STORAGE_BASE_NO + 35;
-			;
+    public static final long EC_OTS_INDEX_INVALID_PARAM = EC_OTS_STORAGE_BASE_NO + 36;
+	public static final long EC_OTS_STORAGE_INDEX_EXIST = EC_OTS_STORAGE_BASE_NO + 37;;
+	;
 }
 

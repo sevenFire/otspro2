@@ -57,6 +57,7 @@ public class RestConstants {
 	public static final String Query_end_time = "end_time";
 	
 	public static final String Query_all_indexes = "_all_indexes";
+	public static final String Query_all_indexes_info = "_all_indexes_info";
 	public static final String Query_query = "query";
 	public static final String Query_secondary_index_query = "secondary_index_query";
 	public static final String Query_filters = "filters";	

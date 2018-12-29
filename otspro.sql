@@ -1,7 +1,6 @@
 DROP TABLE IF EXISTS ots_user_table;
 
-
-CREATE TABLE ots_user_table (
+CREATE TABLE ots_user_table(
   table_id BIGSERIAL NOT NULL, --表id
   user_id  BIGSERIAL NOT NULL, --用户id
   tenant_id  BIGSERIAL NOT NULL, --租户id
@@ -13,7 +12,7 @@ CREATE TABLE ots_user_table (
 	modify_time TIMESTAMP(6) default '2015-01-01 00:00:00'::timestamp without time zone not null, --最近修改时间
 	creator BIGINT not null, --创建人
 	modifier BIGINT not null, --最近修改人
-  permission BOOLEAN default false not null, --权限信息
+  permission BOOLEAN default true not null, --权限信息
   enable BOOLEAN default true not null, --是否启用
 
 	PRIMARY KEY (table_id),
@@ -21,14 +20,23 @@ CREATE TABLE ots_user_table (
 );
 
 
-insert into ots_user_table  ("user_id", "tenant_id", "table_name", "table_desc", "primary_key", "table_columns", "create_time", "modify_time", "creator", "modifier")
-values ('1', '2', 'lyhtest', 'baosight test table', '["col1", "col2", "col3"]', '[{"col_name":"col1","col_type":"String","colName":"col1","colType":"String"}, {"col_name":"col2","col_type":"String","colName":"col2","colType":"String"}]', '2018-12-14 14:47:25.397000 +08:00:00' , '2018-12-14 14:47:25.397000 +08:00:00' , 1 , 1);
+DROP TABLE IF EXISTS ots_table_index;
 
-SELECT *
-FROM ots_user_table;
+CREATE TABLE ots_table_index (
+	index_id BIGSERIAL NOT NULL, --索引id
+  table_id BIGSERIAL NOT NULL, --表id
+  user_id  BIGSERIAL NOT NULL, --用户id
+	index_type VARCHAR(32), --索引类型
+	index_name VARCHAR(128) not null, --索引名
+	table_name VARCHAR(128) not null, --表名
+	index_key json NOT NULL, --被选为索引的列
+	shard int2 NOT NULL, --分片数
+  replication int2 NOT NULL, --副本数
+	create_time TIMESTAMP(6) default '2015-01-01 00:00:00'::timestamp without time zone not null, --创建时间
+	modify_time TIMESTAMP(6) default '2015-01-01 00:00:00'::timestamp without time zone not null, --最近修改时间
+	creator BIGINT not null, --创建人
+	modifier BIGINT not null, --最近修改人
 
-set AUTOCOMMIT=true;
-COMMIT;
-
-SELECT *
-FROM ots_user_table;
+	PRIMARY KEY (index_id),
+  UNIQUE (table_id, index_name)
+);

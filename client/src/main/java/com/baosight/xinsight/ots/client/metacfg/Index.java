@@ -11,7 +11,7 @@ public class Index {
     private long indexId;               //索引id
     private long tableId;               //表id
     private long userId;                //用户id
-    private long tenantId;              //租户id
+//    private long tenantId;              //租户id
     private String indexType;           //索引类型
     private String indexName;           //索引名称
     private String tableName;           //索引名称
@@ -47,13 +47,6 @@ public class Index {
         this.userId = userId;
     }
 
-    public long getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(long tenantId) {
-        this.tenantId = tenantId;
-    }
 
     public String getIndexType() {
         return indexType;

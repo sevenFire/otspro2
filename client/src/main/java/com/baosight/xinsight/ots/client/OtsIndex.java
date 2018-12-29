@@ -47,7 +47,6 @@ public class OtsIndex {
         this.info = info;
         this.conf = conf;
         if (info != null){
-            this.tenantId = info.getTenantId();
             this.userId = info.getUserId();
             this.tableName = info.getTableName();
             this.indexName = info.getIndexName();

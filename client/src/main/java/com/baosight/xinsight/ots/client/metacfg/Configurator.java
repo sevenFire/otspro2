@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static org.hsqldb.persist.HsqlDatabaseProperties.indexName;
+
 /**
  * @author liyuhui
  * @date 2018/12/13
@@ -200,7 +202,7 @@ public class Configurator {
             connect();
 
             Statement st = conn.createStatement();
-            String sql = String.format("delete from ots_user_table where ots_user_table.tenant_id = '%d' and ots_user_table.table_name = '%s';", tenantId, tableName);
+            String sql = String.format("delete from ots_user_table where tenant_id = '%d' and table_name = '%s';", tenantId, tableName);
             LOG.debug(sql);
 
             st.execute(sql);
@@ -738,22 +740,18 @@ public class Configurator {
 
     /**
      * 查询索引详细信息
-     * @param tenantId
-     * @param tableName
+     * @param tableId
      * @param indexName
      * @return
      */
-    public Index queryIndex(long tenantId, String tableName, String indexName) throws ConfigException {
+    public Index queryIndex(long tableId, String indexName) throws ConfigException {
         Index index = null;
 
         try {
             connect();
 
             Statement st = conn.createStatement();
-            String sql = String.format(" select index_id, table_id, user_id, tenant_id, index_type, index_name, table_name, index_key, " +
-                            " shard, replication, create_time, modify_time, creator, modifier from ots_table_index " +
-                            " where table_name = '%s' and index_name = '%s' and tenant_id = '%d'; ",
-                    tableName, indexName, tenantId);
+            String sql = String.format(" select * from ots_table_index where table_id = '%d' and index_name = '%s' ;", tableId, indexName);
             LOG.debug(sql);
 
             ResultSet rs = st.executeQuery(sql);
@@ -762,8 +760,8 @@ public class Configurator {
             }
             st.close();
         } catch (SQLException e) {
-            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_INDEX, "Failed to query index, tableName ="
-                    + tableName + " indexName=" + indexName +"!\n" + e.getMessage());
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_INDEX, "Failed to query index, tableId ="
+                    + tableId + " indexName=" + indexName +"!\n" + e.getMessage());
         }
 
         return index;
@@ -782,9 +780,9 @@ public class Configurator {
             conn.setAutoCommit(false);
 
             String sql = String.format(" insert into ots_table_index " +
-                            " (\"table_id\", \"user_id\", \"tenant_id\",\"index_type\",\"index_name\", \"table_name\", \"index_key\", \"shard\", \"replication\", \"create_time\", \"modify_time\", \"creator\",\"modifier\") " +
-                            " values ('%d', '%d','%d', '%s', '%s','%s','%s','%d','%d', ?, ?, ?, ?) returning index_id; ",
-                    index.getTableId(), index.getUserId(), index.getTenantId(), index.getIndexType(), index.getIndexName(), index.getTableName(),
+                            " (\"table_id\", \"user_id\",\"index_type\",\"index_name\", \"table_name\", \"index_key\", \"shard\", \"replication\", \"create_time\", \"modify_time\", \"creator\",\"modifier\") " +
+                            " values ('%d', '%d', '%s', '%s','%s','%s','%d','%d', ?, ?, ?, ?) returning index_id; ",
+                    index.getTableId(), index.getUserId(), index.getIndexType(), index.getIndexName(), index.getTableName(),
                     index.getIndexKey(),index.getShard(),index.getReplication());
 
             PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -816,6 +814,88 @@ public class Configurator {
 
     }
 
+    /**
+     * 查询该表拥有的所有index
+     * @param tableId
+     * @return
+     */
+    public List<Index> queryRDBIndexByTableId(long tableId)  throws ConfigException {
+        List<Index> indexList = new ArrayList<>();
+
+        try {
+            connect();
+            Statement st = conn.createStatement();
+
+            String sql = String.format("select * from ots_table_index where table_id = '%d' order by index_id;", tableId);
+            LOG.debug(sql);
+
+            ResultSet rs = st.executeQuery(sql);
+            while(rs.next()) {
+                Index index = resultSetToIndex(rs);
+                indexList.add(index);
+            }
+            st.close();
+        } catch (SQLException e) {
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_INDEX, "Failed to query table index of table(tableId=" + tableId +")!\n" + e.getMessage());
+        }
+
+        return indexList;
+    }
+
+    /**
+     * 判定该表是否已经有了该索引
+     * @param tableId
+     * @param indexName
+     * @return
+     */
+    public boolean ifExistIndex(Long tableId, String indexName) throws ConfigException {
+        Statement st = null;
+        try {
+            connect();
+
+            st = conn.createStatement();
+            String sql = String.format("select index_id from ots_table_index where index_name = '%s' and table_id = '%d';", indexName, tableId);
+            LOG.debug(sql);
+
+            ResultSet rs = st.executeQuery(sql);
+            if (rs.next()) {
+                return true;
+            } else return false;
+
+        } catch (SQLException e) {
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_INDEX, "Failed to query index " + indexName + "!\n" + e.getMessage());
+        } finally {
+            try {
+                st.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void delIndexByIndexId(long indexId) throws ConfigException {
+        Statement st = null;
+        try {
+            connect();
+
+            st = conn.createStatement();
+            String sql = String.format("delete from ots_table_index where index_id = '%d' ", indexId);
+            LOG.debug(sql);
+
+            st.execute(sql);
+            st.close();
+        } catch (SQLException e) {
+            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_INDEX,
+                    "Failed to delete index " + indexId + "!\n" + e.getMessage());
+        } finally {
+            try {
+                st.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     /**
      * 将查询的结果存入index对象中
@@ -826,7 +906,6 @@ public class Configurator {
         Index index = new Index();
         index.setUserId(rs.getLong(TableConstants.USER_ID));
         index.setTableId(rs.getLong(TableConstants.TABLE_ID));
-        index.setTenantId(rs.getLong(TableConstants.TENANT_ID));
 
         index.setIndexType(rs.getString(TableConstants.INDEX_TYPE));
         index.setTableName(rs.getString(TableConstants.TABLE_NAME));
