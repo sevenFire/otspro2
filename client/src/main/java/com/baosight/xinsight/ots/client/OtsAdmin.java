@@ -214,26 +214,27 @@ public class OtsAdmin {
     }
 
 
-    /**
-     * 获取表，过滤掉无权限的。
-     * @param tenantId
-     * @return
-     */
-    public List<String> getTableNameListWithPermission(Long tenantId) throws ConfigException {
-        List<String> tableNameList;
-
-        Configurator configurator = new Configurator();
-        try {
-            tableNameList = configurator.queryPermissionTableNames(tenantId);
-        } catch (ConfigException e) {
-            e.printStackTrace();
-            throw e;
-        } finally {
-            configurator.release();
-        }
-
-        return tableNameList;
-    }
+//    /**
+//     * 废弃
+//     * 获取表，过滤掉无权限的。
+//     * @param tenantId
+//     * @return
+//     */
+//    public List<String> getTableNameListWithPermission(Long tenantId) throws ConfigException {
+//        List<String> tableNameList;
+//
+//        Configurator configurator = new Configurator();
+//        try {
+//            tableNameList = configurator.queryPermissionTableNames(tenantId);
+//        } catch (ConfigException e) {
+//            e.printStackTrace();
+//            throw e;
+//        } finally {
+//            configurator.release();
+//        }
+//
+//        return tableNameList;
+//    }
 
     /**
      * 根据表名在RDB中查询表
@@ -276,7 +277,7 @@ public class OtsAdmin {
     }
 
     public OtsTable getTableInfo(Long tenantId,
-                              String tableName) throws ConfigException {
+                                 String tableName) throws ConfigException {
 
         return getTableInfoWithPermission(tenantId,tableName,null);
     }
@@ -313,8 +314,8 @@ public class OtsAdmin {
      * @return
      */
     public List<OtsTable> getAllOtsTablesWithPermission(Long tenantId,
-                                                        long limit,
-                                                        long offset,
+                                                        Long limit,
+                                                        Long offset,
                                                         List<Long> permittedIds) throws ConfigException {
        return getAllOtsTablesWithPermission(tenantId,null,limit,offset,true,permittedIds);
     }
@@ -720,73 +721,8 @@ public class OtsAdmin {
         }
     }
 
-    public void setTablePermission(long tableId) throws ConfigException, PermissionSqlException {
-        Configurator configurator = new Configurator();
-        try {
-            configurator.setTablePermission(tableId);
-        } catch (ConfigException e) {
-            e.printStackTrace();
-            throw e;
-        } catch (PermissionSqlException e) {
-            e.printStackTrace();
-            throw e;
-        } finally {
-            configurator.release();
-        }
-    }
-
-
     /**
-     * 获取表，过滤掉无权限的。
-     * @param tenantId
-     * @return
-     */
-    public List<OtsTable> getPermissionTables(Long tenantId) throws ConfigException {
-        List<OtsTable> otsTableList = new ArrayList<>();
-
-        Configurator configurator = new Configurator();
-        try {
-            List<Table> tableList = configurator.queryPermissionTables(tenantId);
-            for (Table table: tableList) {
-                otsTableList.add(new OtsTable(table, tenantId, this.conf));
-            }
-        } catch (ConfigException e) {
-            e.printStackTrace();
-            throw e;
-        } finally {
-            configurator.release();
-        }
-
-        return otsTableList;
-    }
-
-
-    /**
-     * 获取表，过滤掉无权限的。
-     * @param tenantId
-     * @return
-     */
-    public OtsTable getPermissionTable(Long tenantId, String tableName) throws ConfigException {
-
-        Configurator configurator = new Configurator();
-        try {
-            Table table = configurator.queryPermissionTable(tenantId,tableName);
-            if (table == null){
-                return null;
-            }
-            return new OtsTable(table,this.conf);
-        } catch (ConfigException e) {
-            e.printStackTrace();
-            throw e;
-        } finally {
-            configurator.release();
-        }
-
-    }
-
-
-    /**
-     * 获取表的Id，过滤掉无权限的。
+     * 获取表的Id，找到被设置过权限的表。
      * @param tenantId
      * @return
      */
@@ -796,6 +732,27 @@ public class OtsAdmin {
         Configurator configurator = new Configurator();
         try {
             IdList = configurator.queryPermissionTableIds(tenantId);
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            configurator.release();
+        }
+
+        return IdList;
+    }
+
+    /**
+     * 获取表的Id，找到被设置过权限的表。
+     * @param tenantId
+     * @return
+     */
+    public List<Long> getPermissionTableId(Long tenantId, String tableName) throws ConfigException {
+        List<Long> IdList;
+
+        Configurator configurator = new Configurator();
+        try {
+            IdList = configurator.queryPermissionTableId(tenantId, tableName);
         } catch (ConfigException e) {
             e.printStackTrace();
             throw e;

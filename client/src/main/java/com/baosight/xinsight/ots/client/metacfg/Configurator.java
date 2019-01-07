@@ -264,12 +264,12 @@ public class Configurator {
             Statement st = conn.createStatement();
 
             String sql;
-            if (noGetPermissionList == null) {
-                sql = String.format("select * from ots_user_table where ots_user_table.table_name = '%s' and ots_user_table.tenant_id = '%d';", tableName, tenantId);
+            if (CollectionUtils.isEmpty(noGetPermissionList)) {
+                sql = String.format("select * from ots_user_table where table_name = '%s' and tenant_id = '%d';", tableName, tenantId);
             }else {
                 String list2String = StringUtils.join(noGetPermissionList.toArray(), ",");
                 StringBuilder permittedIdString = new StringBuilder().append("(").append(list2String).append(")");
-                sql = String.format("select * from ots_user_table where ots_user_table.tenant_id = '%d' and ots_user_table.table_id in %s order by ots_user_table.table_id;",
+                sql = String.format("select * from ots_user_table where tenant_id = '%d' and table_id not in %s order by table_id;",
                         tenantId, permittedIdString);
             }
             LOG.debug(sql);
@@ -577,58 +577,7 @@ public class Configurator {
     }
 
     /**
-     * 查询有权限的表
-     * @param tenantId
-     * @return
-     */
-    public List<Table> queryPermissionTables(Long tenantId) throws ConfigException {
-        List<Table> tableList = new ArrayList<>();
-        try {
-            connect();
-            String sql = String.format("select * from ots_user_table where ots_user_table.tenant_id = '%d' and permission= 't' ", tenantId);
-
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-//            pstmt.setBoolean(1,true);
-
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next())	{
-                Table table = resultSetToTable(rs);
-                tableList.add(table);
-            }
-            pstmt.close();
-        } catch (SQLException e) {
-            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query all table!\n" + e.getMessage());
-        }
-        return tableList;
-    }
-
-    /**
-     * 查询有权限的表
-     * @param tenantId
-     * @return
-     */
-    public Table queryPermissionTable(Long tenantId,String tableName) throws ConfigException {
-        Table table = null;
-        try {
-            connect();
-            String sql = String.format(" select * from ots_user_table where tenant_id = '%d' and table_name = '%s' and permission= 't' ",
-                    tenantId,tableName);
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-//            pstmt.setBoolean(1,true);
-
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next())	{
-                table = resultSetToTable(rs);
-            }
-            pstmt.close();
-        } catch (SQLException e) {
-            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query all table!\n" + e.getMessage());
-        }
-        return table;
-    }
-
-    /**
-     * 查询有权限的表的Id
+     * 查询被设置过权限的表的Id（被设置过权限的话，permission=t）
      * @param tenantId
      * @return
      */
@@ -650,19 +599,19 @@ public class Configurator {
     }
 
     /**
-     * 查询有权限的表的名字
+     * 查询被设置过权限的表的Id（被设置过权限的话，permission=t）
      * @param tenantId
      * @return
      */
-    public List<String> queryPermissionTableNames(Long tenantId) throws ConfigException {
-        List<String> returnObjectList = new ArrayList<>();
+    public List<Long> queryPermissionTableId(Long tenantId, String tableName) throws ConfigException {
+        List<Long> returnObjectList = new ArrayList<>();
         try {
             connect();
             Statement st = conn.createStatement();
-            String sql = String.format("select table_name from ots_user_table where permission='t' and tenant_id = '%d'", tenantId);
+            String sql = String.format("select table_id from ots_user_table where permission='t' and tenant_id = '%d' and table_name = '%s' ", tenantId, tableName);
             ResultSet rs = st.executeQuery(sql);
-            while (rs.next())	{
-                returnObjectList.add(rs.getString(TableConstants.TABLE_NAME));
+            while (rs.next()) {
+                returnObjectList.add(rs.getLong(TableConstants.TABLE_ID));
             }
             st.close();
         } catch (SQLException e) {
@@ -670,111 +619,6 @@ public class Configurator {
         }
         return returnObjectList;
     }
-
-//    public List<Object> queryPermissionTables(Long tenantId, String returnColumns) throws ConfigException {
-//        List<Object> returnObjectList = new ArrayList<>();
-//        try {
-//            connect();
-//            Statement st = conn.createStatement();
-//            String sql = String.format("select " + returnColumns + " from ots_user_table where permission='t' and tenant_id = '%d'", tenantId);
-//            ResultSet rs = st.executeQuery(sql);
-//            while (rs.next())	{
-//                if (returnColumns.equalsIgnoreCase(TableConstants.TABLE_ID)) {
-//                    returnObjectList.add(rs.getLong(TableConstants.TABLE_ID));
-//                }else if(returnColumns.equalsIgnoreCase(TableConstants.TABLE_NAME)){
-//                    returnObjectList.add(rs.getString(TableConstants.TABLE_NAME));
-//                }else{
-//                    return null;//目前没有其他需求
-//                }
-//            }
-//            st.close();
-//        } catch (SQLException e) {
-//            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query all table!\n" + e.getMessage());
-//        }
-//        return returnObjectList;
-//
-//    }
-
-
-    /**
-     * 设置表权限
-     * @param tableId
-     * @throws PermissionSqlException
-     * @throws ConfigException
-     */
-    public void setTablePermission(long tableId) throws PermissionSqlException, ConfigException {
-        try {
-            connect();
-            Statement st = conn.createStatement();
-            String sql = "update public.ots_user_table set permission = true where public.ots_user_table.id =" + tableId;
-            st.execute(sql);
-            st.close();
-        }  catch(ConfigException e){
-            e.getStackTrace();
-            LOG.error(ExceptionUtils.getFullStackTrace(e));
-            throw e;
-        }	catch (SQLException e) {
-            LOG.error(ExceptionUtils.getFullStackTrace(e));
-            throw new PermissionSqlException(OtsErrorCode.EC_OTS_ADD_PERMISSION_SQL_LABEL, (new StringBuilder()).append("Failed to add the permitted field to the relevant table").toString());
-        }
-    }
-
-//    /**
-//     * 查询某租户下的所有表
-//     * @param tenantId
-//     * @param tableName
-//     * @param limit
-//     * @param offset
-//     * @param fuzzy 是否模糊查询
-//     * @return 返回表名的列表
-//     */
-//    public List<String> queryTableNameList(Long tenantId, String tableName, Long limit, Long offset, Boolean fuzzy) throws ConfigException {
-//        List<String> tableNameList = new ArrayList<>();
-//
-//        try {
-//            connect();
-//
-//            Statement st = conn.createStatement();
-//            String sql;
-//            StringBuilder sqlSB = new StringBuilder(" select table_name from ots_user_table where tenant_id = '%d'");
-//
-//            if (!StringUtils.isBlank(tableName)) {//带条件查询
-//                sqlSB.append(" and table_name ");
-//                if (fuzzy){
-//                    sqlSB.append(" ~ '%s' ");
-//                }else {
-//                    sqlSB.append(" = '%s' ");
-//                }
-//                sqlSB.append(" limit '%d' offset '%d' " );
-//                sql = String.format(sqlSB.toString(),tenantId,tableName,limit,offset);
-//            }else if(limit != null && offset != null){
-//                sqlSB.append(" limit '%d' offset '%d' " );
-//                sql = String.format(sqlSB.toString(), tenantId, limit, offset);
-//            }else{
-//                sql = String.format(sqlSB.toString(), tenantId);
-//            }
-//
-//            LOG.debug(sql);
-//
-//            ResultSet rs = st.executeQuery(sql);
-//            while (rs.next()){
-//                tableNameList.add(rs.getString("table_name"));
-//            }
-//            st.close();
-//        } catch (SQLException e) {
-//            throw new ConfigException(OtsErrorCode.EC_RDS_FAILED_QUERY_TABLE, "Failed to query table !\n" + e.getMessage());
-//        }
-//
-//        return tableNameList;
-//
-//    }
-//
-//    /**
-//     * 查询某租户下的所有表，返回表名list
-//     */
-//    public List<String> queryTableNameList(long tenantId) throws ConfigException {
-//        return queryTableNameList(tenantId,null,null,null,null);
-//    }
 
     //=================索引===========================
 

@@ -1,5 +1,7 @@
 package com.baosight.xinsight.ots.rest.service;
 
+import com.baosight.xinsight.model.PermissionCheckUserInfo;
+import com.baosight.xinsight.ots.client.OtsTable;
 import com.baosight.xinsight.ots.client.exception.ConfigException;
 import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.ots.rest.constant.RestConstants;
@@ -7,8 +9,11 @@ import com.baosight.xinsight.ots.rest.constant.RestErrorCode;
 import com.baosight.xinsight.ots.rest.model.metrics.response.MetricsInfoBody;
 import com.baosight.xinsight.ots.rest.model.metrics.response.MetricsInfoListBody;
 import com.baosight.xinsight.ots.rest.util.ConfigUtil;
+import com.baosight.xinsight.utils.AasPermissionUtil;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.log4j.Logger;
 
@@ -45,15 +50,16 @@ public class MetricsService {
         return metricsInfoBody;
     }
 
-    public static MetricsInfoListBody getMetricsInfoByNamespace(long tenantId) throws OtsException {
+    public static MetricsInfoListBody getMetricsInfoByNamespace(Long tenantId, Long limit, Long offset) throws OtsException {
         MetricsInfoListBody metricsInfoListBody = new MetricsInfoListBody();
 
         //获取该租户下的所有表
-        //todo lyh 这里是否有权限要求，能获取所有的表吗
-        List<String> tableNameList;
+        List<OtsTable> otsTableList;
         try {
-            tableNameList = ConfigUtil.getInstance().getOtsAdmin().getTableNameListWithPermission(tenantId);
-            if (CollectionUtils.isEmpty(tableNameList)){
+            List<Long> noGetPermittedIds = null;
+
+            otsTableList = ConfigUtil.getInstance().getOtsAdmin().getAllOtsTablesWithPermission(tenantId,limit,offset,noGetPermittedIds);
+            if (CollectionUtils.isEmpty(otsTableList)){
                 throw new OtsException(RestErrorCode.EC_OTS_REST_METRICS_NAMESPACE, String.format("there is no permitted table in the namespace (tenantId = '%d')", tenantId));
             }
         } catch (ConfigException e) {
@@ -61,12 +67,10 @@ public class MetricsService {
             throw new OtsException(RestErrorCode.EC_OTS_REST_METRICS_NAMESPACE, String.format("Get namespace %d metrics info error!", tenantId));
         }
 
-        for (String tableName : tableNameList){
-            MetricsInfoBody metricsInfoBody = getMetricsInfoByTableName(tenantId,tableName);
+        for (OtsTable otsTable : otsTableList){
+            MetricsInfoBody metricsInfoBody = getMetricsInfoByTableName(tenantId,otsTable.getTableName());
             metricsInfoListBody.getMetricsInfoBodyList().add(metricsInfoBody);
         }
-
-        LOG.debug("RETURN:" + tableNameList.toString());
 
         return metricsInfoListBody;
     }
@@ -103,5 +107,31 @@ public class MetricsService {
         //拼接完整字段
         String key =  RestConstants.DEFAULT_METRICS_PREFIX + String.valueOf(tenantId) + TableName.NAMESPACE_DELIM + tableName;
         return ConfigUtil.getInstance().getRedisUtil().getHSet(key, propertyName);
+    }
+
+    /**
+     * 对offset参数的校验和转换
+     * @param offset
+     * @param offset
+     */
+    public static long dealWithOffset(String offset) {
+        if (StringUtils.isBlank(offset) || Long.parseLong(offset) < 0){
+            offset = String.valueOf(RestConstants.DEFAULT_QUERY_OFFSET);
+        }
+
+        return Long.parseLong(offset);
+    }
+
+    public static long dealWithLimit(String limit) {
+        if (StringUtils.isBlank(limit) || Long.parseLong(limit) < 0){
+            limit = String.valueOf(RestConstants.DEFAULT_QUERY_LIMIT);
+        }
+
+        if (limit != null && Integer.parseInt(limit) > RestConstants.DEFAULT_QUERY_MAX_LIMIT) {
+            LOG.info("limit is too large, set to " + RestConstants.DEFAULT_QUERY_MAX_LIMIT);
+            limit = String.valueOf(RestConstants.DEFAULT_QUERY_MAX_LIMIT);
+        }
+
+        return Long.parseLong(limit);
     }
 }

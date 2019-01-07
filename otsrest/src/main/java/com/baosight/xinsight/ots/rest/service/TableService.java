@@ -224,12 +224,13 @@ public class TableService {
      */
     public static TableInfoBody getTableInfo(PermissionCheckUserInfo userInfo,
                                              String tableName) throws OtsException, IOException {
-        TableInfoBody tableInfoBody = new TableInfoBody();
+        TableInfoBody tableInfoBody;
 
         try {
-
-            //获取表信息，带有权限筛选。 permission=true的才会被查出来
-            OtsTable otsTable = ConfigUtil.getInstance().getOtsAdmin().getPermissionTable(userInfo.getTenantId(),tableName);
+            //找出没有get权限的表id
+            List<Long> noGetPermittedIds = getNoGetPermittedId(userInfo,tableName);
+            //获取表信息，带有权限筛选。
+            OtsTable otsTable = ConfigUtil.getInstance().getOtsAdmin().getTableInfoWithPermission(userInfo.getTenantId(),tableName,noGetPermittedIds);
             if (otsTable == null) {
                 throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST,
                         String.format("tenant (id:%d) was not owned table:%s!", userInfo.getTenantId(), tableName));
@@ -274,9 +275,6 @@ public class TableService {
         try {
             //权限筛选，获取筛选后的表Id列表
             List<Long> noGetPermittedIds = getNoGetPermittedIds(userInfo);
-//            if (permittedIds.size() == 0){
-//                return tableInfoListBody;
-//            }
             //获取筛选后的表
             List<OtsTable> otsTableList = ConfigUtil.getInstance().getOtsAdmin()
                     .getAllOtsTablesWithPermission(userInfo.getTenantId(),limit, offset,noGetPermittedIds);
@@ -327,9 +325,6 @@ public class TableService {
         try {
 
             List<Long> noGetPermittedIds = getNoGetPermittedIds(userInfo);
-//            if (permittedIds.size() == 0){
-//                return tableNameListBody;
-//            }
 
             //获取表
             List<OtsTable> otsTableList = ConfigUtil.getInstance().getOtsAdmin()
@@ -358,10 +353,41 @@ public class TableService {
         return tableNameListBody;
     }
 
+    /**
+     * 取被设置过权限，且没有get权限的表id
+     * @param userInfo
+     * @param tableName
+     * @return
+     * @throws ConfigException
+     */
+    private static List<Long> getNoGetPermittedId(PermissionCheckUserInfo userInfo, String tableName) throws ConfigException {
+        List<Long> noGetPermissionList = null;
+        if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
+            // 过滤出被设置过权限（permission=true）的表的id list。
+            // ps：如果没有被设置过权限，permission=false。
+            List<Long> permittedIds = ConfigUtil.getInstance().getOtsAdmin().getPermissionTableId(userInfo.getTenantId(),tableName);
+            try {
+                // 再调用AasPermissionUtil接口
+                noGetPermissionList = AasPermissionUtil.obtainNoGetPermissionInstanceList(ConfigUtil.getInstance().getAuthServerAddr(), userInfo, permittedIds);
+            } catch (Exception e) {
+                e.printStackTrace();
+                LOG.error(ExceptionUtils.getFullStackTrace(e));
+            }
+        }
+
+        return noGetPermissionList;
+    }
+
+    /**
+     * 获取被设置过权限，且没有get权限的表id list
+     * @param userInfo
+     * @return
+     * @throws ConfigException
+     */
     private static List<Long> getNoGetPermittedIds(PermissionCheckUserInfo userInfo) throws ConfigException {
         List<Long> noGetPermissionList = null;
         if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
-            // 过滤出被设置过权限（permission=true）的表的id list。如果没有被设置过权限，permission=false。
+            // 过滤出被设置过权限（permission=true）的表的id list。ps：如果没有被设置过权限，permission=false。
             List<Long> permittedIds = ConfigUtil.getInstance().getOtsAdmin().getPermissionTableIds(userInfo.getTenantId());
             try {
                 // 再调用AasPermissionUtil接口

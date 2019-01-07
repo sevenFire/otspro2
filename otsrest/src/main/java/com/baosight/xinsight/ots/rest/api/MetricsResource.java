@@ -4,10 +4,13 @@ import com.baosight.xinsight.common.CommonConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
 import com.baosight.xinsight.ots.rest.constant.ErrorMode;
+import com.baosight.xinsight.ots.rest.constant.RestConstants;
 import com.baosight.xinsight.ots.rest.model.metrics.response.MetricsInfoBody;
 import com.baosight.xinsight.ots.rest.model.metrics.response.MetricsInfoListBody;
 import com.baosight.xinsight.ots.rest.service.MetricsService;
+import com.baosight.xinsight.ots.rest.service.TableService;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
@@ -94,7 +97,9 @@ public class MetricsResource extends RestBase{
                         .entity(new ErrorMode((long) OtsErrorCode.EC_RDS_FAILED_QUERY_TENANT, Response.Status.NOT_FOUND.name() + ": tenantid '" + tenantId + "' is not exist.")).build();
             }
             else {
-                MetricsInfoListBody metricsInfoListBody = MetricsService.getMetricsInfoByNamespace(tenantId);
+                String limit = StringUtils.trim(uriInfo.getQueryParameters().getFirst(RestConstants.Query_limit));
+                String offset = StringUtils.trim(uriInfo.getQueryParameters().getFirst(RestConstants.Query_offset));
+                MetricsInfoListBody metricsInfoListBody = MetricsService.getMetricsInfoByNamespace(tenantId, MetricsService.dealWithLimit(limit), MetricsService.dealWithOffset(offset));
                 metricsInfoListBody.setErrcode(0L);
 
                 return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
