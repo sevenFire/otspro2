@@ -259,22 +259,22 @@ public class OtsAdmin {
         }
     }
 
-    private Table getRDBTableByTableId(Long tableId) throws ConfigException {
-        Configurator configurator = new Configurator();
-
-        try {
-            Table table = configurator.queryTableById(tableId);
-            if (table != null) {
-                return table;
-            }
-            return null;
-        } catch (ConfigException e) {
-            e.printStackTrace();
-            throw e;
-        }finally {
-            configurator.release();
-        }
-    }
+//    private Table getRDBTableByTableId(Long tableId) throws ConfigException {
+//        Configurator configurator = new Configurator();
+//
+//        try {
+//            Table table = configurator.queryTableById(tableId);
+//            if (table != null) {
+//                return table;
+//            }
+//            return null;
+//        } catch (ConfigException e) {
+//            e.printStackTrace();
+//            throw e;
+//        }finally {
+//            configurator.release();
+//        }
+//    }
 
     public OtsTable getTableInfo(Long tenantId,
                                  String tableName) throws ConfigException {
@@ -731,7 +731,7 @@ public class OtsAdmin {
 
         Configurator configurator = new Configurator();
         try {
-            IdList = configurator.queryPermissionTableIds(tenantId);
+            IdList = configurator.queryPermittedTableIds(tenantId);
         } catch (ConfigException e) {
             e.printStackTrace();
             throw e;
@@ -752,7 +752,7 @@ public class OtsAdmin {
 
         Configurator configurator = new Configurator();
         try {
-            IdList = configurator.queryPermissionTableId(tenantId, tableName);
+            IdList = configurator.queryPermittedTableId(tenantId, tableName);
         } catch (ConfigException e) {
             e.printStackTrace();
             throw e;

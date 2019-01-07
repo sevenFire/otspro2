@@ -123,6 +123,7 @@ public class IndexService {
 
     /**
      * todo lyh other situation
+     * wls 加了两个类型int8 int16
      * 处理列的maxLen
      * @param colType
      * @param colMaxLen
@@ -144,6 +145,10 @@ public class IndexService {
                 return OtsConstants.OTS_SEC_INDEX_TYPE_LONG_LEN;
             case "float64":
                 return OtsConstants.OTS_SEC_INDEX_TYPE_DOUBLE_LEN;
+            case "int8":
+                return OtsConstants.OTS_SEC_INDEX_TYPE_CHAR_LEN;
+            case "int16":
+                return OtsConstants.OTS_SEC_INDEX_TYPE_SHORT_LEN;
             default:
                 throw new OtsException(OtsErrorCode.EC_OTS_SEC_INDEX_INVALID_MAX_LEN, "Invalid type maxLen");
         }
