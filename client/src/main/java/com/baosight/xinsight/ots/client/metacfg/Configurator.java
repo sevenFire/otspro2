@@ -147,20 +147,20 @@ public class Configurator {
      * 更新表
      * @param userId
      * @param tableName
-     * @param table
+     * @param tableNew
      */
-    public void updateTable(Long userId, Long tenantId, String tableName, Table table) throws ConfigException{
+    public void updateTable(Long userId, Long tenantId, String tableName, Table tableNew) throws ConfigException{
 
         try {
             connect();
             conn.setAutoCommit(false);
 
             StringBuilder sqlSB = new StringBuilder(" update ots_user_table set modify_time = ? , modifier = ? ");
-            if (table.getTableName() != null){
-                sqlSB.append( " , table_name = '"+ table.getTableName() + "'");
+            if (tableNew.getTableName() != null){
+                sqlSB.append( " , table_name = '"+ tableNew.getTableName() + "'");
             }
-            if (table.getTableDesc() != null){
-                sqlSB.append( " , table_desc = '"+ table.getTableDesc() + "'");
+            if (tableNew.getTableDesc() != null){
+                sqlSB.append( " , table_desc = '"+ tableNew.getTableDesc() + "'");
             }
             String sql = sqlSB.append(" where tenant_id = " + tenantId + " and table_name = '" + tableName + "'").toString();
 
@@ -387,11 +387,11 @@ public class Configurator {
      * @return 返回表的列表
      */
     public List<Table> queryAllTablesWithPermission(Long tenantId,
-                                                          String tableName,
-                                                          Long limit,
-                                                          Long offset,
-                                                          Boolean fuzzy,
-                                                          List<Long> permittedIdList) throws ConfigException {
+                                                    String tableName,
+                                                    Long limit,
+                                                    Long offset,
+                                                    Boolean fuzzy,
+                                                    List<Long> noGetPermittedIds) throws ConfigException {
         List<Table> tableList = new ArrayList<>();
 
         try {
@@ -399,34 +399,11 @@ public class Configurator {
 
             Statement st = conn.createStatement();
             String sql;
-            StringBuilder sqlSB = new StringBuilder(" select * from ots_user_table where tenant_id = '%d' ");
-
-            if (CollectionUtils.isEmpty(permittedIdList)) {
-                throw new ConfigException(OtsErrorCode.EC_OTS_TABLE_INVALID_PARAM,
-                        "Failed to query table because the param permittedIdList is null!\n" );
+            if (!CollectionUtils.isEmpty(noGetPermittedIds)) {
+                sql = getSqlWithPermission(tenantId,tableName,limit,offset,fuzzy,noGetPermittedIds);
+            }else {
+                sql = getSqlWithoutPermission(tenantId,tableName,limit,offset,fuzzy);
             }
-
-            String list2String = StringUtils.join(permittedIdList.toArray(), ",");
-            StringBuilder permittedIdString = new StringBuilder().append("(").append(list2String).append(")");
-            sqlSB.append(" and table_id in  %s ");
-
-            if (!StringUtils.isBlank(tableName)) {//带条件查询
-                sqlSB.append(" and table_name ");
-                if (fuzzy){
-                    sqlSB.append(" ~ '%s' ");
-                }else {
-                    sqlSB.append(" = '%s' ");
-                }
-                sqlSB.append(" limit '%d' offset '%d' " );
-                sql = String.format(sqlSB.toString(),tenantId,permittedIdString, tableName,limit,offset);
-            }else if(limit != null && offset != null){
-                sqlSB.append(" limit '%d' offset '%d' " );
-                sql = String.format(sqlSB.toString(), tenantId, permittedIdString, limit, offset);
-            }else{
-                sql = String.format(sqlSB.toString(), tenantId, permittedIdString);
-            }
-
-            LOG.debug(sql);
 
             ResultSet rs = st.executeQuery(sql);
             while (rs.next()){
@@ -442,6 +419,69 @@ public class Configurator {
 
     }
 
+    private String getSqlWithoutPermission(Long tenantId,
+                                           String tableName,
+                                           Long limit,
+                                           Long offset,
+                                           Boolean fuzzy) {
+        String sql;
+        StringBuilder sqlSB = new StringBuilder(" select * from ots_user_table where tenant_id = '%d' ");
+
+
+        if (!StringUtils.isBlank(tableName)) {//带条件查询
+            sqlSB.append(" and table_name ");
+            if (fuzzy){
+                sqlSB.append(" ~ '%s' ");
+            }else {
+                sqlSB.append(" = '%s' ");
+            }
+            sqlSB.append(" limit '%d' offset '%d' " );
+            sql = String.format(sqlSB.toString(),tenantId, tableName,limit,offset);
+        }else if(limit != null && offset != null){
+            sqlSB.append(" limit '%d' offset '%d' " );
+            sql = String.format(sqlSB.toString(), tenantId, limit, offset);
+        }else{
+            sql = String.format(sqlSB.toString(), tenantId);
+        }
+
+        LOG.debug(sql);
+
+        return sql;
+    }
+
+    private String getSqlWithPermission(Long tenantId,
+                                        String tableName,
+                                        Long limit,
+                                        Long offset,
+                                        Boolean fuzzy,
+                                        List<Long> noGetPermittedIds) {
+        String sql;
+        StringBuilder sqlSB = new StringBuilder(" select * from ots_user_table where tenant_id = '%d' ");
+
+        String list2String = StringUtils.join(noGetPermittedIds.toArray(), ",");
+        StringBuilder permittedIdString = new StringBuilder().append("(").append(list2String).append(")");
+        sqlSB.append(" and table_id not in  %s ");
+
+        if (!StringUtils.isBlank(tableName)) {//带条件查询
+            sqlSB.append(" and table_name ");
+            if (fuzzy){
+                sqlSB.append(" ~ '%s' ");
+            }else {
+                sqlSB.append(" = '%s' ");
+            }
+            sqlSB.append(" limit '%d' offset '%d' " );
+            sql = String.format(sqlSB.toString(),tenantId,permittedIdString, tableName,limit,offset);
+        }else if(limit != null && offset != null){
+            sqlSB.append(" limit '%d' offset '%d' " );
+            sql = String.format(sqlSB.toString(), tenantId, permittedIdString, limit, offset);
+        }else{
+            sql = String.format(sqlSB.toString(), tenantId, permittedIdString);
+        }
+
+        LOG.debug(sql);
+
+        return sql;
+    }
 
 
     /**

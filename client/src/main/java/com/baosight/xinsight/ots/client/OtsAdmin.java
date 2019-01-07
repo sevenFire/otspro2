@@ -162,17 +162,17 @@ public class OtsAdmin {
      * @param userId
      * @param tenantId
      * @param tableName
-     * @param table
+     * @param tableNew
      */
-    public OtsTable updateTable(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
+    public OtsTable updateTable(Long userId, Long tenantId, String tableName, Table tableNew) throws OtsException {
         try {
             //在pg中更新表。
-            updateRDBTableIfExist(userId,tenantId,tableName,table);
+            tableNew = updateRDBTableIfExist(userId,tenantId,tableName,tableNew);
         } catch (OtsException e) {
             e.printStackTrace();
             throw e;
         }
-        return new OtsTable(table,this.conf);
+        return new OtsTable(tableNew,this.conf);
     }
 
     /**
@@ -320,17 +320,28 @@ public class OtsAdmin {
     }
 
 
+    /**
+     * 查询出表，如果没有get权限的表，不查出来。
+     * @param tenantId
+     * @param tableName
+     * @param limit
+     * @param offset
+     * @param fuzzy
+     * @param noGetPermittedIds
+     * @return
+     * @throws ConfigException
+     */
     public List<OtsTable> getAllOtsTablesWithPermission(Long tenantId,
                                           String tableName,
                                           long limit,
                                           long offset,
                                           Boolean fuzzy,
-                                          List<Long> permittedIds) throws ConfigException {
+                                          List<Long> noGetPermittedIds) throws ConfigException {
         List<OtsTable> otsTableList = new ArrayList<>();
         Configurator configurator = new Configurator();
 
         try {
-            List<Table> lstTables = configurator.queryAllTablesWithPermission(tenantId,tableName,limit,offset,fuzzy,permittedIds);
+            List<Table> lstTables = configurator.queryAllTablesWithPermission(tenantId,tableName,limit,offset,fuzzy,noGetPermittedIds);
             for (Table table: lstTables) {
                 otsTableList.add(new OtsTable(table, tenantId, this.conf));
             }
@@ -622,28 +633,45 @@ public class OtsAdmin {
      * 更新表（带校验）
      * @param userId
      * @param tenantId
-     * @param tableName
-     * @param table
+     * @param tableName 更新后的表名
+     * @param tableNew
      * @throws OtsException
      */
-    private void updateRDBTableIfExist(Long userId, Long tenantId, String tableName, Table table) throws OtsException {
+    private Table updateRDBTableIfExist(Long userId, Long tenantId, String tableName, Table tableNew) throws OtsException {
         Configurator configurator = new Configurator();
 
         //查询表是否存在
-        if (!configurator.ifExistTable(tenantId, tableName)) {//不存在，则抛出异常给上层方法
+        Table table = configurator.queryTable(tenantId,tableName);
+        if (table == null){
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
                     String.format("tenant (tenantId:%d) doesn't own table(tableName:%s)!", tenantId, tableName));
         }
+//        //查询表是否存在
+//        if (!configurator.ifExistTable(tenantId, tableName)) {//不存在，则抛出异常给上层方法
+//            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
+//                    String.format("tenant (tenantId:%d) doesn't own table(tableName:%s)!", tenantId, tableName));
+//        }
+
+        //新旧表名相同
+        if (tableName.equals(tableNew.getTableName())){
+            return table;
+        }
 
         //查询更新后的表是否冲突
-        if (configurator.ifExistTable(tenantId, table.getTableName())) {//不存在，则抛出异常给上层方法
+        if (configurator.ifExistTable(tenantId, tableNew.getTableName())) {//不存在，则抛出异常给上层方法
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_EXIST,
-                    String.format("tenant (tenantId:%d) already own table(tableName:%s)!", tenantId, table.getTableName()));
+                    String.format("tenant (tenantId:%d) already own table(tableName:%s)!", tenantId, tableNew.getTableName()));
         }
 
         //更新表
         try {
-            configurator.updateTable(userId, tenantId, tableName, table);
+            configurator.updateTable(userId, tenantId, tableName, tableNew);
+            if (tableNew.getTableName() != null){
+                table.setTableName(tableNew.getTableName());
+            }
+            if (tableNew.getTableDesc() != null){
+                table.setTableDesc(tableNew.getTableDesc());
+            }
         } catch (ConfigException e) {//更新失败
             e.printStackTrace();
             throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_CREATE,
@@ -651,6 +679,8 @@ public class OtsAdmin {
         }finally {
             configurator.release();
         }
+
+        return table;
     }
 
 

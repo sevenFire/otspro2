@@ -78,28 +78,30 @@
             <jsp:setProperty name="test" property="tenantId" value="<%=tenantId %>"/>
             <jsp:setProperty name="test" property="userId" value="<%=userId %>"/>
             <jsp:setProperty name="test" property="serviceName" value="OTS"/>
-            <c:if test="${test.hasManagePerm }">
-                <div class="table-controls">
-                    <div class="pull-right">
-                        <input name="" type="button" class="btn" style="width: 70px;" value="新建表"
-                               onclick="clickCreateTable();" data-toggle="modal" data-target="#tableCreate">
-                        <input name="" type="button" class="btn" style="width: 80px;" value="批量删除"
-                               onclick="clickDeleteMultiTables();" data-method="remove">
-                        <input name="" type="button" class="btn" style="width: 70px;" value="恢复表"
-                               onclick="clickRestoreTable();" data-toggle="modal" data-target="#tableRestore">
-                    </div>
+            <%--<c:if test="${test.hasManagePerm }">--%>
+            <div class="table-controls">
+                <div class="pull-right">
+                    <input name="" type="button" class="btn" style="width: 70px;" value="新建表"
+                           onclick="clickCreateTable();" data-toggle="modal" data-target="#tableCreate">
+                    <input name="" type="button" class="btn" style="width: 80px;" value="批量删除"
+                           onclick="clickDeleteMultiTables();" data-method="remove">
+                    <%--<input name="" type="button" class="btn" style="width: 70px;" value="恢复表"--%>
+                    <%--onclick="clickRestoreTable();" data-toggle="modal" data-target="#tableRestore">--%>
                 </div>
-            </c:if>
+            </div>
+            <%--</c:if>--%>
             <table id="tableManage" style="table-layout:fixed; word-wrap:break-word;border-collapse:collapse">
                 <thead>
                 <tr>
                     <th data-field="state" data-checkbox="true"></th>
                     <th data-field="table_name" data-align="center" data-formatter="nameFormatter">表名</th>
-                    <th data-field="primary_key_type" data-align="center" data-formatter="primaryKeyTypeFormatter">主键类型</th>
-                    <th data-field="compression_type" data-align="center" data-formatter="compressionFormatter">压缩算法</th>
-                    <!-- <th data-field="mob_enabled" data-align="center" data-formatter="mobFormatter">是否支持Mob</th> -->
-                    <!-- <th data-field="mob_threshold" data-align="center">阈值（KB）</th> -->
-                    <th data-field="description" data-align="center" data-formatter="descFormatter">描述</th>
+                    <%--修改2018.11.23--%>
+                    <th data-field="create_time" data-align="center" >创建时间</th>
+                    <th data-field="modify_time" data-align="center" >最后修改时间</th>
+                    <th data-field="creator" data-align="center">创建者</th>
+                    <th data-field="modifier" data-align="center" >最后修改者</th>
+                    <th data-field="table_desc" data-align="center" data-formatter="descFormatter">描述</th>
+
                     <th class="col-operate-operation" data-field="operate" data-align="center"
                         data-formatter="operateFormatter" data-events="operateEvents">操作</th>
                 </tr>
@@ -114,7 +116,7 @@
 <!---dialog: table--->
 <div class="modal text-center" id="tableCreate" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
      aria-hidden="true">
-    <div class="modal-dialog" style="display: inline-block; width: auto;">
+    <div class="modal-dialog" style="display: inline-block; width: 850px;">
         <div class="modal-content"></div>
     </div>
 </div>
@@ -124,18 +126,18 @@
         <div class="modal-content"></div>
     </div><!-- /.modal -->
 </div>
-<div class="modal text-center" id="tableBackup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-     aria-hidden="true">
-    <div class="modal-dialog" style="display: inline-block; width: auto;">
-        <div class="modal-content"></div>
-    </div><!-- /.modal -->
-</div>
-<div class="modal text-center" id="tableRestore" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-     aria-hidden="true">
-    <div class="modal-dialog" style="display: inline-block; width: auto;">
-        <div class="modal-content"></div>
-    </div><!-- /.modal -->
-</div>
+<%--<div class="modal text-center" id="tableBackup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"--%>
+<%--aria-hidden="true">--%>
+<%--<div class="modal-dialog" style="display: inline-block; width: auto;">--%>
+<%--<div class="modal-content"></div>--%>
+<%--</div><!-- /.modal -->--%>
+<%--</div>--%>
+<%--<div class="modal text-center" id="tableRestore" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"--%>
+<%--aria-hidden="true">--%>
+<%--<div class="modal-dialog" style="display: inline-block; width: auto;">--%>
+<%--<div class="modal-content"></div>--%>
+<%--</div><!-- /.modal -->--%>
+<%--</div>--%>
 <div>
     <div class="modal text-center" id="tablePermission" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
          aria-hidden="true">
@@ -146,21 +148,25 @@
     <div>
         <jsp:include page="errorTips.jsp"/>
     </div>
+    <%--加<div>--%>
+</div>
 </body>
 
 <script type="text/javascript">
     var all_table_info_;
     var all_table_info;
     var table_row_index = 0;
-    var modal_table_row = [];
-    var all_group_lists = [];
+    //    var modal_table_row = [];
     var table_id = "";
-    var resource_name = "";
     var propType = "";
     var resource_desc = "";
     var resource_disp = "";
+    var queryLimit = 5;
+    var queryOffset = 5;
+
 
     $(function () {
+        debugger
         $('#tableManage').bootstrapTable({
             data: [],
             classes: 'table',
@@ -181,20 +187,24 @@
         /* $('#tableManage').on('pre-body.bs.table', function (data, rows) {
             getBackupStatus(rows);
          }); */
+        //后台得到数据
         getTableInfo();
     });
 
     function getTableInfo() {
+        debugger
         $.ajax({
             cache: false,
             type: "GET",
             url: "/otscfgsvr/api/table/_all_tables_info",
+//            url: "wls_all_tableInfo.json",//得到信息
             dataType: "json",
             timeout: 30000,
             success: function (results, msg) {
+//                debugger
                 if (results["errcode"] == 0) {
                     all_table_info_ = results["table_info_list"];
-                    getBackupStatus();
+//                    getBackupStatus();
                 }
                 else {
                     tableAlertMsg("获取表的列表失败！错误: " + results["errcode"]);
@@ -227,45 +237,36 @@
 
 
     function nameFormatter(value, row) {
-        return '<a style="cursor:pointer;" onclick=\'goTableDetail("' + row["table_name"] + '","' + row["primary_key_type"] + '","' + row["range_key_type"] + '","' + row["id"] + '");\' title=' + value + '>' + getStructName(value) + '</a>';
+//        return '<a style="cursor:pointer;" onclick=\'goTableDetail("' + row["table_name"] + '","' + row["primary_key_type"] + '","' + row["range_key_type"] + '","' + row["id"] + '");\' title=' + value + '>' + getStructName(value) + '</a>';
+        return '<a style="cursor:pointer;" onclick=\'goTableDetail("' + row["table_name"] + '","' +   row["id"] + '");\' title=' + value + '>' + getStructName(value) + '</a>';
     }
 
-    function compressionFormatter(value) {
-        switch (value) {
-            case 0:
-                return "NONE";
-            case 1:
-                return "SNAPPY";
-            case 2:
-                return "LZ4";
-            case 3:
-                return "GZ";
-            case 4:
-                return "LZO";
-            default:
-                return "UNDEFIEND";
-        }
-    }
+    //    function compressionFormatter(value) {
+    //        switch (value) {
+    //            case 0:
+    //                return "NONE";
+    //            case 1:
+    //                return "SNAPPY";
+    //            case 2:
+    //                return "LZ4";
+    //            case 3:
+    //                return "GZ";
+    //            case 4:
+    //                return "LZO";
+    //            default:
+    //                return "UNDEFIEND";
+    //        }
+    //    }
 
-    function primaryKeyTypeFormatter(value) {
-        switch (value) {
-            case 0:
-                return "H";
-            case 1:
-                return "H + R";
-            default:
-                return "UNDEFIEND";
-        }
-    }
 
-    function mobFormatter(value) {
-        if (value == true) {
-            return '是';
-        }
-        else {
-            return '否';
-        }
-    }
+    //    function mobFormatter(value) {
+    //        if (value == true) {
+    //            return '是';
+    //        }
+    //        else {
+    //            return '否';
+    //        }
+    //    }
 
     function descFormatter(value) {
         return '<span title="' + value + '">' + htmlEscape(getStructName(value)) + '</span>';
@@ -273,28 +274,29 @@
 
     function operateFormatter(value, row, index) {
         var operate = [
-            '<div class="progress progress-striped" id="tableProgress' + index + '" style="margin-bottom:5px;display:none"><div class="progress-bar" id="tableProgressBar' + index + '" role="progressbar" style="width:' + row["progress"] + '">',
-            '<span class="progress_text">正在进行备份/恢复……</div></div>',
+//            '<div class="progress progress-striped" id="tableProgress' + index + '" style="margin-bottom:5px;display:none"><div class="progress-bar" id="tableProgressBar' + index + '" role="progressbar" style="width:' + row["progress"] + '">',
+//            '<span class="progress_text">正在进行备份/恢复……</div></div>',
             '<div id="tableButton' + index + '" style="display:block">',
             '<input name="" type="button" class="edit btn3" style="width:40px;" value="编辑" data-toggle="modal" data-target="#tableUpdate">',
             '&nbsp;&nbsp;',
-            ' <c:if test="${test.hasManagePerm }">',
+            <%--' <c:if test="${test.hasManagePerm }">',--%>
             '<input name="" type="button" class="delete btn3" style="width:40px;" value="删除" data-method="remove">',
             '&nbsp;&nbsp;',
-            ' </c:if >',
-            '<input name="" type="button" class="backup btn3" style="width:40px;" value="备份" data-toggle="modal" data-target="#tableBackup">',
-            '&nbsp;&nbsp;',
-            ' <c:if test="${test.hasAuthPerm }">',
+            <%--' </c:if >',--%>
+            <%--'<input name="" type="button" class="backup btn3" style="width:40px;" value="备份" data-toggle="modal" data-target="#tableBackup">',--%>
+            <%--'&nbsp;&nbsp;',--%>
+            <%--' <c:if test="${test.hasAuthPerm }">',--%>
             '<input name="" type="button" class="permit btn3" style="width:40px;" value="授权"  data-toggle="modal" data-target="#tablePermission">',
-            ' </c:if >',
+            <%--' </c:if >',--%>
             '&nbsp;&nbsp;',
-            '<div id="tableState' + index + '" class="r_text10" style="float:right;'
+//            '<div id="tableState' + index + '" class="r_text10" style="float:right;'
         ];
 
-        if (!row["result"] || row["result"] == 0) {
-            operate.push('display:none;');
-        }
-        operate.push('">备份/恢复失败！</div>');
+//        if (!row["result"] || row["result"] == 0) {
+//            operate.push('display:none;');
+//        }
+        //这个</div>很关键！这里与上面的最后一个<div对应，如果去掉，则所有的记录会出现在同一行
+//        operate.push('">备份/恢复失败！</div>');
 
         return operate.join('');
     }
@@ -306,9 +308,9 @@
         'click .delete': function (e, value, row, index) {
             clickDeleteTable(row);
         },
-        'click .backup': function (e, value, row, index) {
-            clickBackupTable(row, index);
-        },
+//        'click .backup': function (e, value, row, index) {
+//            clickBackupTable(row, index);
+//        },
         'click .permit': function (e, value, row, index) {
             clickPermitTable(row);
         },
@@ -327,6 +329,7 @@
     }
 
     function tableQuery() {
+        debugger
         var tablename = $("#tableName").val().trim();
 
         if (!tablename) {
@@ -335,10 +338,15 @@
             return;
         }
         else {
+            var tableQueryUrl = "/otscfgsvr/api/table/" + "?" ;
+            tableQueryUrl += "name=" + tablename + "&limit=" + queryLimit +"&offset=" + queryOffset;
+
             $.ajax({
                 cache: false,
                 type: "GET",
-                url: "/otscfgsvr/api/table/" + encodeURIComponent(tablename),
+//                url: "/otscfgsvr/api/table/" + encodeURIComponent(tablename),
+                url: tableQueryUrl,
+//                url:"wls_add_tableInfo.json",
                 dataType: "json",
                 timeout: 30000,
                 success: function (results, msg) {
@@ -449,6 +457,7 @@
         });
     }
 
+    //todo 删除权限
     function deletePermission(cancel_row, cancel_index) {
         var mapCancel = {}; //存储模态弹窗的
         mapCancel["group_name"] = cancel_row["name"].trim();
@@ -512,42 +521,43 @@
         });
     }
 
-    $('#tableBackup').on("show.bs.modal", function () {
-        $(this).removeData("bs.modal");
-    });
-
-    function clickBackupTable(editRow, rowIndex) {
-        modal_table_name = editRow["table_name"];
-        table_row_index = rowIndex;
-        modal_table_row = editRow;
-        $("#tableBackup").modal({
-            backdrop: "static",
-            show: false,
-            remote: "table_backup.jsp"
-        });
-    }
-
-    $('#tableRestore').on("show.bs.modal", function () {
-        $(this).removeData("bs.modal");
-    });
-
-    function clickRestoreTable() {
-        all_table_info = all_table_info_;
-        $("#tableRestore").modal({
-            backdrop: "static",
-            show: false,
-            remote: "table_restore.jsp"
-        });
-    }
-
+    //    $('#tableBackup').on("show.bs.modal", function () {
+    //        $(this).removeData("bs.modal");
+    //    });
+    //
+    //    function clickBackupTable(editRow, rowIndex) {
+    //        modal_table_name = editRow["table_name"];
+    //        table_row_index = rowIndex;
+    //        modal_table_row = editRow;
+    //        $("#tableBackup").modal({
+    //            backdrop: "static",
+    //            show: false,
+    //            remote: "table_backup.jsp"
+    //        });
+    //    }
+    //
+    //    $('#tableRestore').on("show.bs.modal", function () {
+    //        $(this).removeData("bs.modal");
+    //    });
+    //
+    //    function clickRestoreTable() {
+    //        all_table_info = all_table_info_;
+    //        $("#tableRestore").modal({
+    //            backdrop: "static",
+    //            show: false,
+    //            remote: "table_restore.jsp"
+    //        });
+    //    }
+    //
     $('#tablePermission').on("show.bs.modal", function () {
         $(this).removeData("bs.modal");
     });
 
     function clickPermitTable(row_param) {
+        debugger
         propType = row_param["prop_type"];
         table_id = row_param["id"];
-        resource_desc = row_param["description"];
+        resource_desc = row_param["table_desc"];
         resource_disp = row_param["table_name"];
         $("#tablePermission").modal({
             backdrop: "static",
@@ -556,131 +566,130 @@
         });
     }
 
-    function getBackupStatus() {
-        $.ajax({
-            cache: false,
-            async: false,
-            type: "GET",
-            url: "/otscfgsvr/api/table/status/_all_tables",
-            dataType: "json",
-            timeout: 20000,
-            success: function (results, msg) {
-                if (results["errcode"] == 0) {
-                    var table_status_list = results["table_status_list"];
-                    for (var i = 0; i < table_status_list.length; i++) {
-                        for (var j = 0; j < all_table_info_.length; j++) {
-                            if (table_status_list[i]["table_name"] == all_table_info_[j]["table_name"]) {
-                                all_table_info_[j]["progress"] = table_status_list[i]["progress"];
-                                all_table_info_[j]["result"] = table_status_list[i]["result"];
-                                all_table_info_[j]["backup_state"] = table_status_list[i]["state"];
-                                all_table_info_[j]["tenant_state"] = table_status_list[i]["tenant_state"];
-                                if (parseInt(table_status_list[i]["state"], 10) == 0 || parseInt(table_status_list[i]["state"], 10) == 1) {
-                                    getOneTableBackupStatus(all_table_info_[j], j);
-                                } else {
-                                    if (table_status_list[i]["result"] != null
-                                        && table_status_list[i]["result"] != 0) {
-                                        if (document.getElementById("tableState" + j)) {
-                                            document.getElementById("tableState" + j).style.display = "block";
-                                        }
-                                    } else {
-                                        if (document.getElementById("tableState" + j)) {
-                                            document.getElementById("tableState" + j).style.display = "none";
-                                        }
-                                    }
-                                    var progress = all_table_info_[j]["progress"];
-                                    var progressId = "tableProgress" + j;
-                                    if (document.getElementById(progressId)) {
-                                        if (parseFloat(progress, 10) >= 0
-                                            && parseFloat(progress, 10) < 100.0) {
-                                            document.getElementById("tableButton" + i).style.display = "none";
-                                            document.getElementById(progressId).style.display = "block";
-                                            document.getElementById("tableProgressBar" + j).style.width = all_table_info_[i]["progress"] + "%";
-                                        } else {
-                                            document.getElementById(progressId).style.display = "none";
-                                            document.getElementById("tableButton" + j).style.display = "block";
-                                        }
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            },
-            error: function (msg) {
-                var errmsg = "获取表 "
-                    + getStructName(tablename)
-                    + " 备份/恢复状态信息失败！错误: "
-                    + getStructMsg(msg);
-                tableAlertMsg(errmsg);
-            }
-        });
-    }
+    //    function getBackupStatus() {
+    //        $.ajax({
+    //            cache: false,
+    //            async: false,
+    //            type: "GET",
+    ////            url: "/otscfgsvr/api/table/status/_all_tables",
+    //            url:"wls_status_all_tableInfo.json",
+    //            dataType: "json",
+    //            timeout: 20000,
+    //            success: function (results, msg) {
+    //                if (results["errcode"] == 0) {
+    //                    var table_status_list = results["table_status_list"];
+    //                    for (var i = 0; i < table_status_list.length; i++) {
+    //                        for (var j = 0; j < all_table_info_.length; j++) {
+    //                            if (table_status_list[i]["table_name"] == all_table_info_[j]["table_name"]) {
+    //                                all_table_info_[j]["progress"] = table_status_list[i]["progress"];
+    //                                all_table_info_[j]["result"] = table_status_list[i]["result"];
+    //                                all_table_info_[j]["backup_state"] = table_status_list[i]["state"];
+    //                                all_table_info_[j]["tenant_state"] = table_status_list[i]["tenant_state"];
+    //                                if (parseInt(table_status_list[i]["state"], 10) == 0 || parseInt(table_status_list[i]["state"], 10) == 1) {
+    //                                    getOneTableBackupStatus(all_table_info_[j], j);
+    //                                } else {
+    //                                    if (table_status_list[i]["result"] != null
+    //                                        && table_status_list[i]["result"] != 0) {
+    //                                        if (document.getElementById("tableState" + j)) {
+    //                                            document.getElementById("tableState" + j).style.display = "block";
+    //                                        }
+    //                                    } else {
+    //                                        if (document.getElementById("tableState" + j)) {
+    //                                            document.getElementById("tableState" + j).style.display = "none";
+    //                                        }
+    //                                    }
+    //                                    var progress = all_table_info_[j]["progress"];
+    //                                    var progressId = "tableProgress" + j;
+    //                                    if (document.getElementById(progressId)) {
+    //                                        if (parseFloat(progress, 10) >= 0
+    //                                            && parseFloat(progress, 10) < 100.0) {
+    //                                            document.getElementById("tableButton" + i).style.display = "none";
+    //                                            document.getElementById(progressId).style.display = "block";
+    //                                            document.getElementById("tableProgressBar" + j).style.width = all_table_info_[i]["progress"] + "%";
+    //                                        } else {
+    //                                            document.getElementById(progressId).style.display = "none";
+    //                                            document.getElementById("tableButton" + j).style.display = "block";
+    //                                        }
+    //                                    }
+    //                                }
+    //                                break;
+    //                            }
+    //                        }
+    //                    }
+    //                }
+    //            },
+    //            error: function (msg) {
+    //                var errmsg = "获取表 "
+    //                    + getStructName(tablename)
+    //                    + " 备份/恢复状态信息失败！错误: "
+    //                    + getStructMsg(msg);
+    //                tableAlertMsg(errmsg);
+    //            }
+    //        });
+    //    }
 
 
-    function getOneTableBackupStatus(editRow, rowIndex) {
-        var progressId = "tableProgress" + rowIndex;
-        var progressBarId = "tableProgressBar" + rowIndex;
-        var progress = editRow["progress"];
-        $.ajax({
-            cache: false,
-            async: false,
-            type: "GET",
-            url: "/otscfgsvr/api/table/status/" + editRow["table_name"],
-            dataType: "json",
-            timeout: 20000,
-            success: function (results, msg) {
-                editRow["progress"] = results["progress"];
-                editRow["result"] = results["result"];
-                editRow["backup_state"] = results["state"];
-                editRow["tenant_state"] = results["tenant_state"];
-                progress = editRow["progress"];
-                if (document.getElementById(progressId)) {
-                    if (editRow["result"] != null && editRow["result"] != 0) {
-                        document.getElementById(progressId).style.display = "none";
-                        document.getElementById("tableButton" + rowIndex).style.display = "block";
-                        if (document.getElementById("tableState" + rowIndex)) {
-                            document.getElementById("tableState" + rowIndex).style.display = "block";
-                        }
-                    } else {
-                        if (document
-                                .getElementById("tableState" + rowIndex)) {
-                            document.getElementById("tableState" + rowIndex).style.display = "none";
-                        }
-                        if (parseFloat(progress, 10) >= 0 && parseFloat(progress, 10) < 100.0) {
-                            document.getElementById("tableButton" + rowIndex).style.display = "none";
-                            document.getElementById(progressId).style.display = "block";
-                            document.getElementById(progressBarId).style.width = editRow["progress"] + "%";
-                        } else {
-                            document.getElementById(progressId).style.display = "none";
-                            document.getElementById("tableButton" + rowIndex).style.display = "block";
-                        }
-                    }
-                }
-            },
-            error: function (msg) {
-                if (document.getElementById(progressId)) {
-                    document.getElementById(progressId).style.display = "none";
-                }
-                if (document.getElementById("tableState" + rowIndex)) {
-                    document.getElementById("tableButton" + rowIndex).style.display = "block";
-                    document.getElementById("tableState" + rowIndex).style.display = "block";
-                }
-            }
-        });
-        setTimeout(function () {
-            if (parseInt(editRow["backup_state"]) == 0 || parseInt(editRow["backup_state"]) == 1) {
-                getOneTableBackupStatus(editRow, rowIndex);
-            }
-        }, 2000);
-    }
+    //    function getOneTableBackupStatus(editRow, rowIndex) {
+    //        var progressId = "tableProgress" + rowIndex;
+    //        var progressBarId = "tableProgressBar" + rowIndex;
+    //        var progress = editRow["progress"];
+    //        $.ajax({
+    //            cache: false,
+    //            async: false,
+    //            type: "GET",
+    //            url: "/otscfgsvr/api/table/status/" + editRow["table_name"],
+    //            dataType: "json",
+    //            timeout: 20000,
+    //            success: function (results, msg) {
+    //                editRow["progress"] = results["progress"];
+    //                editRow["result"] = results["result"];
+    //                editRow["backup_state"] = results["state"];
+    //                editRow["tenant_state"] = results["tenant_state"];
+    //                progress = editRow["progress"];
+    //                if (document.getElementById(progressId)) {
+    //                    if (editRow["result"] != null && editRow["result"] != 0) {
+    //                        document.getElementById(progressId).style.display = "none";
+    //                        document.getElementById("tableButton" + rowIndex).style.display = "block";
+    //                        if (document.getElementById("tableState" + rowIndex)) {
+    //                            document.getElementById("tableState" + rowIndex).style.display = "block";
+    //                        }
+    //                    } else {
+    //                        if (document
+    //                                .getElementById("tableState" + rowIndex)) {
+    //                            document.getElementById("tableState" + rowIndex).style.display = "none";
+    //                        }
+    //                        if (parseFloat(progress, 10) >= 0 && parseFloat(progress, 10) < 100.0) {
+    //                            document.getElementById("tableButton" + rowIndex).style.display = "none";
+    //                            document.getElementById(progressId).style.display = "block";
+    //                            document.getElementById(progressBarId).style.width = editRow["progress"] + "%";
+    //                        } else {
+    //                            document.getElementById(progressId).style.display = "none";
+    //                            document.getElementById("tableButton" + rowIndex).style.display = "block";
+    //                        }
+    //                    }
+    //                }
+    //            },
+    //            error: function (msg) {
+    //                if (document.getElementById(progressId)) {
+    //                    document.getElementById(progressId).style.display = "none";
+    //                }
+    //                if (document.getElementById("tableState" + rowIndex)) {
+    //                    document.getElementById("tableButton" + rowIndex).style.display = "block";
+    //                    document.getElementById("tableState" + rowIndex).style.display = "block";
+    //                }
+    //            }
+    //        });
+    //        setTimeout(function () {
+    //            if (parseInt(editRow["backup_state"]) == 0 || parseInt(editRow["backup_state"]) == 1) {
+    //                getOneTableBackupStatus(editRow, rowIndex);
+    //            }
+    //        }, 2000);
+    //    }
 
-    function goTableDetail(tablename, keytype, rangetype, id) {
-        var url = "table_detail.jsp?tablename=" + tablename + "&pktype=" + keytype + "&id=" + id;
-        if (keytype == 1 && rangetype != null) {
-            url += "&range=" + rangetype;
-        }
+    function goTableDetail(tablename,  id) {
+        var url = "table_detail.jsp?tablename=" + tablename +  "&id=" + id;
         window.location = url;
     }
+
 </script>
 </html>

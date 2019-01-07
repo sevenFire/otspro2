@@ -110,7 +110,7 @@ public class IndexResource extends RestBase {
     }
 
     /**
-     * 查询单个索引详细信息
+     * 查询单个索引详细信息/查询所有索引详细信息/查询索引名列表
      * @param tableName
      * @param indexName
      * @return

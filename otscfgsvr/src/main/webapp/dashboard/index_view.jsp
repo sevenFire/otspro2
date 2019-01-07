@@ -1,553 +1,804 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"  pageEncoding="UTF-8"%> 
+<%@ page language="java" contentType="text/html; charset=UTF-8"  pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    	<meta charset="UTF-8"/>
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">        
-		<title>索引视图--OTS 配置中心</title>		
-		<link rel="shortcut icon" href="jsp/images/icon.ico"/>
-		<link href="jsp/bootstrap-3.2.0-dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-		<link href="jsp/css/bootstrap-table.css" rel="stylesheet" type="text/css">
-		<link href="jsp/css/style.css" rel="stylesheet" type="text/css">
-		
-		<script type="text/javascript" src="jsp/js/jquery-1.8.2.min.js"></script>
-		<script type="text/javascript" src="jsp/bootstrap-3.2.0-dist/js/bootstrap.min.js"></script>
-		<script type="text/javascript" src="jsp/js/bootstrap-table.js"></script>
-		<script type="text/javascript" src="jsp/js/init-js.js"></script>
-		<script type="text/javascript">
-			$(function(){
-				showActivePage("table");
-			});
-		</script>
+	<meta charset="UTF-8"/>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>索引视图--OTS 配置中心</title>
+	<link rel="shortcut icon" href="jsp/images/icon.ico"/>
+	<link href="jsp/bootstrap-3.2.0-dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="jsp/css/bootstrap-table.css" rel="stylesheet" type="text/css">
+	<link href="jsp/css/style.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript" src="jsp/js/jquery-1.8.2.min.js"></script>
+	<script type="text/javascript" src="jsp/bootstrap-3.2.0-dist/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="jsp/js/bootstrap-table.js"></script>
+	<script type="text/javascript" src="jsp/js/init-js.js"></script>
+	<script type="text/javascript">
+        $(function(){
+            showActivePage("table");
+        });
+	</script>
 </head>
 
 <body class="body_fix">
-	<div id="header">
-		<jsp:include page="header.jsp" />
-	</div>
-		
-	<!---content--->   
-	<div class="content">
-		<div class="row">
-			<div class="row" style="height:40px;">  
-				<div class="pageicon">|</div>
-				<div style="margin-left:5px;margin-top:5px;">
-					<ul class="breadcrumb pagetitle" style="background-color:transparent;padding-top:0px;padding-left:5px;">
-						<li><a href="table.jsp" >OTS-表的管理</a></li>
-						<li><a href="#" id="table_name"></a></li>
-						<li><a href="#" id="view_name"></a></li>
-					</ul>
-		 		</div>	
-			</div>
-			<div class="row" style="margin-left:70px;">
-			<table>
-				<tr>
-					<td class="col-md-1" style="">查询条件</td>
-					<td class="col-md-5">
-						<textarea name="" id="indexQueryContent" cols="" rows="" style="width:100%;resize:none;"></textarea>
-					</td>
-					<td class="col-md-1" style="">显示列&nbsp;<a href="#"><span class="glyphicon glyphicon-edit" style="font-size:10px;" title="编辑显示列" onclick='editIndexViewColumns();' data-toggle="modal"  data-target="#indexViewColumnEdit"></span></a></td>
-					<td class="col-md-5">
-						<input name="" id="indexQueryColumns1" type="button" class="btn" style="width:19%;cursor:default;" value="">
-      					<input name="" id="indexQueryColumns2" type="button" class="btn" style="width:19%;cursor:default;" value="">
-      					<input name="" id="indexQueryColumns3" type="button" class="btn" style="width:19%;cursor:default;" value="">
-      					<input name="" id="indexQueryColumns4" type="button" class="btn" style="width:19%;cursor:default;" value="">
-      					<input name="" id="indexQueryColumns5" type="button" class="btn" style="width:19%;cursor:default;" value="">
-      				</td>
-				</tr>
-				<tr id="trFilterSortForSolr">
-					<td class="col-md-1" style="">过滤条件</td>
-					<td class="col-md-5">
-      					<textarea name="" id="indexViewFilters" cols="" rows="" style="width:100%;resize:none;" placeholder="详见“文档”-REST接口“基于索引查询记录”（filters）"></textarea>
-					</td>
-					<td class="col-md-1" style="">排序条件</td>
-					<td class="col-md-5">
-						<textarea name="" id="indexViewSort" style="width:100%;resize:none;" placeholder="详见“文档”-REST接口“基于索引查询记录”（orders）"></textarea>
-					</td>
-      			</tr>
-				<tr id="trHashRangeForHbase">
-					<td class="col-md-1" style="">Hash键</td>
-					<td class="col-md-5">
-						<input name="" id="indexViewHashKey" type="text" class="" style="width:100%;margin-bottom:10px;" placeholder="Hash键">
-					</td>
-					<td class="col-md-1" id="indexViewRangeKeyText" style="">Range键</td>
-					<td class="col-md-5" id="indexViewRangeKeys">
-						<input name="" id="indexViewRangeKeyStart" type="text" class="" style="width:48%;" placeholder="起始键">&nbsp;&nbsp;
-						<input name="" id="indexViewRangeKeyEnd" type="text" class="" style="width:48%;" placeholder="终止键">
-					</td>				
-				</tr>
-				<tr>
-					<td></td>
-					<td class="col-md-5" style="">
-						<div class="r_text" style="width:60px;margin-left:0px;">限制返回</div>
-						<div class="r_box" style="width:60px;"><input name="" id="indexViewLimit" type="text" class="textbox1" style="width:60px;text-align:right" placeholder="100"></div>
-     					<div class="r_text" style="margin-left:0px;">条记录</div>
-     					<div class="r_text" style="width:40px;">跳过</div>
-     					<div class="r_box" style="width:60px;"><input name="" id="indexViewSkip" type="text" class="textbox1" style="width:60px;text-align:right" placeholder="0"></div>
-     					<div class="r_text" style="margin-left:0px;">条记录</div>
-     				<td style="">
-     					<div><input id="btn_queryindexrec" name="" type="button" class="btn" style="width:60px;" value="查询" onclick="indexViewQuery();"></div>
-     				</td>
-     				<td></td>
-     			</tr>
-			</table>
-			</div>
-    		<div class="row" style="margin-left:140px;margin-top:0px;height:15px;">
-    			<div class="r_text14" id="limitUnvalied" style="margin-left:60px;display:none;">请输入0~10000整数值。</div>
-    			<div class="r_text14" id="skipUnvalied" style="margin-left:240px;display:none;">请输入非负整数值。</div>
-    			<div class="r_text14" id="skipTooLarge" style="margin-left:240px;display:none;">输入的整数值过大。</div>
-    			<div id="indexViewHbaseTips" style="margin-right:70px;text-align:right;color:#428BCA;display:none;">注：仅当指定Hash键时，Range键查询条件才有效！</div>
-    		</div>
-     		<div class="row" style="margin-left:70px;margin-right:70px;"> 
-      		<!-- 
-      			<div class="table-controls">
-      				<div class="pull-right">
-      					<input name="" type="button" class="btn" style="width:80px;" value="删除记录" onclick='recordViewDelete();'>
-      				</div>
-      			</div>
-      		 -->
-				<table id="indexView" style="table-layout:fixed; word-wrap:break-word;border-collapse:collapse">
-					<thead>
-						<tr>
-							<th data-field="hash_key" data-align="center" data-sortable="true">Hash键</th>
-							<th data-field="" data-align="center"></th>
-							<th data-field="" data-align="center"></th>
-							<th data-field="" data-align="center"></th>
-							<th data-field="" data-align="center"></th>
-							<th data-field="" data-align="center"></th>
-							<th data-field="" data-align="center"></th>
-							<th data-class="col-operate-view" data-field="operate" data-align="center" data-formatter="viewOperateFormatter" data-events="operateEvents">操作</th>
-						</tr>
-					</thead>
-				</table>
- 			</div>  
-  		</div>
-	</div>
-	<div>
-		<jsp:include page="footer.jsp" />
-	</div>
-	<div> 
-		<jsp:include page="errorTips.jsp" />
-	</div>
+<div id="header">
+	<jsp:include page="header.jsp" />
+</div>
 
-	<div class="modal text-center" id="indexViewModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-   		<div class="modal-dialog" style="display: inline-block; width: auto;">
-      		<div class="modal-content">
-      			<div class="modal-header" style="background-color:#f5f5f5;">
-            		<button type="button" class="close" data-dismiss="modal" aria-hidden="true"> &times;</button>
-            		<h4 class="modal-title" id="myModalLabel" style="text-align:left;font-weight:bold;">记录详细信息</h4>  
-            	</div>
-        		<div class="modal-body">
-    				<div class="row" style="height:200px;margin-top:0px;"><textarea name="" id="indexViewContent" cols="" rows="" style="width:550px;height:200px;max-width:550px;max-height:200px;resize:none;"></textarea></div>
-    				<div class="row" style="height:30px;"></div>
-        		</div>
-      		</div>
+<!---content--->
+<div class="content">
+	<div class="row">
+		<div class="row" style="height:40px;">
+			<div class="pageicon">|</div>
+			<div style="margin-left:5px;margin-top:5px;">
+				<ul class="breadcrumb pagetitle" style="background-color:transparent;padding-top:0px;padding-left:5px;">
+					<li><a href="table.jsp" >OTS-表的管理</a></li>
+					<li><a href="#" id="table_name"></a></li>
+					<li><a href="#" id="view_name"></a></li>
+				</ul>
+			</div>
+		</div>
+		<%--查询条件--%>
+		<div  id="IndexColQueryDiv" class="row" style="margin-left:70px;margin-right:70px;overflow-y:auto;height:200px;">
+			<table id="IndexColQueryTable" style="height:200px;table-layout:fixed; word-wrap:break-word;border-collapse:collapse;">
+				<thead>
+				<tr>
+					<%--<th class="col-md-2" data-field="IndexCheckState" data-align="left" data-formatter="IndexColQueryCheckFormatter" data-events="operateEvents">查询类型选择&nbsp;&nbsp;&nbsp;</th>--%>
+					<th class="col-md-4" data-field="IndexColQueryName" data-align="center" >索引列名&nbsp;&nbsp;</th>
+						<%--<span class="glyphicon glyphicon-question-sign" title="注：每一列都可以选择使用精确查询或使用范围查询；当选择精确查询时，每个列值必须完整。"></span></th>--%>
+					<th class="col-md-8" data-field="IndexColQueryCondition" data-align="center" data-formatter="IndexColQueryConditionFormatter" data-events="operateEvents">查询条件&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+				</tr>
+				</thead>
+			</table>
+		</div>
+
+		<%--<div id="IKQueryShowDiv" style="margin-left:70px;margin-right:70px;margin-top:5px;height:230px;">--%>
+		<%--<div  id="ReturnColDiv" class="row" style="margin-left:70px;margin-right:70px;overflow-y:auto;height:100px;">--%>
+			<%--<table id="IKQueryShowTable">--%>
+				<%--<tr>--%>
+					<%--<td class="col-md-2" style="">显示列&nbsp;<a href="#"><span class="glyphicon glyphicon-edit" style="font-size:10px;" title="编辑显示列" onclick='editIndexViewColumns();' data-toggle="modal"  data-target="#indexViewColumnEdit"></span></a></td>--%>
+					<%--<td class="col-md-6">--%>
+						<%--<input name="" id="indexQueryColumns1" type="button" class="btn" style="width:19%;cursor:default;" value="">--%>
+						<%--<input name="" id="indexQueryColumns2" type="button" class="btn" style="width:19%;cursor:default;" value="">--%>
+						<%--<input name="" id="indexQueryColumns3" type="button" class="btn" style="width:19%;cursor:default;" value="">--%>
+						<%--<input name="" id="indexQueryColumns4" type="button" class="btn" style="width:19%;cursor:default;" value="">--%>
+						<%--<input name="" id="indexQueryColumns5" type="button" class="btn" style="width:19%;cursor:default;" value="">--%>
+					<%--</td>--%>
+					<%--<td class="col-md-2" style=""></td>--%>
+					<%--<td class="col-md-2" style="">--%>
+						<%--<input id="btn_queryindexrec" name="" type="button" class="btn" style="width:60px;" value="查询" onclick="indexViewQuery();">--%>
+					<%--</td>--%>
+				<%--</tr>--%>
+				<%--<tr>--%>
+					<%--<td></td>--%>
+					<%--<td class="col-md-5" style="">--%>
+						<%--<div class="r_text" style="width:60px;margin-left:0px;">限制返回</div>--%>
+						<%--<div class="r_box" style="width:60px;"><input name="" id="indexViewLimit" type="text" class="textbox1" style="width:60px;text-align:right" placeholder="100"></div>--%>
+						<%--<div class="r_text" style="margin-left:0px;">条记录</div>--%>
+						<%--<div class="r_text" style="width:40px;">跳过</div>--%>
+						<%--<div class="r_box" style="width:60px;"><input name="" id="indexViewSkip" type="text" class="textbox1" style="width:60px;text-align:right" placeholder="0"></div>--%>
+						<%--<div class="r_text" style="margin-left:0px;">条记录</div>--%>
+				<%--</tr>--%>
+				<%--<tr></tr>--%>
+				<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+				<%--&lt;%&ndash;<td></td>&ndash;%&gt;--%>
+				<%--&lt;%&ndash;<td class="col-md-5" style="">&ndash;%&gt;--%>
+				<%--&lt;%&ndash;<div><input id="btn_queryindexrec" name="" type="button" class="btn" style="width:60px;" value="查询" onclick="indexViewQuery();"></div>&ndash;%&gt;--%>
+				<%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+				<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
+
+			<%--</table>--%>
+		<%--</div>--%>
+		<%--<div  id="ReturnColDiv" class="row" style="margin-left:70px;margin-right:70px;overflow-y:auto;height:100px;">--%>
+		<div  id="ReturnColDiv" class="row" style="margin-left:300px;margin-right:70px;overflow-y:auto;height:100px;">
+			<div class="r_text" style="width:60px;margin-left:0px;">限制返回</div>
+			<div class="r_box" style="width:60px;"><input name="" id="indexViewLimit" type="text" class="textbox1" style="width:60px;text-align:right" placeholder="100"></div>
+			<div class="r_text" style="margin-left:0px;">条记录</div>
+			<div class="r_text" style="width:40px;">跳过</div>
+			<div class="r_box" style="width:60px;"><input name="" id="indexViewSkip" type="text" class="textbox1" style="width:60px;text-align:right" placeholder="0"></div>
+			<div class="r_text" style="margin-left:0px;">条记录</div>
+		</div>
+		<%--提示信息--%>
+		<div class="row" style="margin-left:140px;margin-top:0px;height:15px;">
+			<div class="r_text14" id="limitUnvalied" style="margin-left:60px;display:none;">请输入0~10000整数值。</div>
+			<div class="r_text14" id="skipUnvalied" style="margin-left:240px;display:none;">请输入非负整数值。</div>
+			<div class="r_text14" id="skipTooLarge" style="margin-left:240px;display:none;">输入的整数值过大。</div>
+			<%--<div id="indexViewHbaseTips" style="margin-right:70px;text-align:right;color:#428BCA;display:none;">注：仅当指定Hash键时，Range键查询条件才有效！</div>--%>
+			<div id="indexViewHbaseTips" style="margin-right:70px;text-align:right;color:#428BCA;display:none;">请输入完整的查询条件！</div>
+			<%--新加--%>
+			<div class="r_text14" id="IKQ_infoStatus" data-name="index_status" style="margin-top:10px;margin-left:20px;width:90%;text-align:center;" ></div>
+		</div>
+
+		<div class="table-controls" style="margin-left:70px;margin-right:70px;">
+			<div class="pull-right" style="" >
+				<input name="" type="button" class="btn" style="width:100px;" value="编辑显示列" onclick='clickIndexEditDisplayColumns();' data-toggle="modal"  data-target="#propertyEdit">
+			</div>
 		</div>
 	</div>
-	<!---dialog: property--->
+	<%--索引查询记录的视图--%>
+	<div class="row" style="margin-left:70px;margin-right:70px;">
+		<table id="indexViewTable" style="table-layout:fixed; word-wrap:break-word;border-collapse:collapse">
+			<thead>
+			<tr>
+				<%--<th data-field="hash_key" data-align="center" data-sortable="true">Hash键</th>--%>
+				<th data-field="" data-align="center"></th>
+				<th data-field="" data-align="center"></th>
+				<th data-field="" data-align="center"></th>
+				<th data-field="" data-align="center"></th>
+				<th data-field="" data-align="center"></th>
+				<%--<th data-field="" data-align="center"></th>--%>
+				<th data-class="col-operate-view" data-field="operate" data-align="center" data-formatter="viewOperateFormatter" data-events="operateEvents">操作</th>
+			</tr>
+			</thead>
+		</table>
+	</div>
+	<%--</div>--%>
+</div>
+<div>
+	<jsp:include page="footer.jsp" />
+</div>
+<div>
+	<jsp:include page="errorTips.jsp" />
+</div>
+
+<div class="modal text-center" id="indexViewModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog" style="display: inline-block; width: auto;">
+		<div class="modal-content">
+			<div class="modal-header" style="background-color:#f5f5f5;">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true"> &times;</button>
+				<h4 class="modal-title" id="myModalLabel" style="text-align:left;font-weight:bold;">记录详细信息</h4>
+			</div>
+			<div class="modal-body">
+				<div class="row" style="height:200px;margin-top:0px;"><textarea name="" id="indexViewContent" cols="" rows="" style="width:550px;height:200px;max-width:550px;max-height:200px;resize:none;"></textarea></div>
+				<div class="row" style="height:30px;"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<!---dialog: property--->
 <div class="modal text-center" id="indexViewColumnEdit" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-   <div class="modal-dialog" style="display: inline-block; width: auto;">
-      <div class="modal-content"></div>
+	<div class="modal-dialog" style="display: inline-block; width: auto;">
+		<div class="modal-content"></div>
 	</div>
 </div>
 </body>
 
 <script type="text/javascript">
-	var index_view_query = "";
-	var index_view_skip = 0;
-	var index_view_limit = 100;
-	var index_view_total_record_num = 0;
- 	var index_view_columns_num = 0;
-	var index_view_tablename = getUrlParam("tablename");
-	var index_view_indexname = getUrlParam("indexname");
-	var indexViewListHeadHtml = "";
-	var index_view_records = [];
-	var recordToShow = {};
-	var recordShownKeys = [];
-	var index_view_modal_table_name = {};
-	var index_view_modal_index_name = {};
-	var index_view_pktype = getUrlParam("pktype");
-	var index_view_range = getUrlParam("range");
-	var index_view_index_type = getUrlParam("idxtype");		//0-solr, 1-hbase
-	var index_view_show_columns_num = 7;
-	var index_view_show_columns = [];
-	var index_view_query_columns = [];
-	var index_view_column_property = {"field":"", "title":"", "align":"center"};
-	
-	function indexViewAlertMsg(msg){
-		errorAlertMsg(msg);
-	}
-	
-	function indexViewhelpInfo(message)
-	{
-		$("#indexViewContent").attr("value", message);
-    	$("#indexViewModal").modal("show");
-	}
-	
-	$(function(){
-		if (index_view_tablename == null || index_view_indexname == null ||index_view_pktype == null || index_view_index_type == null) {
-   			recordAlertMsg("非法的URL，请跳转至“表详细页”页面，点击索引名，进入“索引视图”页面。");
-   		 	//window.location = "table_detail.jsp";
-   		}
-		
-    	var href = "table_detail.jsp?tablename=" + index_view_tablename   + "&pktype=" + index_view_pktype  + "&display=index"+ "&id=" + getUrlParam("id");
-    	if (index_view_pktype == 1) {
-    		href += "&range=" + index_view_range;
-    	}
-		$("#table_name").attr("href", href);
-       	$("#table_name").text(getStructName(index_view_tablename) + "-索引");
-		document.getElementById("table_name").title = index_view_tablename;
-       	$("#view_name").text(getStructName(index_view_indexname) + "-视图");
-		document.getElementById("view_name").title = index_view_indexname;
-		
-	    for (var i=0; i<index_view_show_columns_num; i++) {
-	    	index_view_show_columns[i] = index_view_column_property;
-   		}
-	    index_view_show_columns[0] = {"field":"hash_key", "title":"Hash键", "align":"center", "sortable":true};	
-	    if (index_view_pktype == 1) {
-	    	index_view_show_columns[1] = {"field":"range_key", "title":"Range键", "align":"center", "sortable":true};
-	    }
-		if (index_view_index_type == 1) {
-			$("#indexQueryContent").attr("placeholder",  "缺省默认查询所有记录。详见“文档”-REST接口“基于索引查询记录”（基于Hbase索引-query）");
-			document.getElementById("trFilterSortForSolr").style.display = "none";
-			document.getElementById("indexViewHbaseTips").style.display = "block";
-			if (index_view_pktype == 0) {
-				$("#indexViewRangeKeyStart").attr("disabled", "disabled");
-				$("#indexViewRangeKeyEnd").attr("disabled", "disabled");
-				//document.getElementById("indexViewRangeKeyText").style.display = "none";
-				//document.getElementById("indexViewRangeKeys").style.display = "none";
-			}
-		}
-		else {
-			$("#indexQueryContent").attr("placeholder",  "缺省默认查询所有记录。详见“文档”-REST接口“基于索引查询记录”（基于Solr索引-query）");
-			document.getElementById("trHashRangeForHbase").style.display = "none";
-		}
+    var index_view_query = "";
+    var index_view_skip = 0;
+    var index_view_limit = 100;
+    var index_view_total_record_num = 0;
+    var index_view_columns_num = 0;
+    var index_view_tablename = getUrlParam("tablename");
+    var index_view_indexname = getUrlParam("indexname");
+    var indexViewListHeadHtml = "";
+    var index_view_records = [];
+    var recordToShow = {};
+    var recordShownKeys = [];
+    var index_view_modal_table_name = {};
+    var index_view_modal_index_name = {};
+    var index_view_pktype = getUrlParam("pktype");
+    var index_view_range = getUrlParam("range");
+    var index_view_index_type = getUrlParam("idxtype");		//0-solr, 1-hbase
+    //	var index_view_show_columns_num = 7;
+    var index_view_show_columns_num = 5;
+    var index_view_show_columns = [];
+    var index_view_query_columns = [];
+    var index_view_column_property = {"field":"", "title":"", "align":"center"};
 
-			$.ajax({
-	 			cache: false,
-	 			type: "GET",
-	 			url: "/otscfgsvr/api/index/" + index_view_tablename + "/" + index_view_indexname + "/display_columns",
-	 			dataType: "json",
-	 			timeout:30000,
-	            success:function(results, msg){ 
-	            	if (results["errcode"] == 0) {
-	            		var property = results["columns"];
-	                	if (property.length > 0) {
-	                		index_view_query_columns = property.split(",");
-	                	}
-	                	getIndexViewShowColumns();
-	                	/* else {
-	                		indexViewInit();
-	                	} */
-	            	}
-	            	else {
-	            		indexViewAlertMsg("获取索引显示列信息失败！错误: " + errorInfo(results["errcode"]) + "错误码: " + results["errcode"]);
-	            	}
-	            },
-		         complete: function()
-			     {
-		            indexViewColumnsInit();
-		            $('#indexView').bootstrapTable({
-		                data: [], 
-		                classes: 'table',
-		                striped: true,
-		                formatNoMatches: function () {
-		                	return '请输入查询条件。';
-		                },
-		                undefinedText: '',
-		                columns: index_view_show_columns
-		            });
-			     },
-	            error: function(msg){
-	            	if(msg["status"] != 404) {
-	                	var errmsg = "获取索引显示列信息失败！错误: " + getStructMsg(msg);
-	                	indexViewAlertMsg(errmsg);
-	            	}
-	            	/* else {
-	            		indexViewInit();
-	            	} */
-	      		}
-	  		});
-		
-		
-		
-		$('#indexView').on('page-change.bs.table', function (e, size, number){
- 			var $table = $('#indexView').bootstrapTable();
- 			var totalPages = $table.bootstrapTable('getOptions').totalPages;
- 			if(totalPages == size){
- 				index_view_total_record_num = $table.bootstrapTable('getOptions').totalRows;
- 				indexViewUpdate();
- 			}
- 		});
-	});
-	
-	function viewOperateFormatter(value, row, index) {
+    var colValue_data=[];
+    var show_data=[];
+    var IKQuery_table = [];
+
+
+
+    //索引列查询条件的选择
+    function IndexColQueryConditionFormatter(value, row, index) {
+        return [
+            '<div name="" id="ICQConditionDiv' + index + '">',
+            '<div name="" id="ICStartDiv' + index + '" style="float:left;margin-left: 50px">',
+            '<input class="" name="" id="IndexRangeStartKey' + index + '" type="text"  style="width:120px;text-align:left;margin-left:0px;" value="" placeholder="起始键 " >',
+            '</div>',
+            '<div name="" id="ICRangeDiv' + index + '" style="float:left">' ,
+            '<span  class="r_text1" name="" id="IndexRangeSplit' + index + '"></span>----',
+            '<input class="" name="" id="IndexRangeEndKey' + index + '" type="text"  style="width:120px;margin-left: 0px;" value="" placeholder="终止键 " >',
+            '</div>',
+            '<div name="" id="ICCheckDiv' + index + '" style="margin-left:20px;float:left;margin-top:5px">' ,
+            '<input class="IndexCheckBoxStateAcc" type="checkbox" name="" id="IndexCheckBoxStateAcc' + index + '" style="" onclick="">精确查询',
+            '</div>',
+            '</div>',
+        ].join('');
+    }
+
+    $('#indexViewTable').bootstrapTable({
+        data: [],
+        classes: 'table',
+        striped: true,
+        formatNoMatches: function () {
+            return '';
+        },
+    });
+
+
+//    //  当点击某个文本框时，选择对应的索引单选项
+//    function IndexTextFocus(type){
+//        if (type == 0){
+//            $("#IndexAccurateKeyRadio").attr("checked", true);
+//        }
+//        else if (type == 1){
+//            $("#IndexRangeStartEndKeyRadio").attr("checked", true);
+//        }
+//    }
+//    //  确定索引查询的类型
+//    function ConfirmIKQuery()
+//    {
+////        debugger;
+//        var count_index=0;
+////		var i=0;
+//        var colName_text_now = $("#IndexKeyItem").find("option:selected").text();
+//        if($("#IndexAccurateKeyRadio").attr("checked")){
+//            colValue_data = $("#IndexViewAccurateKey").attr("value");//得到文本框中的列值
+//            show_data = {"IKQueryName":colName_text_now,"IKQueryValue":colValue_data,"IKQueryType":"精确查询"};
+//        }
+//        else if ($("#IndexRangeStartEndKeyRadio").attr("checked")){
+//            var colStartValue_data = $("#IndexViewRangeStartKey").attr("value");//得到文本框中的列值
+//            var colEndValue_data = $("#IndexViewRangeEndKey").attr("value");//得到文本框中的列值
+//            colValue_data =colStartValue_data+"----"+ colEndValue_data;//得到文本框中的列值，起始键+终止键
+//            show_data = {"IKQueryName":colName_text_now,"IKQueryValue":colValue_data,"IKQueryType":"范围查询"};
+//
+//        }
+//        IKQuery_table = $("#IKQueryTable").bootstrapTable('getData');
+//        if  (colValue_data==null || colValue_data==""){
+//            $("#IKQ_infoStatus").html("请输入完整查询条件。");
+//            return;
+//        }
+//        //判断表中是否已存在，若存在，就更新数据，否则，新插一行。
+//        else{
+//            for( var i =0;i<IKQuery_table.length;i++)
+//            {
+//                if (IKQuery_table[i].IKQueryName == colName_text_now){
+//                    $("#IKQueryTable").bootstrapTable('updateRow',{index:i, row:show_data});
+//                    break;
+//                }
+//                count_index++;
+//            }
+//            if(count_index==IKQuery_table.length){
+//                $("#IKQueryTable").bootstrapTable('append', show_data);//_data----->新增的数据
+//            }
+//            return;
+//        }
+//    }
+    //主键查询值的操作,目前只支持删除
+//    function IKQueryOperateFormatter(value, row, index) {
+//        return [
+//            '<input name="" type="button" class="keyDeleteIKQ" style="width:40px;" value="删除" data-method="remove" data-target="#IKQueryTable">',
+//        ].join('');
+//    }
+
+
+    //    function clickDeleteIKQ(editRow) {
+    ////        debugger
+    //
+    //        $("#IKQueryTable").bootstrapTable('remove',{
+    //            field: 'IKQueryName',
+    //            values: [editRow.IKQueryName]
+    //        });
+    //
+    //    }
+
+    function indexViewAlertMsg(msg){
+        errorAlertMsg(msg);
+    }
+
+    function indexViewhelpInfo(message)
+    {
+        $("#indexViewContent").attr("value", message);
+        $("#indexViewModal").modal("show");
+    }
+
+    function recordAlertMsg(msg){
+        errorAlertMsg(msg);
+    }
+
+    $(function(){
+        debugger
+//-------------------动态加载下拉框------------------
+        var url = '/otscfgsvr/api/index/';
+        url += index_view_tablename;
+
+        var table_column_index = [];
+        var optionsCol_index=[];
+        var column_name_index;
+        var table_IC_data=[];
+        $.ajax({
+            type: "GET",
+//            url: url,
+//            url:"wls_colInfo_tableInfo.json" ,
+            url:"wls_Column_indexInfo.json",
+            dataType: "json",
+            timeout: 10000,
+            success: function(results, msg){
+                var errorcode = results["errcode"];
+                if (errorcode == 0) {
+                    table_column_index = results["index_key"];
+                    for (var i = 0; i < table_column_index.length; i++) {
+                        column_name_index = table_column_index[i]["col_name"];
+                        table_IC_data[i] = {"IndexColQueryName": column_name_index};
+                    }
+
+                    $('#IndexColQueryTable').bootstrapTable('destroy').bootstrapTable({
+                        data: table_IC_data,
+                        classes: 'table',
+                        undefinedText: '',
+                        striped: true,
+                    });
+                    for(var i=1;i<table_column_index.length;i++){
+                        $('#IndexColQueryTable').bootstrapTable('hideRow', {index:i});
+                    }
+                }
+                else {
+                    var errmsg = "获取表 " + index_view_tablename + " 详细信息失败。";
+                    recordAlertMsg(errmsg);
+                }
+            },
+            error: function(msg){
+                table_column_index = [];
+//                if(msg["status"] != 404) {
+                var errmsg = "获取表" + getStructName(index_view_tablename) + " 显示列信息错误: " + getStructMsg(msg);
+                recordAlertMsg(errmsg);
+//                }
+            }
+        });
+//-----------------------------------------------------------
+
+
+        //todo 2018.12.20增加复选键来简化页面
+        $('#IndexColQueryTable').bootstrapTable('destroy').bootstrapTable({
+            data: [],
+//            data: wls_PKQ_datas,
+            classes: 'table',
+            striped: true,
+            formatNoMatches: function () {
+                return '';
+            },
+        });
+
+//		if (index_view_tablename == null || index_view_indexname == null ||index_view_pktype == null || index_view_index_type == null) {
+        if (index_view_tablename == null || index_view_indexname == null || index_view_index_type == null) {
+            recordAlertMsg("非法的URL，请跳转至“表详细页”页面，点击索引名，进入“索引视图”页面。");
+            //window.location = "table_detail.jsp";
+        }
+
+        var href = "table_detail.jsp?tablename=" + index_view_tablename   + "&pktype=" + index_view_pktype  + "&display=index"+ "&id=" + getUrlParam("id");
+        if (index_view_pktype == 1) {
+            href += "&range=" + index_view_range;
+        }
+        $("#table_name").attr("href", href);
+        $("#table_name").text(getStructName(index_view_tablename) + "-索引");
+        document.getElementById("table_name").title = index_view_tablename;
+        $("#view_name").text(getStructName(index_view_indexname) + "-视图");
+        document.getElementById("view_name").title = index_view_indexname;
+
+        for (var i=0; i<index_view_show_columns_num; i++) {
+            index_view_show_columns[i] = index_view_column_property;
+        }
+//	    index_view_show_columns[0] = {"field":"hash_key", "title":"Hash键", "align":"center", "sortable":true};
+//	    if (index_view_pktype == 1) {
+//	    	index_view_show_columns[1] = {"field":"range_key", "title":"Range键", "align":"center", "sortable":true};
+//	    }
+        if (index_view_index_type == 1) {
+            $("#indexQueryContent").attr("placeholder",  "缺省默认查询所有记录。详见“文档”-REST接口“基于索引查询记录”（基于Hbase索引-query）");
+//			document.getElementById("trFilterSortForSolr").style.display = "none";
+            document.getElementById("indexViewHbaseTips").style.display = "block";
+//			if (index_view_pktype == 0) {
+//				$("#indexViewRangeKeyStart").attr("disabled", "disabled");
+//				$("#indexViewRangeKeyEnd").attr("disabled", "disabled");
+//				//document.getElementById("indexViewRangeKeyText").style.display = "none";
+//				//document.getElementById("indexViewRangeKeys").style.display = "none";
+//			}
+        }
+        else {
+            $("#indexQueryContent").attr("placeholder",  "缺省默认查询所有记录。详见“文档”-REST接口“基于索引查询记录”（基于Solr索引-query）");
+//			document.getElementById("trHashRangeForHbase").style.display = "none";
+        }
+
+        $.ajax({
+            cache: false,
+            type: "GET",
+            url: "/otscfgsvr/api/index/" + index_view_tablename + "/" + index_view_indexname + "/display_columns",
+//                url:"wls_display_columns_indexInfo.json",
+            dataType: "json",
+            timeout:30000,
+            success:function(results, msg){
+                if (results["errcode"] == 0) {
+                    var property = results["columns"];
+                    if (property.length > 0) {
+                        index_view_query_columns = property.split(",");
+                    }
+                    getIndexViewShowColumns();
+                    /* else {
+                        indexViewInit();
+                    } */
+                }
+                else {
+                    indexViewAlertMsg("获取索引显示列信息失败！错误: " + errorInfo(results["errcode"]) + "错误码: " + results["errcode"]);
+                }
+            },
+            complete: function()
+            {
+                indexViewColumnsInit();
+                $('#indexView').bootstrapTable({
+                    data: [],
+                    classes: 'table',
+                    striped: true,
+                    formatNoMatches: function () {
+                        return '请输入查询条件。';
+                    },
+                    undefinedText: '',
+                    columns: index_view_show_columns
+                });
+            },
+            error: function(msg){
+                if(msg["status"] != 404) {
+                    var errmsg = "获取索引显示列信息失败！错误: " + getStructMsg(msg);
+                    indexViewAlertMsg(errmsg);
+                }
+                /* else {
+                    indexViewInit();
+                } */
+            }
+        });
+
+
+
+        $('#indexView').on('page-change.bs.table', function (e, size, number){
+            var $table = $('#indexView').bootstrapTable();
+            var totalPages = $table.bootstrapTable('getOptions').totalPages;
+            if(totalPages == size){
+                index_view_total_record_num = $table.bootstrapTable('getOptions').totalRows;
+                indexViewUpdate();
+            }
+        });
+    });
+
+    function viewOperateFormatter(value, row, index) {
         return '<input name="" type="button" class="viewRecord btn3" style="width:50px;" value="查看" data-toggle="modal" data-target="#indexViewModal">';
     }
-	
-	window.operateEvents = {
-            'click .viewRecord': function (e, value, row, index) {
-            	goRecordDetail(row);
-            }
-        };
-	/* function indexViewInit() {
-		$.ajax({
-			async: false,
+
+    window.operateEvents = {
+        'click .viewRecord': function (e, value, row, index) {
+            goRecordDetail(row);
+        },
+//			'click .keyDeleteIKQ': function (e, value, row, index) {
+//				clickDeleteIKQ(row);
+//        	},
+//        'click .focusIndexRadio': function (e, value, row, index) {
+//            $(this).prev("input").attr("checked", true);
+//        },
+        'click .IndexCheckBoxStateAcc': function (e, value, row, index) {
+            clickIndexCheckStateAcc(index);
+        },
+    };
+    /* function indexViewInit() {
+        $.ajax({
+            async: false,
             type: "GET",
             url: "/otscfgsvr/api/index/" + index_view_tablename + "/" + index_view_indexname + "?query_from=0",
             dataType: "json",
             timeout: 30000,
             success: function (results, msg) {
-             	$.each(results.columns, function (InfoIndex, Info) {
-             		index_view_columns.push(Info["column"]);
-             	});
-             	index_view_columns = index_view_columns.slice(0,5);
+                 $.each(results.columns, function (InfoIndex, Info) {
+                     index_view_columns.push(Info["column"]);
+                 });
+                 index_view_columns = index_view_columns.slice(0,5);
              },
-        	 error: function (msg) {
-        		 for (var i=0; i<5; i++){
- 	            	indexViewListHeadHtml += "<th data-field='' data-align='center'></th>"; 
-              	}
-             	var errmsg = "获取索引信息错误: " + getStructMsg(msg);
-               	indexViewAlertMsg(errmsg);
+             error: function (msg) {
+                 for (var i=0; i<5; i++){
+                     indexViewListHeadHtml += "<th data-field='' data-align='center'></th>";
+                  }
+                 var errmsg = "获取索引信息错误: " + getStructMsg(msg);
+                   indexViewAlertMsg(errmsg);
             }
-		}); 
-		$.ajax({
- 			type: "PUT",
- 			url: "/otscfgsvr/api/index/" + index_view_tablename + "/" + index_view_indexname + "/display_columns",
- 			contentType: "application/json",
- 			data: "{" + index_view_columns.join(",") + "}",
- 			dataType: "text",
- 			timeout:30000,
+        });
+        $.ajax({
+             type: "PUT",
+             url: "/otscfgsvr/api/index/" + index_view_tablename + "/" + index_view_indexname + "/display_columns",
+             contentType: "application/json",
+             data: "{" + index_view_columns.join(",") + "}",
+             dataType: "text",
+             timeout:30000,
             success:function(msg){
-            	
+
             },
             error: function(msg){
-            	var errmsg = "保存显示列信息错误: " + getStructMsg(msg);
-            	indexViewAlertMsg(errmsg);
+                var errmsg = "保存显示列信息错误: " + getStructMsg(msg);
+                indexViewAlertMsg(errmsg);
             }
-       	});
-	} */
-	
-	function indexViewColumnsInit() {
-			for (var j=0; j<index_view_query_columns.length; j++) {
-	     		var columnId = "indexQueryColumns" + (j + 1);
-	     		$("#" + columnId).attr("value", index_view_query_columns[j]);
-	     		document.getElementById(columnId).title = index_view_query_columns[j];
-	     	}
-	     	for (var i=index_view_query_columns.length; i<5; i++){
-	        	var columnNoId = "indexQueryColumns" + (i + 1);
-	        	$("#" + columnNoId).attr("value", "");
-	        	document.getElementById(columnNoId).disabled = "disabled";
-	     	}
-	}
-	
-	function indexViewUpdate(){
-		if ($("#indexViewLimit").val()){
-			return;
-		}
-		index_view_total_record_num += index_view_skip;
-     	if(index_view_query.indexOf("&offset=") > 0) {
-     		index_view_query = index_view_query.substring(0,index_view_query.indexOf("&offset="));
-     	}
+           });
+    } */
 
-		$.ajax({
- 			cache: false,
-  			type: "GET",
-  			url: "/otscfgsvr/api/index/" + index_view_tablename + "/" + index_view_indexname + "?" + index_view_query + "&offset=" + index_view_total_record_num, 
-  			dataType: "json",
-  			timeout: 30000,
-  			success: function(results, msg){
-  				index_view_records = results["records"];
-  				for (var i=0; i<index_view_records.length; i++){
- 					$.each(index_view_records[i],function(j){  
- 						index_view_records[i][j] = htmlEscape(index_view_records[i][j]);  
- 					});  
- 				}
-  				$('#indexView').bootstrapTable('append', index_view_records);
-  			},
-       		error: function(msg){
-             	var errmsg = "查询表" + getStructName(index_view_tablename) + " 记录信息失败！错误: " + getStructMsg(msg);
-               	indexViewAlertMsg(errmsg);
-        	}
-  		});
-  	}
-	
-	function indexViewQuery() {
-		document.getElementById("limitUnvalied").style.display = 'none';
-		document.getElementById("skipUnvalied").style.display = 'none';
-		document.getElementById("skipTooLarge").style.display = 'none';
-		index_view_query = "";
-		if (index_view_index_type == 1) {
-			if ($("#indexQueryContent").val()) {
-				index_view_query += "query=" + encodeURIComponent($("#indexQueryContent").val()).replace(/%20/g, "+");
-			}
-			else {
-				index_view_query += "query=*:*";
-			}
-			if ($("#indexViewHashKey").val().trim()) {
-				index_view_query += "&hash_key=" + encodeURIComponent($("#indexViewHashKey").val().trim());
-			}
-			if ($("#indexViewRangeKeyStart").val().trim()) {
-				index_view_query += "&range_key_start=" + encodeURIComponent($("#indexViewRangeKeyStart").val().trim());
-			}
-			if ($("#indexViewRangeKeyEnd").val().trim()) {
-				index_view_query += "&range_key_end=" + encodeURIComponent($("#indexViewRangeKeyEnd").val().trim());
-			}
-		}
-		else {
-			if ($("#indexQueryContent").val()) {
-				index_view_query += "query=" + encodeURIComponent($("#indexQueryContent").val()).replace(/%20/g, "+");
-			}
-			else {
-				index_view_query += "query=*:*";	
-			}
-			if ($("#indexViewFilters").val()){
-				index_view_query += "&filters=" + encodeURIComponent($("#indexViewFilters").val());
-			}
-			if ($("#indexViewSort").val()) {
-				index_view_query += "&orders=" + encodeURIComponent($("#indexViewSort").val());
-			}
-		}
-		
-		if (index_view_query_columns.length == 0 || index_view_query_columns[0].length == 0){
-			/* index_view_query += "&columns=hash_key";
-			if (index_view_pktype == 1) {
-				index_view_query += ",range_key";
-			} */
-		}
-		else {
-			index_view_query += "&columns=" + index_view_query_columns.join(",");
-		}
+    function clickIndexCheckStateAcc(editIndex) {
+        //todo 当点击当前复选框时，当前的“----”和“终止键”隐藏，"起始键"变为精确查询，并出现下一行。
+        debugger
+        var Index_text_start={};
+        var Index_text_end;
+        $("#IKQ_infoStatus").html("");
+        var isChecked_now = $('#IndexCheckBoxStateAcc' + editIndex).prop('checked');//判断当前复选框是否被选中
+        if(isChecked_now){
+            for(var i = 0;i < editIndex;i++) {
+                var isChecked_before = $('#IndexCheckBoxStateAcc' + i).prop('checked');
+                if(!isChecked_before){
+                    $("#IKQ_infoStatus").html("请保证之前的主键列都是精确查询。");
+                    $('#IndexCheckBoxStateAcc' + editIndex).attr("checked", false);//若之前主键列没有被勾选，则本主键列无法勾选。
+                    return;
+                }
+                else{
+                    Index_text_start[i] = $('#IndexRangeStartKey'+i).val();
+                    if(Index_text_start[i]==""){
+                        $("#IKQ_infoStatus").html("请填写上一个主键列“精确查询”的条件。");
+                        $('#IndexCheckBoxStateAcc' + editIndex).attr("checked", false);//若之前主键列没有被勾选，则本主键列无法勾选。
+                        return;
+                    }
+                }
+            }
+            Index_text_start[editIndex] = $('#IndexRangeStartKey'+editIndex).val();
+            editRowCheck=editIndex+1;
+            $('#IndexColQueryTable').bootstrapTable('showRow', {index:(editRowCheck)});
+            for(var i=0;i<=editIndex;i++){
+                $('#ICRangeDiv'+i).hide();
+                $('#IndexCheckBoxStateAcc' + i).attr("checked", true);
+                $('#IndexRangeStartKey'+i).attr("value",Index_text_start[i]);
+            }
+        }else{
+            if(editIndex ==  (record_table_primary_keys.length-1)){
+                $('#ICRangeDiv'+editIndex).show();
+                $('#IndexCheckBoxStateAcc' + editIndex).attr("checked", false);
+            }else {
+                var isChecked_after = $('#IndexCheckBoxStateAcc' + (editIndex + 1)).prop('checked');
+                if ((!isChecked_after) && ($('#IndexRangeStartKey' + (editIndex + 1)).val() == "") && ($('#tableDetailRangeEndKey' + (editIndex + 1)).val() == "")) {
+                    for (var i = 0; i <= editIndex; i++) {
+                        Index_text_start[i] = $('#IndexRangeStartKey' + i).val();
+                    }
+                    $('#IndexColQueryTable').bootstrapTable('hideRow', {index: (editIndex + 1)});
+                    for (var i = 0; i < editIndex; i++) {
+                        $('#ICRangeDiv' + i).hide();
+                        $('#IndexCheckBoxStateAcc' + i).attr("checked", true);
+                        $('#IndexRangeStartKey' + i).attr("value", Index_text_start[i]);
+                    }
+                    $('#IndexRangeStartKey' + editIndex).attr("value", Index_text_start[editIndex]);
+                }else{
+                    $("#IKQ_infoStatus").html("若想以此主键列为范围查询，则请确保此主键列为查询的最后一个主键列。");
+                    $('#IndexCheckBoxStateAcc' + editIndex).attr("checked", true);
+                    return;
+                }
+            }
+        }
+    }
 
-    	for (var i=index_view_query_columns.length; i<5; i++) {
-    		index_view_query_columns[i] = "";
-    	}
-		var rex_check_str = /^\d+$/;		
-		var indexViewLimit = $("#indexViewLimit").val().trim();
-		if(indexViewLimit){
-			if(!rex_check_str.test(indexViewLimit)  || indexViewLimit >10000 ){
-				document.getElementById("limitUnvalied").style.display = 'block';
-				return;
-			}
-			index_view_query +=  "&limit=" + parseInt(indexViewLimit, 10);
-		}
-		var indexViewSkip =$("#indexViewSkip").val().trim(); 
-		if(indexViewSkip){
-			if (!rex_check_str.test(indexViewSkip)) {
-				document.getElementById("skipUnvalied").style.display = 'block';
-				document.getElementById("skipTooLarge").style.display = 'none';
-				return;
-			}
-			else if(isGtMax(indexViewSkip)) {
-				document.getElementById("skipUnvalied").style.display = 'none';
-				document.getElementById("skipTooLarge").style.display = 'block';
-				return;
-			}
-			index_view_skip = parseInt(indexViewSkip, 10);
-		}
-		else {
-			index_view_skip = 0;
-		}
-		index_view_query += "&offset=" + index_view_skip;
-		$.ajax({
- 			cache: false,
- 			type: "GET",
-  			url: "/otscfgsvr/api/index/" + index_view_tablename + "/" + index_view_indexname + "?" + index_view_query,
-  			dataType: "json",
-  			timeout: 30000,
+
+
+    function indexViewColumnsInit() {
+        for (var j=0; j<index_view_query_columns.length; j++) {
+            var columnId = "indexQueryColumns" + (j + 1);
+            $("#" + columnId).attr("value", index_view_query_columns[j]);
+            document.getElementById(columnId).title = index_view_query_columns[j];
+        }
+        for (var i=index_view_query_columns.length; i<5; i++){
+            var columnNoId = "indexQueryColumns" + (i + 1);
+            $("#" + columnNoId).attr("value", "");
+            document.getElementById(columnNoId).disabled = "disabled";
+        }
+    }
+
+    function indexViewUpdate(){
+        if ($("#indexViewLimit").val()){
+            return;
+        }
+        index_view_total_record_num += index_view_skip;
+        if(index_view_query.indexOf("&offset=") > 0) {
+            index_view_query = index_view_query.substring(0,index_view_query.indexOf("&offset="));
+        }
+
+        $.ajax({
+            cache: false,
+            type: "GET",
+            url: "/otscfgsvr/api/index/" + index_view_tablename + "/" + index_view_indexname + "?" + index_view_query + "&offset=" + index_view_total_record_num,
+            dataType: "json",
+            timeout: 30000,
             success: function(results, msg){
-            	index_view_records = results["records"];
-            	for (var i=0; i<index_view_records.length; i++){
-     					$.each(index_view_records[i],function(j){  
-     						index_view_records[i][j] = htmlEscape(index_view_records[i][j]);  
-     					});  
-     				}
-         	},
-			complete: function()
-		    {
-				var $table = $('#indexView').bootstrapTable();
-     			var pagesize = $table.bootstrapTable('getOptions').pageSize;
-				$('#indexView').bootstrapTable('destroy').bootstrapTable({
-	                data: index_view_records, 
-	                classes: 'table',
-	                undefinedText: '',
-	                striped: true,
-	                pagination: true,
-	                pageSize: pagesize,
-	                pageList: [5, 10, 15],
-	                formatRecordsPerPage: function (pageNumber) {
-	                    return sprintf('每页显示 %s 条记录', pageNumber);
-	                },
-	               	formatShowingRows: function (pageFrom, pageTo, totalRows) {
-	                    return sprintf('第  %s 到 %s 条记录', pageFrom, pageTo);
-	                },
-	                formatNoMatches: function () {
-	                	return '没有匹配的记录。';
-	                },
-	                columns: index_view_show_columns
-	            });
-		    },
-            error: function(msg){       		
-             	var errmsg = "查询表 " + getStructName(index_view_tablename) + " 记录信息失败！错误: " + getStructMsg(msg);
-               	indexViewAlertMsg(errmsg);
+                index_view_records = results["records"];
+                for (var i=0; i<index_view_records.length; i++){
+                    $.each(index_view_records[i],function(j){
+                        index_view_records[i][j] = htmlEscape(index_view_records[i][j]);
+                    });
+                }
+                $('#indexViewTable').bootstrapTable('append', index_view_records);
+            },
+            error: function(msg){
+                var errmsg = "查询表" + getStructName(index_view_tablename) + " 记录信息失败！错误: " + getStructMsg(msg);
+                indexViewAlertMsg(errmsg);
             }
-		});     	
-     }
-	
-	function editIndexViewColumns() {
-		index_view_modal_table_name = index_view_tablename;
-		index_view_modal_index_name = index_view_indexname;
-	   $('#indexViewColumnEdit').on("show.bs.modal", function () {
+        });
+    }
+
+    function indexViewQuery() {
+        document.getElementById("limitUnvalied").style.display = 'none';
+        document.getElementById("skipUnvalied").style.display = 'none';
+        document.getElementById("skipTooLarge").style.display = 'none';
+        index_view_query = "";
+        if (index_view_index_type == 1) {
+            if ($("#indexQueryContent").val()) {
+                index_view_query += "query=" + encodeURIComponent($("#indexQueryContent").val()).replace(/%20/g, "+");
+            }
+            else {
+                index_view_query += "query=*:*";
+            }
+            if ($("#indexViewHashKey").val().trim()) {
+                index_view_query += "&hash_key=" + encodeURIComponent($("#indexViewHashKey").val().trim());
+            }
+            if ($("#indexViewRangeKeyStart").val().trim()) {
+                index_view_query += "&range_key_start=" + encodeURIComponent($("#indexViewRangeKeyStart").val().trim());
+            }
+            if ($("#indexViewRangeKeyEnd").val().trim()) {
+                index_view_query += "&range_key_end=" + encodeURIComponent($("#indexViewRangeKeyEnd").val().trim());
+            }
+        }
+        else {
+            if ($("#indexQueryContent").val()) {
+                index_view_query += "query=" + encodeURIComponent($("#indexQueryContent").val()).replace(/%20/g, "+");
+            }
+            else {
+                index_view_query += "query=*:*";
+            }
+            if ($("#indexViewFilters").val()){
+                index_view_query += "&filters=" + encodeURIComponent($("#indexViewFilters").val());
+            }
+            if ($("#indexViewSort").val()) {
+                index_view_query += "&orders=" + encodeURIComponent($("#indexViewSort").val());
+            }
+        }
+
+        if (index_view_query_columns.length == 0 || index_view_query_columns[0].length == 0){
+            /* index_view_query += "&columns=hash_key";
+            if (index_view_pktype == 1) {
+                index_view_query += ",range_key";
+            } */
+        }
+        else {
+            index_view_query += "&columns=" + index_view_query_columns.join(",");
+        }
+
+        for (var i=index_view_query_columns.length; i<5; i++) {
+            index_view_query_columns[i] = "";
+        }
+        var rex_check_str = /^\d+$/;
+        var indexViewLimit = $("#indexViewLimit").val().trim();
+        if(indexViewLimit){
+            if(!rex_check_str.test(indexViewLimit)  || indexViewLimit >10000 ){
+                document.getElementById("limitUnvalied").style.display = 'block';
+                return;
+            }
+            index_view_query +=  "&limit=" + parseInt(indexViewLimit, 10);
+        }
+        var indexViewSkip =$("#indexViewSkip").val().trim();
+        if(indexViewSkip){
+            if (!rex_check_str.test(indexViewSkip)) {
+                document.getElementById("skipUnvalied").style.display = 'block';
+                document.getElementById("skipTooLarge").style.display = 'none';
+                return;
+            }
+            else if(isGtMax(indexViewSkip)) {
+                document.getElementById("skipUnvalied").style.display = 'none';
+                document.getElementById("skipTooLarge").style.display = 'block';
+                return;
+            }
+            index_view_skip = parseInt(indexViewSkip, 10);
+        }
+        else {
+            index_view_skip = 0;
+        }
+        index_view_query += "&offset=" + index_view_skip;
+        $.ajax({
+            cache: false,
+            type: "GET",
+            url: "/otscfgsvr/api/index/" + index_view_tablename + "/" + index_view_indexname + "?" + index_view_query,
+            dataType: "json",
+            timeout: 30000,
+            success: function(results, msg){
+                index_view_records = results["records"];
+                for (var i=0; i<index_view_records.length; i++){
+                    $.each(index_view_records[i],function(j){
+                        index_view_records[i][j] = htmlEscape(index_view_records[i][j]);
+                    });
+                }
+            },
+            complete: function()
+            {
+                var $table = $('#indexViewTable').bootstrapTable();
+                var pagesize = $table.bootstrapTable('getOptions').pageSize;
+                $('#indexViewTable').bootstrapTable('destroy').bootstrapTable({
+                    data: index_view_records,
+                    classes: 'table',
+                    undefinedText: '',
+                    striped: true,
+                    pagination: true,
+                    pageSize: pagesize,
+                    pageList: [5, 10, 15],
+                    formatRecordsPerPage: function (pageNumber) {
+                        return sprintf('每页显示 %s 条记录', pageNumber);
+                    },
+                    formatShowingRows: function (pageFrom, pageTo, totalRows) {
+                        return sprintf('第  %s 到 %s 条记录', pageFrom, pageTo);
+                    },
+                    formatNoMatches: function () {
+                        return '没有匹配的记录。';
+                    },
+                    columns: index_view_show_columns
+                });
+            },
+            error: function(msg){
+                var errmsg = "查询表 " + getStructName(index_view_tablename) + " 记录信息失败！错误: " + getStructMsg(msg);
+                indexViewAlertMsg(errmsg);
+            }
+        });
+    }
+
+    function editIndexViewColumns() {
+//	    debugger
+        index_view_modal_table_name = index_view_tablename;
+        index_view_modal_index_name = index_view_indexname;
+        $('#indexViewColumnEdit').on("show.bs.modal", function () {
             $(this).removeData("bs.modal");
         });
-	   $("#indexViewColumnEdit").modal({
-		   backdrop: "static",
-			show: false,
-			remote: "index_view_column_edit.jsp"
-		}); 
-  	}
-	
-	 function goRecordDetail(row){
-		 var queryUrl = "/otscfgsvr/api/record/" + index_view_tablename + "?query_from=0&hash_key=" + encodeURIComponent(htmlUnescape(row["hash_key"]));
-		 if (index_view_pktype == 1) {
-			 queryUrl += "&range_key=" + encodeURIComponent(htmlUnescape(row["range_key"]));
-		 }
-		$("#indexViewContent").attr("value", "");
-		var indexViewContentHtml = "";
-    	$.ajax({
- 			cache: false,
-    		type: "GET",
-    		url: queryUrl,
-    		dataType: "json",
-    		timeout: 60000,
-    		success: function(results, msg){
-    			recordShownKeys = [];
-    			indexViewContentHtml = "{\n\"records\":\n\t[\n\t\t{\n";
-    			if (results["records"].length > 0) {
-    				recordToShow = results["records"][0];
-    			}
-    			for(var item in recordToShow){
-    				recordShownKeys.push(item);
-    			}
-    			for (var i=0; i<recordShownKeys.length; i++) {
-    				indexViewContentHtml += "\t\t\"" + recordShownKeys[i] + "\":\"" + recordToShow[recordShownKeys[i]] + "\"";
-    				if (i < recordShownKeys.length - 1){
-    					indexViewContentHtml += ",\n";
-    				}
-    			}
-    			indexViewContentHtml += "\n\t\t}\n\t]\n}";
-    	    	indexViewhelpInfo(indexViewContentHtml);
-    		},
-    		error: function (msg){
-             	var errmsg = "获取记录信息失败！错误: " + getStructMsg(msg);
-               	indexViewhelpInfo(errmsg);
-    		}
-    	});
-	 }
-	 
-	 /***********
-	     function recordViewDelete(){
+        $("#indexViewColumnEdit").modal({
+            backdrop: "static",
+            show: false,
+            remote: "index_view_column_edit.jsp"
+        });
+    }
+
+    function goRecordDetail(row){
+        var queryUrl = "/otscfgsvr/api/record/" + index_view_tablename + "?query_from=0&hash_key=" + encodeURIComponent(htmlUnescape(row["hash_key"]));
+        if (index_view_pktype == 1) {
+            queryUrl += "&range_key=" + encodeURIComponent(htmlUnescape(row["range_key"]));
+        }
+        $("#indexViewContent").attr("value", "");
+        var indexViewContentHtml = "";
+        $.ajax({
+            cache: false,
+            type: "GET",
+            url: queryUrl,
+            dataType: "json",
+            timeout: 60000,
+            success: function(results, msg){
+                recordShownKeys = [];
+                indexViewContentHtml = "{\n\"records\":\n\t[\n\t\t{\n";
+                if (results["records"].length > 0) {
+                    recordToShow = results["records"][0];
+                }
+                for(var item in recordToShow){
+                    recordShownKeys.push(item);
+                }
+                for (var i=0; i<recordShownKeys.length; i++) {
+                    indexViewContentHtml += "\t\t\"" + recordShownKeys[i] + "\":\"" + recordToShow[recordShownKeys[i]] + "\"";
+                    if (i < recordShownKeys.length - 1){
+                        indexViewContentHtml += ",\n";
+                    }
+                }
+                indexViewContentHtml += "\n\t\t}\n\t]\n}";
+                indexViewhelpInfo(indexViewContentHtml);
+            },
+            error: function (msg){
+                var errmsg = "获取记录信息失败！错误: " + getStructMsg(msg);
+                indexViewhelpInfo(errmsg);
+            }
+        });
+    }
+
+    /***********
+     function recordViewDelete(){
 	      	var rowNum=0;
 			var strs=document.getElementsByName("indexViewCheck");
 			var rowSelectNum = 0;
@@ -565,15 +816,15 @@
 					}
 				}
 	 			if (rowSelectNum == 0){
-	 				indexViewAlertMsg("请选择一个或多个索引。");	 				
+	 				indexViewAlertMsg("请选择一个或多个索引。");
 					return;
-				} 
+				}
 				else {
 					if(window.confirm('确定删除记录？')){
 			            //alert("确定");
 						for(var i=0; i<rowCheckNum; i++){
 							if(rowSelectCheck[i]==true){
-								
+
 								document.body.style.cursor="wait";
 						     	document.getElementById("btn_queryindexrec").style.cursor="wait";
 
@@ -594,13 +845,13 @@
 				                	error: function(msg){
 				    	             	var errmsg = "删除记录" + rowCheckValue[i] + " 错误: " + msg["status"];
 				    	               	if (String(msg["status"]).indexOf("17") != 0)
-				    	               		errmsg += " - " + msg["statusText"];    	               	
+				    	               		errmsg += " - " + msg["statusText"];
 				    	               	errmsg += ". " + msg["responseText"];
 				    	               	if(msg["status"] == 401)
 				    	               		errmsg += "<br/>(请刷新页面或者重新登录！)";
 				    	               	indexViewAlertMsg(errmsg);
 					                }
-								}); 
+								});
 							}
 		               	$(rowDeleted[i]).remove();
 					}
@@ -611,24 +862,24 @@
 	            }
 			}
 		}
-	 } 
-	 *******************/
-	 
-	 function getIndexViewShowColumns() {
-	 	var propertyShowNum = 1;
-     	if (index_view_pktype == 1) {
-     		propertyShowNum = 2;
-     	}
-     	for (var i=0; i<index_view_query_columns.length; i++) {
-     		var columnMap = {"align":"center", "sortable":true};
-     		columnMap["field"] = index_view_query_columns[i];
-     		columnMap["title"] = htmlEscape(index_view_query_columns[i]);
-     		index_view_show_columns[propertyShowNum] = columnMap;
-     		propertyShowNum++;
-     	}
-     	for (var i=propertyShowNum; i<index_view_show_columns_num; i++) {
-     		index_view_show_columns[i] = index_view_column_property;
-     	}
 	 }
+     *******************/
+
+    function getIndexViewShowColumns() {
+        var propertyShowNum = 1;
+        if (index_view_pktype == 1) {
+            propertyShowNum = 2;
+        }
+        for (var i=0; i<index_view_query_columns.length; i++) {
+            var columnMap = {"align":"center", "sortable":true};
+            columnMap["field"] = index_view_query_columns[i];
+            columnMap["title"] = htmlEscape(index_view_query_columns[i]);
+            index_view_show_columns[propertyShowNum] = columnMap;
+            propertyShowNum++;
+        }
+        for (var i=propertyShowNum; i<index_view_show_columns_num; i++) {
+            index_view_show_columns[i] = index_view_column_property;
+        }
+    }
 </script>
 </html>

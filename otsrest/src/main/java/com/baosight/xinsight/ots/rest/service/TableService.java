@@ -21,6 +21,9 @@ import com.baosight.xinsight.ots.rest.util.ConfigUtil;
 import com.baosight.xinsight.ots.rest.util.MessageBuilder;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 import com.baosight.xinsight.ots.rest.util.TableConfigUtil;
+import com.baosight.xinsight.utils.AasPermissionUtil;
+
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
@@ -270,13 +273,13 @@ public class TableService {
 
         try {
             //权限筛选，获取筛选后的表Id列表
-            List<Long> permittedIds = getPermittedIds(userInfo);
-            if (permittedIds.size() == 0){
-                return tableInfoListBody;
-            }
+            List<Long> noGetPermittedIds = getNoGetPermittedIds(userInfo);
+//            if (permittedIds.size() == 0){
+//                return tableInfoListBody;
+//            }
             //获取筛选后的表
             List<OtsTable> otsTableList = ConfigUtil.getInstance().getOtsAdmin()
-                    .getAllOtsTablesWithPermission(userInfo.getTenantId(),limit, offset,permittedIds);
+                    .getAllOtsTablesWithPermission(userInfo.getTenantId(),limit, offset,noGetPermittedIds);
             for (OtsTable otsTable : otsTableList) {
                 TableInfoBody tableInfoBody = fromTableToBody(otsTable);
                 tableInfoListBody.addTable(tableInfoBody);
@@ -323,14 +326,14 @@ public class TableService {
 
         try {
 
-            List<Long> permittedIds = getPermittedIds(userInfo);
-            if (permittedIds.size() == 0){
-                return tableNameListBody;
-            }
+            List<Long> noGetPermittedIds = getNoGetPermittedIds(userInfo);
+//            if (permittedIds.size() == 0){
+//                return tableNameListBody;
+//            }
 
             //获取表
             List<OtsTable> otsTableList = ConfigUtil.getInstance().getOtsAdmin()
-                    .getAllOtsTablesWithPermission(userInfo.getTenantId(), name, limit, offset, Fuzzy, permittedIds);
+                    .getAllOtsTablesWithPermission(userInfo.getTenantId(), name, limit, offset, Fuzzy, noGetPermittedIds);
             if (CollectionUtils.isEmpty(otsTableList)) {
                 throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_TABLE_NOTEXIST,
                         String.format("tenant (id:%d) didn't own any tables with table_name ~'%s'!", userInfo.getTenantId(), name));
@@ -355,30 +358,29 @@ public class TableService {
         return tableNameListBody;
     }
 
-    private static List<Long> getPermittedIds(PermissionCheckUserInfo userInfo) throws ConfigException {
-        //todo lyh
-//        List<Long> noGetPermissionList = null;
-//        if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
-//            // 过滤出id list
-//            List<Long> permittedIds = ConfigUtil.getInstance().getOtsAdmin().getPermissionTableIds(userInfo.getTenantId());
-//            // 再调用AasPermissionUtil接口获取ConfigUtil.getInstance().getAuthServerAddr()，noGetPermissionList
-//            try {
-//                noGetPermissionList = AasPermissionUtil.obtainNoGetPermissionInstanceList(ConfigUtil.getInstance().getAuthServerAddr(), userInfo, permittedIds);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                LOG.error(ExceptionUtils.getFullStackTrace(e));
-//            }
-//        }
-//
-//        return noGetPermissionList;
-
-        List<Long> permittedIds = new ArrayList<>();
+    private static List<Long> getNoGetPermittedIds(PermissionCheckUserInfo userInfo) throws ConfigException {
+        List<Long> noGetPermissionList = null;
         if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
-            // 过滤出id list
-            permittedIds = ConfigUtil.getInstance().getOtsAdmin().getPermissionTableIds(userInfo.getTenantId());
+            // 过滤出被设置过权限（permission=true）的表的id list。如果没有被设置过权限，permission=false。
+            List<Long> permittedIds = ConfigUtil.getInstance().getOtsAdmin().getPermissionTableIds(userInfo.getTenantId());
+            try {
+                // 再调用AasPermissionUtil接口
+                noGetPermissionList = AasPermissionUtil.obtainNoGetPermissionInstanceList(ConfigUtil.getInstance().getAuthServerAddr(), userInfo, permittedIds);
+            } catch (Exception e) {
+                e.printStackTrace();
+                LOG.error(ExceptionUtils.getFullStackTrace(e));
+            }
         }
 
-        return permittedIds;
+        return noGetPermissionList;
+
+//        List<Long> permittedIds = new ArrayList<>();
+//        if (userInfo.getTenantId() != null && userInfo.getUserId() != null) {
+//            // 过滤出id list
+//            permittedIds = ConfigUtil.getInstance().getOtsAdmin().getPermissionTableIds(userInfo.getTenantId());
+//        }
+//
+//        return permittedIds;
 
         //null表示无权限限制，size=0表示没有满足权限要求的记录。
 
