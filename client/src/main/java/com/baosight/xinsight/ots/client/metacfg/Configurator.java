@@ -504,6 +504,29 @@ public class Configurator {
         return returnObjectList;
     }
 
+    /**
+     * 对表进行授权
+     * @param tableId
+     * @throws PermissionSqlException
+     * @throws ConfigException
+     */
+    public void setTablePermission(long tableId) throws PermissionSqlException, ConfigException {
+        try {
+            connect();
+            Statement st = conn.createStatement();
+            String sql = "update ots_user_table set permission = true where table_id =" + tableId;
+            st.execute(sql);
+            st.close();
+        }  catch(ConfigException e){
+            e.getStackTrace();
+            LOG.error(ExceptionUtils.getFullStackTrace(e));
+            throw e;
+        }	catch (SQLException e) {
+            LOG.error(ExceptionUtils.getFullStackTrace(e));
+            throw new PermissionSqlException(OtsErrorCode.EC_OTS_ADD_PERMISSION_SQL_LABEL, (new StringBuilder()).append("Failed to add the permitted field to the relevant table").toString());
+        }
+    }
+
     //=================权限===========================
 
 

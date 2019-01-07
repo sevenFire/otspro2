@@ -845,6 +845,20 @@ public class OtsAdmin {
         return (TableConstants.HBASE_TABLE_PREFIX + String.valueOf(tenantId));
     }
 
+    public void setTablePermission(long tableId) throws ConfigException, PermissionSqlException {
+        Configurator configurator = new Configurator();
+        try {
+            configurator.setTablePermission(tableId);
+        } catch (ConfigException e) {
+            e.printStackTrace();
+            throw e;
+        } catch (PermissionSqlException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            configurator.release();
+        }
+    }
 
 
     //============================================index===========================================

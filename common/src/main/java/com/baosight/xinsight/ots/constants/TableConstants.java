@@ -37,7 +37,7 @@ public class TableConstants {
 
 
     //HBase中ots的表名前缀
-    public static final String HBASE_TABLE_PREFIX = "1:ots_";
+    public static final String HBASE_TABLE_PREFIX = "1:ots__";
 
     //HBase中ots的cell名 //todo lyh
     public static final String HBASE_TABLE_CELL = "all";
