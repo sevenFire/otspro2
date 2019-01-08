@@ -247,6 +247,7 @@ public class TableService {
 
             //更新缓存
             tableInfoBody = fromTableToBody(otsTable);
+            tableInfoBody.setErrorCode(0L);
             TableConfigUtil.addTableConfig(userInfo.getUserId(), userInfo.getTenantId(), tableInfoBody);
 
         } catch (ConfigException e) {

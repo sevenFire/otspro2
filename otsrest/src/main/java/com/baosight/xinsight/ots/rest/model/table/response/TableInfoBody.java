@@ -19,6 +19,8 @@ import java.util.List;
 public class TableInfoBody implements Serializable {
     @JsonIgnore
     private static final long serialVersionUID = 1L;
+    @JsonProperty(value="error_code")
+    private Long errorCode;
 
     @JsonProperty(value="table_id")
     private Long tableId;
@@ -138,6 +140,14 @@ public class TableInfoBody implements Serializable {
 
     public void setModifier(Long modifier) {
         this.modifier = modifier;
+    }
+
+    public Long getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(Long errorCode) {
+        this.errorCode = errorCode;
     }
 
     @JsonIgnore
