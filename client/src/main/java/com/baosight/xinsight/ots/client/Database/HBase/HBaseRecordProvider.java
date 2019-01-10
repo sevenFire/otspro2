@@ -71,17 +71,21 @@ public class HBaseRecordProvider {
     public static void deleteRecordsByRange(Table hTable, RecordQueryOption query,
                                             byte[] startKey,
                                             byte[] endKey) throws DecoderException, IOException, TableException{
-        Scan scan = new Scan();
-        scan.addFamily(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME));
+//        Scan scan = new Scan();
+//        scan.addFamily(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME));
+//
+//        scan.setStartRow(startKey==null?HConstants.EMPTY_START_ROW:startKey);
+//        scan.setStopRow(endKey==null?HConstants.EMPTY_END_ROW:endKey);
+//
+//        if (query.hasCaching()) {
+//            scan.setCaching(query.getCaching());
+//        }
+//
+//        deleteRecordsByScan(hTable,scan);
 
-        scan.setStartRow(startKey==null?HConstants.EMPTY_START_ROW:startKey);
-        scan.setStopRow(endKey==null?HConstants.EMPTY_END_ROW:endKey);
+        //todo lyh
+//        可能是精确删除也可能是范围删除。
 
-        if (query.hasCaching()) {
-            scan.setCaching(query.getCaching());
-        }
-
-        deleteRecordsByScan(hTable,scan);
     }
 
 

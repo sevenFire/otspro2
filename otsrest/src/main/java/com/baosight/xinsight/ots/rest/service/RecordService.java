@@ -162,6 +162,7 @@ public class RecordService {
 
     /**
      * 根据主键批量查询
+     * 精确查询
      * @param userInfo
      * @param tableName
      * @param getBody
@@ -249,6 +250,7 @@ public class RecordService {
 
     /**
      * 通过主键查询记录
+     * 前缀查询或者精确查询都有可能
      * @param userInfo
      * @param tableName
      * @param getBody
@@ -303,6 +305,7 @@ public class RecordService {
 
     /**
      * 删除满足条件的记录
+     * 前面的参数处理部分和查询满足条件的记录这个方法是一模一样的。
      * @param userInfo
      * @param tableName
      * @return
@@ -338,7 +341,7 @@ public class RecordService {
             //拼接rowKey的前缀
             List<byte[]> rowKeyRange = PrimaryKeyUtil.generateRowKeyRange(table.getTableId(),schema_primaryKey,schema_tableColumns,primaryKeyInput);
 
-            //query
+            //delete
             if (rowKeyRange.size() == 1){//只有startKey
                 ConfigUtil.getInstance().getOtsAdmin().deleteRecords(table.getTenantId(), query,  rowKeyRange.get(0),null);
             }else {//startKey和endKey都有
