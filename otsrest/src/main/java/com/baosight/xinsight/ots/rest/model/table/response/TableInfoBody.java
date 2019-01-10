@@ -19,7 +19,7 @@ import java.util.List;
 public class TableInfoBody implements Serializable {
     @JsonIgnore
     private static final long serialVersionUID = 1L;
-    @JsonProperty(value="error_code")
+    @JsonProperty(value="errcode")
     private Long errorCode;
 
     @JsonProperty(value="table_id")

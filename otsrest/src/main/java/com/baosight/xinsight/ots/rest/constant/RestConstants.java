@@ -51,7 +51,7 @@ public class RestConstants {
 	public static final String Query_rangekey_start = "range_key_start";
 	public static final String Query_rangekey_end = "range_key_end";
 	public static final String Query_rangekey_prefix = "range_key_prefix";
-	public static final String Query_rangekey_cursormark = "range_key_cursor_mark";
+	public static final String Query_cursormark = "cursor_mark";
 	
 	public static final String Query_start_time = "start_time";
 	public static final String Query_end_time = "end_time";

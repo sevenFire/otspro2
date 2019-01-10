@@ -31,7 +31,7 @@ public class RecordInfoListResponseBody implements Serializable {
     @JsonProperty(value="records")
     private List<JsonNode> records = new ArrayList<>();
 
-    @JsonProperty(value="range_key_next_cursor_mark")
+    @JsonProperty(value="next_cursor_mark")
     private int cursorMark;
 
     @JsonProperty(value="total_count")

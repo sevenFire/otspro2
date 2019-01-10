@@ -413,31 +413,31 @@ public class TableService {
 
     }
 
-    /**
-     * 对offset参数的校验和转换
-     * @param offset
-     * @param offset
-     */
-    public static long dealWithOffset(String offset) {
-        if (StringUtils.isBlank(offset) || Long.parseLong(offset) < 0){
-            offset = String.valueOf(RestConstants.DEFAULT_QUERY_OFFSET);
-        }
-
-        return Long.parseLong(offset);
-    }
-
-    public static long dealWithLimit(String limit) {
-        if (StringUtils.isBlank(limit) || Long.parseLong(limit) < 0){
-            limit = String.valueOf(RestConstants.DEFAULT_QUERY_LIMIT);
-        }
-
-        if (limit != null && Integer.parseInt(limit) > RestConstants.DEFAULT_QUERY_MAX_LIMIT) {
-            LOG.info("limit is too large, set to " + RestConstants.DEFAULT_QUERY_MAX_LIMIT);
-            limit = String.valueOf(RestConstants.DEFAULT_QUERY_MAX_LIMIT);
-        }
-
-        return Long.parseLong(limit);
-    }
+//    /**
+//     * 对offset参数的校验和转换
+//     * @param offset
+//     * @param offset
+//     */
+//    public static long dealWithOffset(String offset) {
+//        if (StringUtils.isBlank(offset) || Long.parseLong(offset) < 0){
+//            offset = String.valueOf(RestConstants.DEFAULT_QUERY_OFFSET);
+//        }
+//
+//        return Long.parseLong(offset);
+//    }
+//
+//    public static long dealWithLimit(String limit) {
+//        if (StringUtils.isBlank(limit) || Long.parseLong(limit) < 0){
+//            limit = String.valueOf(RestConstants.DEFAULT_QUERY_LIMIT);
+//        }
+//
+//        if (limit != null && Integer.parseInt(limit) > RestConstants.DEFAULT_QUERY_MAX_LIMIT) {
+//            LOG.info("limit is too large, set to " + RestConstants.DEFAULT_QUERY_MAX_LIMIT);
+//            limit = String.valueOf(RestConstants.DEFAULT_QUERY_MAX_LIMIT);
+//        }
+//
+//        return Long.parseLong(limit);
+//    }
 
 
 }

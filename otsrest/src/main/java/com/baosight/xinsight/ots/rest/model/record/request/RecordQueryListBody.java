@@ -32,7 +32,7 @@ public class RecordQueryListBody implements Serializable {
     @JsonProperty(value="limit")
     private Long limit;
 
-    @JsonProperty(value="range_key_cursor_mark")
+    @JsonProperty(value="cursor_mark")
     private String cursorMark;
 
     @JsonIgnore

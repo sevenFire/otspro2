@@ -24,6 +24,8 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.filter.FilterList;
+import org.apache.hadoop.hbase.filter.KeyOnlyFilter;
 import org.apache.hadoop.hbase.filter.PrefixFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -55,8 +57,33 @@ public class HBaseRecordProvider {
         scan.addFamily(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME));
         scan.setFilter(rowFilter);
 
-        deleteRecords(table, scan);
+        deleteRecordsByScan(table, scan);
     }
+
+
+    /**
+     * 根据范围删除符合条件的记录
+     * @param hTable
+     * @param query
+     * @param startKey
+     * @param endKey
+     */
+    public static void deleteRecordsByRange(Table hTable, RecordQueryOption query,
+                                            byte[] startKey,
+                                            byte[] endKey) throws DecoderException, IOException, TableException{
+        Scan scan = new Scan();
+        scan.addFamily(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME));
+
+        scan.setStartRow(startKey==null?HConstants.EMPTY_START_ROW:startKey);
+        scan.setStopRow(endKey==null?HConstants.EMPTY_END_ROW:endKey);
+
+        if (query.hasCaching()) {
+            scan.setCaching(query.getCaching());
+        }
+
+        deleteRecordsByScan(hTable,scan);
+    }
+
 
     /**
      * 删除记录
@@ -65,7 +92,7 @@ public class HBaseRecordProvider {
      * @throws TableException
      * @throws IOException
      */
-    private static void deleteRecords(Table table, Scan scan) throws TableException, IOException {
+    private static void deleteRecordsByScan(Table table, Scan scan) throws TableException, IOException {
         int bufferSize = OtsConstants.DEFAULT_META_SCANNER_CACHING; //avoid running out of memory
 
         ResultScanner rs = null;
@@ -119,13 +146,14 @@ public class HBaseRecordProvider {
                 rs.close();
             }
             table.close();
-
-            // no match record
-            if (realDelCount == 0) {
-                throw new TableException(OtsErrorCode.EC_OTS_STORAGE_DELETE_RECORD_NOMATCH, "delete Record error, no match record!");
-            }
+//            // no match record
+//            if (realDelCount == 0) {
+//                throw new TableException(OtsErrorCode.EC_OTS_STORAGE_DELETE_RECORD_NOMATCH, "delete Record error, no match record!");
+//            }
         }
     }
+
+
 
     /**
      * 根据表名插入记录
@@ -189,6 +217,37 @@ public class HBaseRecordProvider {
 
     public static void updateRecords(TableName tableName, List<RowRecord> records) throws IOException, TableException {
         insertRecords(tableName,records);
+    }
+
+    public static RecordResult getRecordsByTableId(Table hTable, Long tableId, RecordQueryOption query) throws IOException, TableException {
+        byte[] rowKeyPrefix = PrimaryKeyUtil.generateRowKeyPrefixOnlyWithTableId(tableId);
+        Filter rowFilter = new PrefixFilter(rowKeyPrefix);
+
+        Scan scan = new Scan();
+        scan.addFamily(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME));
+        scan.setFilter(rowFilter);
+
+        if (query.hasReturnColumns()) {
+            List<String> returnColumns = query.getReturnColumns();
+            boolean onlyRowKey = query.onlyGetRowKey();
+            if (!onlyRowKey) {
+                for (int i = 0; i < returnColumns.size(); i++) {
+                    System.out.println(returnColumns.get(i).getClass());
+
+                    byte[] col = returnColumns.get(i).getBytes();
+                    scan.addColumn(Bytes.toBytes(OtsConstants.DEFAULT_FAMILY_NAME), col);
+                }
+                scan.setBatch(returnColumns.size());
+            }
+        }
+
+        if (query.hasIterate()) {
+            return queryRecordsByCursorMark(hTable, query, scan);
+        }else{
+            //目前不支持limit和offset这种场景
+            return null;
+        }
+
     }
 
 
@@ -352,6 +411,7 @@ public class HBaseRecordProvider {
             return null;
         }
     }
+
 
     /**
      * 以cursor mark的方式查询

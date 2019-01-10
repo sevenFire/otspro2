@@ -804,6 +804,73 @@ public class OtsAdmin {
 
 
     /**
+     * 删除记录
+     * @param tenantId
+     * @param query
+     */
+    public void deleteRecords(Long tenantId, RecordQueryOption query, byte[] startKey, byte[] endKey) throws OtsException {
+        try {
+            org.apache.hadoop.hbase.client.Table hTable =
+                    HBaseConnectionUtil.getInstance().getTable(generateHBaseTableName(tenantId));
+            HBaseRecordProvider.deleteRecordsByRange(hTable, query, startKey, endKey);
+        }catch (MasterNotRunningException e) {
+            e.printStackTrace();
+            LOG.error("Failed to delete records because hbase master no running!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_NO_RUNNING_HBASE_MASTER, "Failed to query records because hbase master no running!\n" + e.getMessage());
+        } catch (ZooKeeperConnectionException e) {
+            e.printStackTrace();
+            LOG.error("Failed to delete because can not connecto to zookeeper!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_FAILED_CONN_ZK,	"Failed to query because can not connecto to zookeeper!\n" + e.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error("Failed to delete records!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_RECORD_QUERY, "Failed to query records!\n" + e.getMessage());
+        } catch (TableException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
+            throw e;
+        } catch (DecoderException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_RECORD_QUERY, "Failed to query records!\n" + e.getMessage());
+        }
+
+    }
+
+    /**
+     * 查询tableiD
+     * @param tableId
+     * @param query
+     * @return
+     */
+    public RecordResult getRecordsByTableId(Long tenantId, Long tableId, RecordQueryOption query) throws OtsException {
+        try {
+            org.apache.hadoop.hbase.client.Table hTable =  HBaseConnectionUtil.getInstance().getTable(generateHBaseTableName(tenantId));
+
+            return HBaseRecordProvider.getRecordsByTableId(hTable, tableId, query);
+        } catch (MasterNotRunningException e) {
+            e.printStackTrace();
+            LOG.error("Failed to query records because hbase master no running!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_NO_RUNNING_HBASE_MASTER, "Failed to query records because hbase master no running!\n" + e.getMessage());
+        } catch (ZooKeeperConnectionException e) {
+            e.printStackTrace();
+            LOG.error("Failed to query because can not connecto to zookeeper!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_FAILED_CONN_ZK,	"Failed to query because can not connecto to zookeeper!\n" + e.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error("Failed to query records!\n" + e.getMessage());
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_RECORD_QUERY, "Failed to query records!\n" + e.getMessage());
+        } catch (TableException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
+            throw e;
+        }
+
+
+    }
+
+
+    /**
      * 根据rowKeys批量查询记录
      * @param rowKeyBatch
      * @param query
@@ -859,6 +926,7 @@ public class OtsAdmin {
             configurator.release();
         }
     }
+
 
 
     //============================================index===========================================

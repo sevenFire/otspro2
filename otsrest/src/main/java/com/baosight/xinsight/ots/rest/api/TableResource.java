@@ -8,6 +8,7 @@ import com.baosight.xinsight.ots.rest.constant.RestConstants;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableCreateBody;
 import com.baosight.xinsight.ots.rest.model.table.operate.TableUpdateBody;
 import com.baosight.xinsight.ots.rest.service.TableService;
+import com.baosight.xinsight.ots.rest.util.ParamUtil;
 import com.baosight.xinsight.ots.rest.util.PermissionUtil;
 import com.baosight.xinsight.ots.rest.util.RegexUtil;
 
@@ -116,7 +117,7 @@ public class TableResource {
                 String offset = StringUtils.trim(uriInfo.getQueryParameters().getFirst(RestConstants.Query_offset));
 
                 return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-                        .entity(TableService.getAllTableInfoList(userInfo, TableService.dealWithLimit(limit), TableService.dealWithOffset(offset))).build();
+                        .entity(TableService.getAllTableInfoList(userInfo, ParamUtil.dealWithLimit(limit), ParamUtil.dealWithOffset(offset))).build();
             } else {
                 //todo lyh 错误码和校验规则
                 if (!RegexUtil.isValidTableName(tableName)) {
@@ -158,7 +159,7 @@ public class TableResource {
 
         try{
             return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON).entity(
-                    TableService.getTableNameList(userInfo,name,TableService.dealWithLimit(limit),TableService.dealWithOffset(offset),true)).build();
+                    TableService.getTableNameList(userInfo,name,ParamUtil.dealWithLimit(limit),ParamUtil.dealWithOffset(offset),true)).build();
         } catch (OtsException e) {
             e.printStackTrace();
             return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();
@@ -186,7 +187,7 @@ public class TableResource {
 
         try{
              return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON).entity(
-                TableService.getAllTableNameList(userInfo,TableService.dealWithLimit(limit),TableService.dealWithOffset(offset))).build();
+                TableService.getAllTableNameList(userInfo,ParamUtil.dealWithLimit(limit),ParamUtil.dealWithOffset(offset))).build();
         } catch (OtsException e) {
             e.printStackTrace();
             return Response.status(e.getErrorCode() == OtsErrorCode.EC_OTS_PERMISSION_NO_PERMISSION_FAULT?Response.Status.FORBIDDEN : Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(new ErrorMode(e.getErrorCode(), e.getMessage())).build();

@@ -3,28 +3,26 @@ package com.baosight.xinsight.ots.rest.model.record.request;
 import com.baosight.xinsight.ots.OtsConstants;
 import com.baosight.xinsight.ots.OtsErrorCode;
 import com.baosight.xinsight.ots.exception.OtsException;
-import com.baosight.xinsight.ots.rest.model.record.same.RecordColumnsBody;
 import com.baosight.xinsight.utils.JsonUtil;
 
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * @author liyuhui
- * @date 2018/12/25
- * @description  满足主键条件查询的请求体
+ * @date {DATE}
+ * @description
  */
-public class RecordQueryBody implements Serializable{
+public class RecordAllQueryBody implements Serializable {
     @JsonIgnore
     private static final long serialVersionUID = 1L;
-
-    @JsonProperty(value="primary_key")
-    private List<RecordColumnsBody> primaryKey = new ArrayList<>();
 
     @JsonProperty(value="return_columns")
     private List<String> returnColumns = new ArrayList<>();
@@ -42,23 +40,15 @@ public class RecordQueryBody implements Serializable{
     }
 
     @JsonIgnore
-    public static RecordQueryBody toClass(String in) throws OtsException {
+    public static RecordAllQueryBody toClass(String in) throws OtsException {
 
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(in.getBytes(OtsConstants.DEFAULT_ENCODING));
-            return JsonUtil.readJsonFromStream(bais, RecordQueryBody.class);
+            return JsonUtil.readJsonFromStream(bais, RecordAllQueryBody.class);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_JSON2OBJECT, "convert json input to RecordQueryBody failed.");
+            throw new OtsException(OtsErrorCode.EC_OTS_STORAGE_JSON2OBJECT, "convert json input to RecordAllQueryBody failed.");
         }
-    }
-
-    public List<RecordColumnsBody> getPrimaryKey() {
-        return primaryKey;
-    }
-
-    public void setPrimaryKey(List<RecordColumnsBody> primaryKey) {
-        this.primaryKey = primaryKey;
     }
 
     public List<String> getReturnColumns() {
@@ -84,4 +74,15 @@ public class RecordQueryBody implements Serializable{
     public void setCursorMark(String cursorMark) {
         this.cursorMark = cursorMark;
     }
+
+    public RecordAllQueryBody(String returnColumnsString, Long limit, String cursorMark) {
+        if (!StringUtils.isBlank(returnColumnsString)){
+            String[] returnColumns = returnColumnsString.split(",");
+            this.returnColumns = Arrays.asList(returnColumns);
+        }
+        this.limit = limit;
+        this.cursorMark = cursorMark;
+    }
+
+
 }

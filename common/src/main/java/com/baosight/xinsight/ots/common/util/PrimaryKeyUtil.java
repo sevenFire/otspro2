@@ -74,10 +74,10 @@ public class PrimaryKeyUtil {
      * @throws DecoderException 
      */
     public static byte[] generateRowKey(long tableId,
-    		ArrayNode schema_primaryKey,
-    		ArrayNode schema_tableColumns,
-    		JsonNode record,
-    		Boolean prefix) throws OtsException, SQLException, DecoderException {
+                                        ArrayNode schema_primaryKey,
+                                        ArrayNode schema_tableColumns,
+                                        JsonNode record,
+                                        Boolean prefix) throws OtsException, SQLException, DecoderException {
         
         Map<String,String> tableColumnsMap = ColumnsUtil.dealWithTableColumns(schema_tableColumns);
 

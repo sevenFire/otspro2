@@ -20,7 +20,7 @@ public class ParamConstant {
     public static final String KEY_COL_END = "col_end";
     public static final String KEY_LIMIT = "limit";
     public static final String KEY_OFFSET = "offset";
-    public static final String KEY_CURSOR_MARK = "range_key_cursor_mark";
+    public static final String KEY_CURSOR_MARK = "cursor_mark";
     public static final String KEY_RETURN_COLUMNS = "return_columns";
     public static final String KEY_INDEX_KEY = "index_key";
     public static final String KEY_INDEX_TYPE = "index_type";
